@@ -1,0 +1,24 @@
+﻿# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# Local logs and temp
+*.log
+vite-dev.*
+
+# Backups / local scratch
+*.bak
+*.tmp
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
