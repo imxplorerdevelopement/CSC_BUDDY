@@ -3,13 +3,17 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;
 
 // --- app_config helpers ---
 // All three data types (tickets, services, quick_links) are stored as
 // single JSONB rows in the app_config table keyed by name.
 
 export async function dbLoad(key) {
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("app_config")
     .select("value")
@@ -23,6 +27,7 @@ export async function dbLoad(key) {
 }
 
 export async function dbSave(key, value) {
+  if (!supabase) return;
   const { error } = await supabase
     .from("app_config")
     .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
