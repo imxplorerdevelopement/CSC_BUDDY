@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { dbLoad, dbSave } from "./supabase.js";
 
 const INITIAL_SERVICES = [
   { id: "aadhaar", name: "Aadhaar Update / Correction", category: "Government ID", price: 0, unit: "per application", variable: false },
@@ -3253,6 +3254,30 @@ export default function CSCBilling() {
     window.open(finalUrl, "_blank");
   };
 
+  // Load from Supabase on mount — Supabase data wins over localStorage cache.
+  useEffect(() => {
+    async function loadFromSupabase() {
+      const [remoteTickets, remoteServices, remoteQuickLinks] = await Promise.all([
+        dbLoad("tickets"),
+        dbLoad("services"),
+        dbLoad("quick_links"),
+      ]);
+      if (Array.isArray(remoteTickets)) {
+        setTickets(hydrateTickets(remoteTickets));
+        writeStoredJSON(STORAGE_KEYS.tickets, remoteTickets);
+      }
+      if (Array.isArray(remoteServices)) {
+        setServices(hydrateServices(remoteServices));
+        writeStoredJSON(STORAGE_KEYS.services, remoteServices);
+      }
+      if (Array.isArray(remoteQuickLinks)) {
+        setCustomQuickLinks(remoteQuickLinks);
+        writeStoredJSON(STORAGE_KEYS.quickLinks, remoteQuickLinks);
+      }
+    }
+    loadFromSupabase();
+  }, []);
+
   useEffect(() => {
     writeStoredJSON(STORAGE_KEYS.activeTab, tab);
   }, [tab]);
@@ -3263,14 +3288,18 @@ export default function CSCBilling() {
 
   useEffect(() => {
     writeStoredJSON(STORAGE_KEYS.services, services);
+    dbSave("services", services);
   }, [services]);
 
   useEffect(() => {
-    writeStoredJSON(STORAGE_KEYS.tickets, serializeTickets(tickets));
+    const serialized = serializeTickets(tickets);
+    writeStoredJSON(STORAGE_KEYS.tickets, serialized);
+    dbSave("tickets", serialized);
   }, [tickets]);
 
   useEffect(() => {
     writeStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks);
+    dbSave("quick_links", customQuickLinks);
   }, [customQuickLinks]);
 
   return (
