@@ -86,8 +86,10 @@ const STORAGE_KEYS = {
   services: "csc-buddy.services",
   tickets: "csc-buddy.tickets",
   ticketDraft: "csc-buddy.ticket-draft",
+  quickLinks: "csc-buddy.quick-links",
 };
 const TAB_CONFIG = [
+  { id: "desk", label: "Today's Desk", description: "Start with pending work and today's totals.", shortLabel: "TDK", navGroup: "primary" },
   { id: "entry", label: "Service Entry", description: "Create tickets and capture walk-ins.", shortLabel: "SE", navGroup: "primary" },
   { id: "rates", label: "Rate Card", description: "Maintain service pricing and categories.", shortLabel: "RC", navGroup: "primary" },
   { id: "log", label: "Ticket Dashboard", description: "Track payment, status, and document flow.", shortLabel: "TD", navGroup: "panel" },
@@ -95,6 +97,25 @@ const TAB_CONFIG = [
 ];
 const PRIMARY_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "primary");
 const PANEL_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "panel");
+const QUICK_LINK_DEFAULTS = [
+  { id: "default_esathi", name: "e-Saathi", description: "UP state citizen services portal.", url: "https://edistrict.up.gov.in", isDefault: true },
+  { id: "default_digitalseva", name: "Digital Seva Portal", description: "CSC services and transaction desk.", url: "https://digitalseva.csc.gov.in", isDefault: true },
+  { id: "default_csc_edistrict", name: "CSC e-District", description: "e-District workflows and submissions.", url: "https://edistrict.up.gov.in", isDefault: true },
+  { id: "default_estamping", name: "Estamping", description: "Stamp and registration services.", url: "https://igrsup.gov.in", isDefault: true },
+  { id: "default_pf", name: "PF (EPFO)", description: "Provident fund member services.", url: "https://www.epfindia.gov.in", isDefault: true },
+  { id: "default_pension", name: "Pension (NPS)", description: "NPS CRA account and pension tools.", url: "https://npscra.nsdl.co.in", isDefault: true },
+  { id: "default_crsorgi", name: "dc.crsorgi", description: "Civil registration and certificate access.", url: "https://dc.crsorgi.gov.in", isDefault: true },
+  { id: "default_pdf_compress", name: "PDF Compressor", description: "Quickly reduce PDF file size.", url: "https://www.ilovepdf.com/compress_pdf", isDefault: true },
+  { id: "default_img_to_pdf", name: "Image to PDF", description: "Convert JPG or PNG to PDF.", url: "https://www.ilovepdf.com/jpg_to_pdf", isDefault: true },
+  { id: "default_pdf_to_img", name: "PDF to Image", description: "Convert PDF pages to image files.", url: "https://www.ilovepdf.com/pdf_to_jpg", isDefault: true },
+];
+
+function normalizeExternalUrl(url) {
+  const trimmed = String(url || "").trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
 
 function getReferenceTypeConfig(typeId) {
   return REFERENCE_TYPE_CONFIG[typeId] || REFERENCE_TYPE_CONFIG.incharge;
@@ -215,6 +236,7 @@ function buildPrintableTicketHtml(ticket) {
     .filter((doc) => doc.submitted)
     .map((doc) => doc.name)
     .join(", ");
+  const ackNumber = String(normalizedTicket?.ackNumber || "").trim();
   const statusColor = structured.meta.status === "Closed" ? "#047857" : "#B45309";
 
   return `<!doctype html>
@@ -322,6 +344,7 @@ function buildPrintableTicketHtml(ticket) {
       </div>
       <div class="meta-line">Reference: ${escapeHtml(structured.parties.reference.name || "N/A")} (${escapeHtml(structured.parties.reference.typeLabel || "N/A")})</div>
       ${structured.parties.documentHolder.phone ? `<div class="meta-line">Contact: ${escapeHtml(structured.parties.documentHolder.phone)}</div>` : ""}
+      ${ackNumber ? `<div class="meta-line">Acknowledgement No.: ${escapeHtml(ackNumber)}</div>` : ""}
       <div class="meta-line">Created: ${escapeHtml(structured.meta.createdDate)} ${escapeHtml(structured.meta.createdTime)}</div>
       <div class="divider">
         ${servicesHtml}
@@ -428,8 +451,8 @@ function serializeTickets(tickets) {
 }
 
 function getStoredActiveTab() {
-  const storedTab = readStoredJSON(STORAGE_KEYS.activeTab, "entry");
-  return TAB_CONFIG.some((item) => item.id === storedTab) ? storedTab : "entry";
+  const storedTab = readStoredJSON(STORAGE_KEYS.activeTab, "desk");
+  return TAB_CONFIG.some((item) => item.id === storedTab) ? storedTab : "desk";
 }
 
 function getStoredSidePanelExpanded() {
@@ -440,6 +463,26 @@ function getStoredSidePanelExpanded() {
 function getStoredTicketDraft() {
   const draft = readStoredJSON(STORAGE_KEYS.ticketDraft, null);
   return draft && typeof draft === "object" ? draft : {};
+}
+
+function getStoredQuickLinks() {
+  const stored = readStoredJSON(STORAGE_KEYS.quickLinks, []);
+  if (!Array.isArray(stored)) return [];
+  return stored
+    .filter((item) => item && typeof item === "object")
+    .map((item) => {
+      const name = String(item.name || "").trim();
+      const url = normalizeExternalUrl(item.url);
+      if (!name || !url) return null;
+      return {
+        id: String(item.id || `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`),
+        name,
+        description: String(item.description || "Custom quick access link"),
+        url,
+        isDefault: false,
+      };
+    })
+    .filter(Boolean);
 }
 
 //  Tab Button
@@ -1175,6 +1218,8 @@ function TicketWorkspace({ services, onSaveTicket }) {
   const [customAmt, setCustomAmt] = useState(() => draftSeed.customAmt || "");
   const [paymentCash, setPaymentCash] = useState(() => draftSeed.paymentCash || "");
   const [paymentUpi, setPaymentUpi] = useState(() => draftSeed.paymentUpi || "");
+  const [portalDown, setPortalDown] = useState(() => Boolean(draftSeed.portalDown));
+  const [portalDownNote, setPortalDownNote] = useState(() => draftSeed.portalDownNote || "");
   const [docName, setDocName] = useState(() => draftSeed.docName || "");
   const [docRequired, setDocRequired] = useState(() => (
     typeof draftSeed.docRequired === "boolean" ? draftSeed.docRequired : true
@@ -1306,6 +1351,8 @@ function TicketWorkspace({ services, onSaveTicket }) {
       customAmt,
       paymentCash,
       paymentUpi,
+      portalDown,
+      portalDownNote,
       docName,
       docRequired,
       documents,
@@ -1325,6 +1372,8 @@ function TicketWorkspace({ services, onSaveTicket }) {
     customAmt,
     paymentCash,
     paymentUpi,
+    portalDown,
+    portalDownNote,
     docName,
     docRequired,
     documents,
@@ -1460,6 +1509,10 @@ function TicketWorkspace({ services, onSaveTicket }) {
       setError("Collected amount cannot exceed ticket total.");
       return;
     }
+    if (portalDown && !portalDownNote.trim()) {
+      setError("Portal name is required when ticket is marked as portal down.");
+      return;
+    }
 
     const payMode = cashCollected > 0 && upiCollected > 0
       ? "Cash+UPI"
@@ -1473,10 +1526,11 @@ function TicketWorkspace({ services, onSaveTicket }) {
       : paidTotal > 0
         ? "Partial"
         : "Unpaid";
+    const finalStatus = portalDown ? "Open" : status;
 
     const ticket = withStructuredTicket({
       ...ticketMeta,
-      status,
+      status: finalStatus,
       payMode,
       paymentStatus,
       cashCollected,
@@ -1486,6 +1540,8 @@ function TicketWorkspace({ services, onSaveTicket }) {
       operator,
       items: [...items],
       documents: [...documents],
+      portalDown: Boolean(portalDown),
+      portalDownNote: portalDown ? portalDownNote.trim() : "",
       total,
       updatedAt: `${todayStr()} ${timeStr()}`,
     });
@@ -1508,6 +1564,8 @@ function TicketWorkspace({ services, onSaveTicket }) {
     setCustomAmt("");
     setPaymentCash("");
     setPaymentUpi("");
+    setPortalDown(false);
+    setPortalDownNote("");
     setDocName("");
     setDocRequired(true);
     setDocuments([]);
@@ -1556,6 +1614,11 @@ function TicketWorkspace({ services, onSaveTicket }) {
           <div style={{ marginTop: 6, fontSize: 12, color: "#475569" }}>
             Payment: {saved.paymentStatus || "Unpaid"} | Paid Rs. {saved.paidTotal || 0} | Pending Rs. {saved.pendingBalance || 0}
           </div>
+          {saved.portalDown && (
+            <div style={{ marginTop: 6, fontSize: 12, color: "#B45309", fontWeight: 700 }}>
+              Portal Down: {saved.portalDownNote || "Submission pending"}
+            </div>
+          )}
           <div style={{ marginTop: 6, fontSize: 12, color: "#475569" }}>
             Docs: {saved.documents?.filter((doc) => doc.required && doc.submitted).length || 0}/{saved.documents?.filter((doc) => doc.required).length || 0} required submitted
           </div>
@@ -1988,6 +2051,32 @@ function TicketWorkspace({ services, onSaveTicket }) {
                   </label>
                 </div>
 
+                <div style={{ ...softPanelStyle, marginBottom: 12, padding: 14 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#0F172A", fontSize: 13, fontWeight: 700, marginBottom: portalDown ? 10 : 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={portalDown}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setPortalDown(checked);
+                        if (!checked) setPortalDownNote("");
+                      }}
+                    />
+                    Mark as portal down - submission pending
+                  </label>
+                  {portalDown && (
+                    <label style={{ display: "grid", gap: 8 }}>
+                      <span style={sectionEyebrowStyle}>Which portal is down?</span>
+                      <input
+                        value={portalDownNote}
+                        onChange={(e) => setPortalDownNote(e.target.value)}
+                        placeholder="e.g. e-Saathi"
+                        style={inputStyle}
+                      />
+                    </label>
+                  )}
+                </div>
+
                 <div style={{ ...softPanelStyle, marginBottom: 14 }}>
                   <div style={{ display: "grid", gap: 10 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#475569" }}>
@@ -2008,6 +2097,8 @@ function TicketWorkspace({ services, onSaveTicket }) {
                 <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: isOverpaid ? "rgba(254,242,242,0.96)" : pendingBalance > 0 ? "rgba(255,251,235,0.96)" : "rgba(236,253,245,0.96)", border: isOverpaid ? "1px solid rgba(248,113,113,0.24)" : pendingBalance > 0 ? "1px solid rgba(245,158,11,0.22)" : "1px solid rgba(20,184,166,0.22)", color: isOverpaid ? "#B91C1C" : pendingBalance > 0 ? "#B45309" : "#0F766E", fontSize: 13, lineHeight: 1.5, fontWeight: 600 }}>
                   {isOverpaid
                     ? "Collected amount is greater than the ticket total. Reduce the payment before saving."
+                    : portalDown
+                      ? "Portal is marked down. Ticket will always save as Open until portal-down is unchecked."
                     : pendingBalance > 0
                       ? "Partial payment is okay. You can save the ticket and keep the remaining balance pending."
                       : "Payment is fully collected. This ticket is ready to complete."}
@@ -2037,7 +2128,7 @@ function TicketWorkspace({ services, onSaveTicket }) {
                       cursor: canSaveTicket ? "pointer" : "not-allowed",
                     }}
                   >
-                    Save and Complete
+                    {portalDown ? "Save (Portal Down)" : "Save and Complete"}
                   </button>
                 </div>
               </div>
@@ -2049,9 +2140,228 @@ function TicketWorkspace({ services, onSaveTicket }) {
   );
 }
 
-function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUpdateTicket }) {
+function TodaysDesk({ tickets, onOpenTicket }) {
+  const normalizedTickets = tickets.map((ticket) => (ticket?.structured ? ticket : withStructuredTicket(ticket)));
+  const todayLabel = todayStr();
+  const todayTickets = normalizedTickets.filter((ticket) => ticket.date === todayLabel);
+  const openTickets = normalizedTickets.filter((ticket) => ticket.status === "Open");
+  const pendingWorkTickets = [...openTickets].reverse();
+  const portalDownTickets = openTickets.filter((ticket) => ticket.portalDown === true);
+
+  const getPaidTotal = (ticket) => {
+    if (Number.isFinite(Number(ticket.paidTotal))) return Math.max(0, Number(ticket.paidTotal));
+    const cashCollected = Number(ticket.cashCollected) || 0;
+    const upiCollected = Number(ticket.upiCollected) || 0;
+    return Math.max(0, cashCollected + upiCollected);
+  };
+
+  const getPendingBalance = (ticket) => {
+    if (Number.isFinite(Number(ticket.pendingBalance))) return Math.max(0, Number(ticket.pendingBalance));
+    const total = Number(ticket.total) || 0;
+    return Math.max(0, total - getPaidTotal(ticket));
+  };
+
+  const collectedToday = todayTickets.reduce((sum, ticket) => sum + getPaidTotal(ticket), 0);
+  const stillToCollect = openTickets.reduce((sum, ticket) => sum + getPendingBalance(ticket), 0);
+  const todayOpenCount = todayTickets.filter((ticket) => ticket.status === "Open").length;
+  const todayClosedCount = todayTickets.filter((ticket) => ticket.status === "Closed").length;
+
+  const summaryCards = [
+    {
+      id: "collected",
+      label: "Collected Today",
+      value: `Rs. ${collectedToday}`,
+      note: "Cash + UPI from today's tickets",
+      accent: "#0F766E",
+      background: "linear-gradient(180deg, rgba(236,253,245,0.96) 0%, rgba(255,255,255,0.96) 100%)",
+      border: "1px solid rgba(20,184,166,0.28)",
+    },
+    {
+      id: "pending",
+      label: "Still to Collect",
+      value: `Rs. ${stillToCollect}`,
+      note: "Pending balance across all open tickets",
+      accent: "#B45309",
+      background: "linear-gradient(180deg, rgba(255,251,235,0.98) 0%, rgba(255,255,255,0.96) 100%)",
+      border: "1px solid rgba(245,158,11,0.28)",
+    },
+    {
+      id: "today-open",
+      label: "Open Today",
+      value: String(todayOpenCount),
+      note: `Out of ${todayTickets.length} ticket(s) created today`,
+      accent: "#D97706",
+      background: "linear-gradient(180deg, rgba(255,247,237,0.98) 0%, rgba(255,255,255,0.96) 100%)",
+      border: "1px solid rgba(251,146,60,0.26)",
+    },
+    {
+      id: "today-closed",
+      label: "Closed Today",
+      value: String(todayClosedCount),
+      note: "Tickets completed on today's date",
+      accent: "#047857",
+      background: "linear-gradient(180deg, rgba(240,253,244,0.98) 0%, rgba(255,255,255,0.96) 100%)",
+      border: "1px solid rgba(34,197,94,0.24)",
+    },
+  ];
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+      <div style={{
+        background: "linear-gradient(135deg, rgba(255,255,255,0.94) 0%, rgba(240,253,250,0.92) 42%, rgba(239,246,255,0.92) 100%)",
+        borderRadius: 22,
+        border: "1px solid rgba(148,163,184,0.20)",
+        boxShadow: "0 22px 40px rgba(15,23,42,0.08)",
+        padding: "22px 22px 20px",
+        marginBottom: 14,
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", color: "#0F766E", marginBottom: 8 }}>
+          Morning Snapshot
+        </div>
+        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A", marginBottom: 8 }}>
+          Today's Desk
+        </div>
+        <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, maxWidth: 780 }}>
+          Start here to review pending work, cash collected today, and tickets that need follow-up.
+          Select any ticket below to jump directly into Ticket Dashboard.
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 16 }}>
+        {summaryCards.map((card) => (
+          <div key={card.id} style={{
+            background: card.background,
+            borderRadius: 16,
+            border: card.border,
+            boxShadow: "0 12px 24px rgba(15,23,42,0.06)",
+            padding: "14px 14px 12px",
+          }}>
+            <div style={{ fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: 1.05, fontWeight: 700, marginBottom: 6 }}>
+              {card.label}
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.6, color: card.accent, marginBottom: 5 }}>
+              {card.value}
+            </div>
+            <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.45 }}>
+              {card.note}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        marginBottom: 16,
+        background: "linear-gradient(180deg, rgba(255,251,235,0.98) 0%, rgba(255,255,255,0.98) 100%)",
+        border: "1px solid rgba(245,158,11,0.28)",
+        borderRadius: 16,
+        padding: 14,
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#92400E", letterSpacing: 0.3, marginBottom: 8 }}>
+          Portal Down Queue
+        </div>
+        {portalDownTickets.length === 0 ? (
+          <div style={{ fontSize: 13, color: "#A16207", background: "rgba(255,255,255,0.92)", borderRadius: 12, border: "1px dashed rgba(217,119,6,0.30)", padding: "12px 14px" }}>
+            No portal-down tickets right now. This section will auto-populate when tickets are marked as portal down.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 8 }}>
+            {portalDownTickets.map((ticket) => (
+              <button
+                key={`portal_${ticket.ticketNo}`}
+                onClick={() => onOpenTicket(ticket.ticketNo)}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  borderRadius: 12,
+                  border: "1px solid rgba(217,119,6,0.26)",
+                  background: "rgba(255,255,255,0.98)",
+                  padding: "10px 12px",
+                  color: "#1E293B",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ fontWeight: 700 }}>{ticket.ticketNo} | {ticket.customerName || "Walk-in Customer"}</div>
+                  <div style={{ fontWeight: 700, color: "#B45309" }}>Pending Rs. {getPendingBalance(ticket)}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>
+        Pending Work ({pendingWorkTickets.length})
+      </div>
+      {pendingWorkTickets.length === 0 ? (
+        <div style={{ background: "rgba(255,255,255,0.88)", border: "1px dashed rgba(148,163,184,0.34)", borderRadius: 14, padding: "14px 16px", color: "#475569" }}>
+          No open tickets pending right now.
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 10 }}>
+          {pendingWorkTickets.map((ticket) => {
+            const structured = ticket.structured || toStructuredTicket(ticket);
+            const serviceNames = structured.services.map((service) => service.name).filter(Boolean);
+            const badgeLabel = ticket.portalDown ? "Portal Down" : "Open";
+            const badgeStyle = ticket.portalDown
+              ? { color: "#B45309", background: "rgba(254,243,199,0.98)", border: "1px solid rgba(245,158,11,0.28)" }
+              : { color: "#D97706", background: "rgba(255,247,237,0.98)", border: "1px solid rgba(251,146,60,0.26)" };
+
+            return (
+              <button
+                key={ticket.ticketNo}
+                onClick={() => onOpenTicket(ticket.ticketNo)}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  borderRadius: 16,
+                  border: "1px solid rgba(148,163,184,0.24)",
+                  background: "rgba(255,255,255,0.92)",
+                  boxShadow: "0 12px 24px rgba(15,23,42,0.06)",
+                  padding: "14px 14px 12px",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+                  <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 15 }}>
+                    {ticket.customerName || "Walk-in Customer"}
+                  </div>
+                  <span style={{
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 0.35,
+                    textTransform: "uppercase",
+                    padding: "5px 9px",
+                    ...badgeStyle,
+                  }}>
+                    {badgeLabel}
+                  </span>
+                </div>
+                <div style={{ color: "#334155", fontSize: 13, marginBottom: 7, lineHeight: 1.45 }}>
+                  {serviceNames.length > 0 ? serviceNames.join(", ") : "No services linked"}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ color: "#64748B", fontSize: 12, fontFamily: APP_MONO_STACK }}>
+                    {ticket.ticketNo} | {ticket.date}
+                  </div>
+                  <div style={{ color: "#B45309", fontWeight: 700, fontSize: 13 }}>
+                    Pending Rs. {getPendingBalance(ticket)}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUpdateTicket, focusTicketNo, onFocusHandled }) {
   const [expandedTickets, setExpandedTickets] = useState({});
   const [viewTicketNo, setViewTicketNo] = useState(null);
+  const [customerRecordTicketNo, setCustomerRecordTicketNo] = useState(null);
   const [showRawJson, setShowRawJson] = useState(false);
   const [editTicketNo, setEditTicketNo] = useState(null);
   const [editDraft, setEditDraft] = useState({
@@ -2062,10 +2372,31 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     operator: OPERATORS[0],
     cashCollected: "",
     upiCollected: "",
+    portalDown: false,
+    portalDownNote: "",
   });
   const [editError, setEditError] = useState("");
+  const [ackDrafts, setAckDrafts] = useState({});
+  const [ackSavedFlags, setAckSavedFlags] = useState({});
 
   const normalizedTickets = tickets.map((t) => (t.structured ? t : withStructuredTicket(t)));
+  const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(0, 10);
+  const normalizeName = (value) => String(value || "").trim();
+  const getCustomerIdentity = (ticket) => {
+    const phone = normalizePhone(ticket?.customerPhone);
+    if (PHONE_REGEX.test(phone)) return { type: "phone", value: phone };
+    const name = normalizeName(ticket?.customerName);
+    return name ? { type: "name", value: name } : null;
+  };
+  const ticketMatchesIdentity = (ticket, identity) => {
+    if (!identity) return false;
+    if (identity.type === "phone") {
+      const phone = normalizePhone(ticket?.customerPhone);
+      return PHONE_REGEX.test(phone) && phone === identity.value;
+    }
+    return normalizeName(ticket?.customerName) === identity.value;
+  };
+
   const openTickets = normalizedTickets.filter((t) => t.status === "Open");
   const closedTickets = normalizedTickets.filter((t) => t.status === "Closed");
   const totalTasks = normalizedTickets.reduce((sum, t) => sum + t.items.length, 0);
@@ -2073,6 +2404,23 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   const viewingTicket = normalizedTickets.find((t) => t.ticketNo === viewTicketNo) || null;
   const viewingStructured = viewingTicket ? (viewingTicket.structured || toStructuredTicket(viewingTicket)) : null;
   const editingTicket = normalizedTickets.find((t) => t.ticketNo === editTicketNo) || null;
+  const customerRecordAnchorTicket = normalizedTickets.find((t) => t.ticketNo === customerRecordTicketNo) || null;
+  const customerIdentity = customerRecordAnchorTicket ? getCustomerIdentity(customerRecordAnchorTicket) : null;
+  const customerRecordTickets = customerIdentity
+    ? normalizedTickets.filter((ticket) => ticketMatchesIdentity(ticket, customerIdentity))
+    : [];
+  const customerRecordTicketsSorted = [...customerRecordTickets].reverse();
+  const customerPrimaryName = customerRecordTickets.find((ticket) => normalizeName(ticket.customerName))?.customerName || "Walk-in Customer";
+  const customerPrimaryPhone = customerRecordTickets
+    .map((ticket) => normalizePhone(ticket.customerPhone))
+    .find((phone) => PHONE_REGEX.test(phone)) || "";
+  const customerSubmittedDocs = Array.from(new Set(
+    customerRecordTickets.flatMap((ticket) => {
+      const structured = ticket.structured || toStructuredTicket(ticket);
+      return structured.documents.submitted || [];
+    })
+  ));
+
   const detailCardStyle = {
     background: "rgba(255,255,255,0.88)",
     border: "1px solid rgba(148,163,184,0.24)",
@@ -2086,6 +2434,21 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     borderRadius: 16,
     padding: 14,
     boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
+  };
+  const dashboardInputStyle = {
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid rgba(148,163,184,0.24)",
+    borderRadius: 10,
+    background: "#FFFFFF",
+    color: "#0F172A",
+    outline: "none",
+  };
+  const softPanelStyle = {
+    background: "rgba(248,250,252,0.88)",
+    border: "1px solid rgba(148,163,184,0.20)",
+    borderRadius: 12,
+    padding: 12,
   };
   const actionButtonBase = {
     borderRadius: 10,
@@ -2114,6 +2477,12 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       border: "1px solid rgba(59,130,246,0.30)",
       background: "rgba(219,234,254,0.94)",
       color: "#1D4ED8",
+    },
+    customer: {
+      ...actionButtonBase,
+      border: "1px solid rgba(15,118,110,0.26)",
+      background: "rgba(240,253,250,0.96)",
+      color: "#0F766E",
     },
     print: {
       ...actionButtonBase,
@@ -2147,8 +2516,48 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     },
   };
 
+  useEffect(() => {
+    if (!focusTicketNo) return;
+    const exists = normalizedTickets.some((ticket) => ticket.ticketNo === focusTicketNo);
+    if (!exists) {
+      if (typeof onFocusHandled === "function") onFocusHandled();
+      return;
+    }
+    setViewTicketNo(focusTicketNo);
+    setShowRawJson(false);
+    setExpandedTickets((prev) => ({ ...prev, [focusTicketNo]: true }));
+    if (typeof onFocusHandled === "function") onFocusHandled();
+  }, [focusTicketNo, normalizedTickets, onFocusHandled]);
+
+  useEffect(() => {
+    if (!customerRecordTicketNo) return;
+    const exists = normalizedTickets.some((ticket) => ticket.ticketNo === customerRecordTicketNo);
+    if (!exists) setCustomerRecordTicketNo(null);
+  }, [customerRecordTicketNo, normalizedTickets]);
+
   const toggleExpand = (ticketNo) => {
     setExpandedTickets((prev) => ({ ...prev, [ticketNo]: !prev[ticketNo] }));
+  };
+
+  const getAckDraftValue = (ticket) => (
+    Object.prototype.hasOwnProperty.call(ackDrafts, ticket.ticketNo)
+      ? ackDrafts[ticket.ticketNo]
+      : (ticket.ackNumber || "")
+  );
+
+  const saveAckNumber = (ticketNo) => {
+    if (typeof onUpdateTicket !== "function") return;
+    const ticket = normalizedTickets.find((item) => item.ticketNo === ticketNo);
+    const draftValue = Object.prototype.hasOwnProperty.call(ackDrafts, ticketNo)
+      ? ackDrafts[ticketNo]
+      : (ticket?.ackNumber || "");
+    const ackNumber = String(draftValue || "").trim();
+    onUpdateTicket(ticketNo, { ackNumber });
+    setAckDrafts((prev) => ({ ...prev, [ticketNo]: ackNumber }));
+    setAckSavedFlags((prev) => ({ ...prev, [ticketNo]: true }));
+    setTimeout(() => {
+      setAckSavedFlags((prev) => ({ ...prev, [ticketNo]: false }));
+    }, 1300);
   };
 
   const startEdit = (ticket) => {
@@ -2161,6 +2570,8 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       operator: ticket.operator || OPERATORS[0],
       cashCollected: String(Number(ticket.cashCollected) || 0),
       upiCollected: String(Number(ticket.upiCollected) || 0),
+      portalDown: Boolean(ticket.portalDown),
+      portalDownNote: ticket.portalDownNote || "",
     });
     setEditError("");
   };
@@ -2175,6 +2586,8 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     const paidTotal = cashCollected + upiCollected;
     const total = Number(editingTicket?.total) || 0;
     const pendingBalance = Math.max(0, total - paidTotal);
+    const portalDown = Boolean(editDraft.portalDown);
+    const portalDownNote = String(editDraft.portalDownNote || "").trim();
 
     if (!name) {
       setEditError("Document holder name is required.");
@@ -2190,6 +2603,10 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     }
     if (paidTotal > total) {
       setEditError("Collected amount cannot exceed ticket total.");
+      return;
+    }
+    if (portalDown && !portalDownNote) {
+      setEditError("Portal name is required when ticket is marked as portal down.");
       return;
     }
     const referenceCfg = getReferenceTypeConfig(editDraft.referenceType);
@@ -2219,6 +2636,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       upiCollected,
       paidTotal,
       pendingBalance,
+      portalDown,
+      portalDownNote: portalDown ? portalDownNote : "",
+      status: portalDown ? "Open" : (editingTicket?.status || "Open"),
     });
     setEditTicketNo(null);
     setEditError("");
@@ -2243,6 +2663,11 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
             <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Meta</div>
             <div>Status: {structured.meta.status}</div>
             <div style={{ color: "#475569" }}>Updated: {structured.meta.updatedAt || "N/A"}</div>
+            {ticket.portalDown && (
+              <div style={{ color: "#B45309", marginTop: 4, fontWeight: 700 }}>
+                Portal Down: {ticket.portalDownNote || "Submission pending"}
+              </div>
+            )}
           </div>
           <div style={{ color: "#1E293B", fontSize: 13 }}>
             <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Payment</div>
@@ -2288,12 +2713,116 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
             </div>
           </div>
         )}
+        <div style={{ marginTop: 12, ...softPanelStyle, padding: 12 }}>
+          <div style={{ color: "#0F172A", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Acknowledgement / Application No.</div>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, alignItems: "center" }}>
+            <input
+              value={getAckDraftValue(ticket)}
+              onChange={(e) => setAckDrafts((prev) => ({ ...prev, [ticket.ticketNo]: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  saveAckNumber(ticket.ticketNo);
+                }
+              }}
+              placeholder="Enter acknowledgement number"
+              style={dashboardInputStyle}
+            />
+            <button onClick={() => saveAckNumber(ticket.ticketNo)} style={actionButtonStyles.neutral}>Save</button>
+          </div>
+          {ackSavedFlags[ticket.ticketNo] && (
+            <div style={{ marginTop: 6, fontSize: 11, color: "#0F766E", fontWeight: 700 }}>
+              Acknowledgement saved.
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+      {customerRecordAnchorTicket && (
+        <div style={{ background: "linear-gradient(180deg, rgba(240,253,250,0.88) 0%, rgba(255,255,255,0.94) 100%)", border: "1px solid rgba(20,184,166,0.34)", borderRadius: 18, padding: 20, marginBottom: 18, boxShadow: "0 16px 34px rgba(15,23,42,0.06)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
+            <div style={{ color: "#0F172A", fontWeight: 800, fontSize: 16 }}>Customer Record: {customerPrimaryName}</div>
+            <button onClick={() => setCustomerRecordTicketNo(null)} style={actionButtonStyles.closeView}>Close Record</button>
+          </div>
+
+          {!customerIdentity ? (
+            <div style={{ color: "#475569", fontSize: 13 }}>Customer identity is not available for this ticket.</div>
+          ) : (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 10 }}>
+                <div style={detailCardStyle}>
+                  <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Customer Name</div>
+                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{customerPrimaryName}</div>
+                </div>
+                <div style={detailCardStyle}>
+                  <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Phone Number</div>
+                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{customerPrimaryPhone || "Not captured"}</div>
+                </div>
+                <div style={detailCardStyle}>
+                  <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Total Tickets</div>
+                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{customerRecordTickets.length}</div>
+                </div>
+                <div style={detailCardStyle}>
+                  <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Identification Basis</div>
+                  <div style={{ color: "#0F172A", fontWeight: 700 }}>
+                    {customerIdentity.type === "phone" ? "Phone number match" : "Exact name match"}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ ...sectionCardStyle, marginBottom: 10 }}>
+                <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 12, marginBottom: 8 }}>Submitted Documents (History)</div>
+                {customerSubmittedDocs.length === 0 ? (
+                  <div style={{ color: "#475569", fontSize: 12 }}>No submitted documents recorded yet.</div>
+                ) : (
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {customerSubmittedDocs.map((docName) => (
+                      <span key={`history_doc_${docName}`} style={{ fontSize: 11, fontWeight: 600, color: "#0F766E", borderRadius: 999, padding: "5px 10px", background: "rgba(236,253,245,0.96)", border: "1px solid rgba(20,184,166,0.24)" }}>
+                        {docName}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={sectionCardStyle}>
+                <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 12, marginBottom: 8 }}>Ticket History</div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {customerRecordTicketsSorted.map((ticket) => {
+                    const structured = ticket.structured || toStructuredTicket(ticket);
+                    const serviceNames = structured.services.map((item) => item.name).filter(Boolean);
+                    return (
+                      <div key={`history_ticket_${ticket.ticketNo}`} style={{ border: "1px solid rgba(148,163,184,0.22)", borderRadius: 12, padding: 10, background: "rgba(255,255,255,0.92)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                          <div style={{ color: "#0F172A", fontSize: 13, fontWeight: 700 }}>{ticket.ticketNo} | {ticket.date}</div>
+                          <div style={{ color: ticket.status === "Closed" ? "#047857" : "#B45309", fontWeight: 700, fontSize: 12 }}>{ticket.status}</div>
+                        </div>
+                        <div style={{ color: "#334155", fontSize: 12, marginBottom: 3 }}>
+                          Services: {serviceNames.length > 0 ? serviceNames.join(", ") : "No services linked"}
+                        </div>
+                        <div style={{ color: "#475569", fontSize: 12, marginBottom: 3 }}>
+                          Amount: Rs. {ticket.total || 0} | Paid: Rs. {ticket.paidTotal || 0} | Pending: Rs. {ticket.pendingBalance || 0}
+                        </div>
+                        <div style={{ color: "#475569", fontSize: 12, marginBottom: 3 }}>
+                          Acknowledgement No.: {ticket.ackNumber ? ticket.ackNumber : "Not available"}
+                        </div>
+                        <div style={{ color: "#475569", fontSize: 12 }}>
+                          Submitted Docs: {structured.documents.submitted.length > 0 ? structured.documents.submitted.join(", ") : "None"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {viewingTicket && (
         <div style={{ background: "linear-gradient(180deg, rgba(240,253,250,0.84) 0%, rgba(255,255,255,0.92) 100%)", border: "1px solid rgba(45,212,191,0.42)", borderRadius: 18, padding: 20, marginBottom: 18, boxShadow: "0 16px 34px rgba(15,23,42,0.06)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
@@ -2325,6 +2854,11 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
               <div style={{ color: "#0F172A", fontSize: 12 }}>Status: {viewingStructured.meta.status}</div>
               <div style={{ color: "#475569", fontSize: 12 }}>Created: {viewingStructured.meta.createdDate} {viewingStructured.meta.createdTime}</div>
               <div style={{ color: "#475569", fontSize: 12 }}>Updated: {viewingStructured.meta.updatedAt || "N/A"}</div>
+              {viewingTicket.portalDown && (
+                <div style={{ color: "#B45309", fontSize: 12, fontWeight: 700, marginTop: 4 }}>
+                  Portal Down: {viewingTicket.portalDownNote || "Submission pending"}
+                </div>
+              )}
             </div>
             <div style={detailCardStyle}>
               <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Assignment & Payment</div>
@@ -2338,6 +2872,12 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                 Paid Rs. {viewingStructured.payment.paidTotal} | Pending Rs. {viewingStructured.payment.pendingBalance}
               </div>
             </div>
+            {viewingTicket.ackNumber && (
+              <div style={detailCardStyle}>
+                <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Acknowledgement / Application No.</div>
+                <div style={{ color: "#0F172A", fontWeight: 800, fontSize: 15 }}>{viewingTicket.ackNumber}</div>
+              </div>
+            )}
           </div>
 
           <div style={{ ...sectionCardStyle, marginTop: 10 }}>
@@ -2395,6 +2935,13 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
             </select>
             <input type="number" min="0" value={editDraft.cashCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, cashCollected: e.target.value }))} placeholder="Cash collected" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
             <input type="number" min="0" value={editDraft.upiCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, upiCollected: e.target.value }))} placeholder="UPI collected" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
+            <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#334155", fontSize: 12, fontWeight: 700, padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)" }}>
+              <input type="checkbox" checked={editDraft.portalDown} onChange={(e) => setEditDraft((prev) => ({ ...prev, portalDown: e.target.checked, portalDownNote: e.target.checked ? prev.portalDownNote : "" }))} />
+              Mark as Portal Down
+            </label>
+            {editDraft.portalDown && (
+              <input value={editDraft.portalDownNote} onChange={(e) => setEditDraft((prev) => ({ ...prev, portalDownNote: e.target.value }))} placeholder="Which portal is down?" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
+            )}
           </div>
           <div style={{ marginTop: 8, fontSize: 12, color: "#475569" }}>
             Ticket total Rs. {editingTicket?.total || 0} | Collected Rs. {(Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)} | Pending Rs. {Math.max((Number(editingTicket?.total) || 0) - ((Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)), 0)}
@@ -2422,13 +2969,29 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           {openTickets.map((t) => (
             <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 10, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-                <div style={{ color: "#0F172A", fontWeight: 700 }}>{t.ticketNo} | {t.customerName}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{t.ticketNo} | {t.customerName}</div>
+                  {t.portalDown && (
+                    <span style={{ borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: "#B45309", background: "rgba(254,243,199,0.96)", border: "1px solid rgba(245,158,11,0.26)" }}>
+                      Portal Down
+                    </span>
+                  )}
+                </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <button onClick={() => printTicketSlip(t)} style={actionButtonStyles.print}>Print</button>
                   <button onClick={() => { setViewTicketNo(t.ticketNo); setShowRawJson(false); }} style={actionButtonStyles.view}>View</button>
+                  <button onClick={() => setCustomerRecordTicketNo(t.ticketNo)} style={actionButtonStyles.customer}>View Customer Record</button>
                   <button onClick={() => startEdit(t)} style={actionButtonStyles.edit}>Edit</button>
                   <button onClick={() => toggleExpand(t.ticketNo)} style={actionButtonStyles.neutral}>{expandedTickets[t.ticketNo] ? "Collapse" : "Expand"}</button>
-                  <button onClick={() => onToggleTicketStatus(t.ticketNo, "Closed")} style={actionButtonStyles.success}>Close</button>
+                  <button
+                    onClick={() => onToggleTicketStatus(t.ticketNo, "Closed")}
+                    disabled={Boolean(t.portalDown)}
+                    style={t.portalDown
+                      ? { ...actionButtonStyles.warning, cursor: "not-allowed", opacity: 0.7 }
+                      : actionButtonStyles.success}
+                  >
+                    {t.portalDown ? "Portal Down" : "Close"}
+                  </button>
                 </div>
               </div>
               {t.items.map((it, idx) => (
@@ -2441,6 +3004,11 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
               <div style={{ marginTop: 8, fontSize: 12, color: "#475569" }}>
                 Payment: {t.paymentStatus || t.structured?.payment?.status || "Unpaid"} | Pending Rs. {t.pendingBalance ?? t.structured?.payment?.pendingBalance ?? 0} | Docs: {t.structured?.documents?.submitted?.length || 0}/{t.structured?.documents?.required?.length || 0} required submitted
               </div>
+              {t.portalDown && (
+                <div style={{ marginTop: 6, fontSize: 12, color: "#B45309", fontWeight: 700 }}>
+                  Portal Down Note: {t.portalDownNote || "Submission pending"}
+                </div>
+              )}
               {expandedTickets[t.ticketNo] && renderExpandedContent(t)}
             </div>
           ))}
@@ -2455,10 +3023,18 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           {[...closedTickets].reverse().map((t, idx) => (
             <div key={t.ticketNo} style={{ padding: "12px 14px", borderBottom: idx < closedTickets.length - 1 ? "1px solid rgba(15,23,42,0.10)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <div style={{ color: "#0F172A" }}>{t.ticketNo} | {t.customerName} | Rs. {t.total} | {t.paymentStatus || t.structured?.payment?.status || "Unpaid"}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ color: "#0F172A" }}>{t.ticketNo} | {t.customerName} | Rs. {t.total} | {t.paymentStatus || t.structured?.payment?.status || "Unpaid"}</div>
+                  {t.portalDown && (
+                    <span style={{ borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: "#B45309", background: "rgba(254,243,199,0.96)", border: "1px solid rgba(245,158,11,0.26)" }}>
+                      Portal Down
+                    </span>
+                  )}
+                </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <button onClick={() => printTicketSlip(t)} style={actionButtonStyles.print}>Print</button>
                   <button onClick={() => { setViewTicketNo(t.ticketNo); setShowRawJson(false); }} style={actionButtonStyles.view}>View</button>
+                  <button onClick={() => setCustomerRecordTicketNo(t.ticketNo)} style={actionButtonStyles.customer}>View Customer Record</button>
                   <button onClick={() => startEdit(t)} style={actionButtonStyles.edit}>Edit</button>
                   <button onClick={() => toggleExpand(t.ticketNo)} style={actionButtonStyles.neutral}>{expandedTickets[t.ticketNo] ? "Collapse" : "Expand"}</button>
                   <button onClick={() => onToggleTicketStatus(t.ticketNo, "Open")} style={actionButtonStyles.warning}>Reopen</button>
@@ -2579,6 +3155,12 @@ function B2BWorkspace() {
 export default function CSCBilling() {
   const [tab, setTab] = useState(() => getStoredActiveTab());
   const [sidePanelExpanded, setSidePanelExpanded] = useState(() => getStoredSidePanelExpanded());
+  const [dashboardFocusTicketNo, setDashboardFocusTicketNo] = useState(null);
+  const [customQuickLinks, setCustomQuickLinks] = useState(() => getStoredQuickLinks());
+  const [showAddQuickLink, setShowAddQuickLink] = useState(false);
+  const [quickLinkName, setQuickLinkName] = useState("");
+  const [quickLinkUrl, setQuickLinkUrl] = useState("");
+  const [quickLinkError, setQuickLinkError] = useState("");
   const [services, setServices] = useState(() => (
     hydrateServices(readStoredJSON(STORAGE_KEYS.services, INITIAL_SERVICES))
   ));
@@ -2592,6 +3174,7 @@ export default function CSCBilling() {
     log: openTicketCount > 0 ? String(openTicketCount) : String(tickets.length),
     b2b: "Beta",
   };
+  const quickLinks = [...QUICK_LINK_DEFAULTS, ...customQuickLinks];
   const headerStats = [
     { label: "Configured services", value: `${pricedServiceCount}/${services.length}`, note: "Rates ready for billing", accent: "#14B8A6" },
     { label: "Open tickets", value: String(openTicketCount), note: "Live desk workload", accent: "#F59E0B" },
@@ -2602,7 +3185,13 @@ export default function CSCBilling() {
   const saveTicket = (ticket) => setTickets((prev) => [...prev, withStructuredTicket(ticket)]);
   const toggleTicketStatus = (ticketNo, status) => {
     setTickets((prev) => prev.map((t) => (
-      t.ticketNo === ticketNo ? withStructuredTicket({ ...t, status, updatedAt: `${todayStr()} ${timeStr()}` }) : t
+      t.ticketNo === ticketNo
+        ? withStructuredTicket({
+          ...t,
+          status: t.portalDown && status === "Closed" ? "Open" : status,
+          updatedAt: `${todayStr()} ${timeStr()}`,
+        })
+        : t
     )));
   };
   const toggleTaskDone = (ticketNo, taskIdx) => {
@@ -2618,12 +3207,50 @@ export default function CSCBilling() {
   const updateTicket = (ticketNo, updates) => {
     setTickets((prev) => prev.map((t) => {
       if (t.ticketNo !== ticketNo) return t;
+      const nextPortalDown = Object.prototype.hasOwnProperty.call(updates || {}, "portalDown")
+        ? Boolean(updates.portalDown)
+        : Boolean(t.portalDown);
+      const requestedStatus = Object.prototype.hasOwnProperty.call(updates || {}, "status")
+        ? updates.status
+        : t.status;
       return withStructuredTicket({
         ...t,
         ...updates,
+        status: nextPortalDown ? "Open" : requestedStatus,
         updatedAt: `${todayStr()} ${timeStr()}`,
       });
     }));
+  };
+  const addQuickLink = () => {
+    const name = String(quickLinkName || "").trim();
+    const url = normalizeExternalUrl(quickLinkUrl);
+    if (!name || !url) {
+      setQuickLinkError("Both name and URL are required.");
+      return;
+    }
+    setCustomQuickLinks((prev) => [
+      ...prev,
+      {
+        id: `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        name,
+        description: "Custom quick access link",
+        url,
+        isDefault: false,
+      },
+    ]);
+    setQuickLinkName("");
+    setQuickLinkUrl("");
+    setQuickLinkError("");
+    setShowAddQuickLink(false);
+  };
+  const removeQuickLink = (linkId) => {
+    setCustomQuickLinks((prev) => prev.filter((item) => item.id !== linkId));
+  };
+  const openQuickLink = (url) => {
+    if (typeof window === "undefined") return;
+    const finalUrl = normalizeExternalUrl(url);
+    if (!finalUrl) return;
+    window.open(finalUrl, "_blank");
   };
 
   useEffect(() => {
@@ -2641,6 +3268,10 @@ export default function CSCBilling() {
   useEffect(() => {
     writeStoredJSON(STORAGE_KEYS.tickets, serializeTickets(tickets));
   }, [tickets]);
+
+  useEffect(() => {
+    writeStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks);
+  }, [customQuickLinks]);
 
   return (
     <div style={{
@@ -2963,28 +3594,87 @@ export default function CSCBilling() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
-              <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", margin: "0 4px" }}>
-                Utility Views
+            <div style={{ display: "grid", gap: 14, alignContent: "start", overflowY: "auto", paddingRight: 2 }}>
+              <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
+                <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", margin: "0 4px" }}>
+                  Utility Views
+                </div>
+                {PANEL_TAB_CONFIG.map((item) => (
+                  <SideNavItem
+                    key={item.id}
+                    item={item}
+                    active={tab === item.id}
+                    expanded={true}
+                    badge={panelBadges[item.id]}
+                    onClick={() => {
+                      setTab(item.id);
+                      setSidePanelExpanded(false);
+                    }}
+                  />
+                ))}
               </div>
-              {PANEL_TAB_CONFIG.map((item) => (
-                <SideNavItem
-                  key={item.id}
-                  item={item}
-                  active={tab === item.id}
-                  expanded={true}
-                  badge={panelBadges[item.id]}
+
+              <div style={{ display: "grid", gap: 10 }}>
+                <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", margin: "0 4px" }}>
+                  Quick Links
+                </div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {quickLinks.map((link) => (
+                    <div key={link.id} style={{ borderRadius: 14, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(255,255,255,0.92)", padding: 10, display: "grid", gap: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                        <div style={{ color: "#0F172A", fontSize: 13, fontWeight: 700 }}>{link.name}</div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button onClick={() => openQuickLink(link.url)} style={{ border: "1px solid rgba(20,184,166,0.24)", borderRadius: 8, background: "rgba(236,253,245,0.96)", color: "#0F766E", fontSize: 11, fontWeight: 700, padding: "6px 8px", cursor: "pointer" }}>
+                            Open
+                          </button>
+                          {!link.isDefault && (
+                            <button onClick={() => removeQuickLink(link.id)} style={{ border: "1px solid rgba(248,113,113,0.24)", borderRadius: 8, background: "rgba(254,242,242,0.96)", color: "#B91C1C", fontSize: 11, fontWeight: 700, padding: "6px 8px", cursor: "pointer" }}>
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ color: "#475569", fontSize: 12, lineHeight: 1.45 }}>{link.description}</div>
+                    </div>
+                  ))}
+                </div>
+                <button
                   onClick={() => {
-                    setTab(item.id);
-                    setSidePanelExpanded(false);
+                    setShowAddQuickLink((prev) => !prev);
+                    setQuickLinkError("");
                   }}
-                />
-              ))}
+                  style={{ border: "1px solid rgba(20,184,166,0.26)", borderRadius: 10, background: "rgba(240,253,250,0.96)", color: "#0F766E", fontSize: 12, fontWeight: 700, padding: "9px 10px", cursor: "pointer" }}
+                >
+                  + Add Link
+                </button>
+                {showAddQuickLink && (
+                  <div style={{ borderRadius: 12, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(255,255,255,0.94)", padding: 10, display: "grid", gap: 8 }}>
+                    <input value={quickLinkName} onChange={(e) => setQuickLinkName(e.target.value)} placeholder="Name" style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid rgba(148,163,184,0.24)", outline: "none" }} />
+                    <input value={quickLinkUrl} onChange={(e) => setQuickLinkUrl(e.target.value)} placeholder="URL" style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid rgba(148,163,184,0.24)", outline: "none" }} />
+                    {quickLinkError && (
+                      <div style={{ color: "#B91C1C", fontSize: 11, fontWeight: 600 }}>{quickLinkError}</div>
+                    )}
+                    <button onClick={addQuickLink} style={{ border: "none", borderRadius: 8, background: "linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)", color: "#FFFFFF", fontSize: 12, fontWeight: 700, padding: "8px 10px", cursor: "pointer" }}>
+                      Save
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
 
           {/* Content Container */}
           <div style={{ maxWidth: APP_MAX_WIDTH, margin: "0 auto", padding: "0 4px 12px" }}>
+            <TabPanel active={tab === "desk"}>
+              <TodaysDesk
+                tickets={tickets}
+                onOpenTicket={(ticketNo) => {
+                  setDashboardFocusTicketNo(ticketNo);
+                  setTab("log");
+                  setSidePanelExpanded(false);
+                }}
+              />
+            </TabPanel>
             <TabPanel active={tab === "entry"}>
               <TicketWorkspace services={services} onSaveTicket={saveTicket} />
             </TabPanel>
@@ -2992,7 +3682,14 @@ export default function CSCBilling() {
               <RateCard services={services} setServices={setServices} />
             </TabPanel>
             <TabPanel active={tab === "log"}>
-              <TicketDashboard tickets={tickets} onToggleTicketStatus={toggleTicketStatus} onToggleTaskDone={toggleTaskDone} onUpdateTicket={updateTicket} />
+              <TicketDashboard
+                tickets={tickets}
+                onToggleTicketStatus={toggleTicketStatus}
+                onToggleTaskDone={toggleTaskDone}
+                onUpdateTicket={updateTicket}
+                focusTicketNo={dashboardFocusTicketNo}
+                onFocusHandled={() => setDashboardFocusTicketNo(null)}
+              />
             </TabPanel>
             <TabPanel active={tab === "b2b"}>
               <B2BWorkspace />
