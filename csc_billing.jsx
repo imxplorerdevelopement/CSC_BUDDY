@@ -3154,6 +3154,7 @@ function B2BWorkspace() {
 
 // --- MAIN APP ---
 export default function CSCBilling() {
+  const dbSyncedRef = useRef(false);
   const [tab, setTab] = useState(() => getStoredActiveTab());
   const [sidePanelExpanded, setSidePanelExpanded] = useState(() => getStoredSidePanelExpanded());
   const [dashboardFocusTicketNo, setDashboardFocusTicketNo] = useState(null);
@@ -3254,7 +3255,9 @@ export default function CSCBilling() {
     window.open(finalUrl, "_blank");
   };
 
-  // Load from Supabase on mount — Supabase data wins over localStorage cache.
+  // Load from Supabase on mount.
+  // If DB has data → use it. If DB is empty → push local data up.
+  // Save effects are blocked until this completes to prevent race conditions.
   useEffect(() => {
     async function loadFromSupabase() {
       const [remoteTickets, remoteServices, remoteQuickLinks] = await Promise.all([
@@ -3262,18 +3265,33 @@ export default function CSCBilling() {
         dbLoad("services"),
         dbLoad("quick_links"),
       ]);
-      if (Array.isArray(remoteTickets)) {
+
+      const localTickets = readStoredJSON(STORAGE_KEYS.tickets, []);
+      const localServices = readStoredJSON(STORAGE_KEYS.services, []);
+      const localQuickLinks = readStoredJSON(STORAGE_KEYS.quickLinks, []);
+
+      if (Array.isArray(remoteTickets) && remoteTickets.length > 0) {
         setTickets(hydrateTickets(remoteTickets));
         writeStoredJSON(STORAGE_KEYS.tickets, remoteTickets);
+      } else if (localTickets.length > 0) {
+        await dbSave("tickets", localTickets);
       }
-      if (Array.isArray(remoteServices)) {
+
+      if (Array.isArray(remoteServices) && remoteServices.length > 0) {
         setServices(hydrateServices(remoteServices));
         writeStoredJSON(STORAGE_KEYS.services, remoteServices);
+      } else if (localServices.length > 0) {
+        await dbSave("services", localServices);
       }
-      if (Array.isArray(remoteQuickLinks)) {
+
+      if (Array.isArray(remoteQuickLinks) && remoteQuickLinks.length > 0) {
         setCustomQuickLinks(remoteQuickLinks);
         writeStoredJSON(STORAGE_KEYS.quickLinks, remoteQuickLinks);
+      } else if (localQuickLinks.length > 0) {
+        await dbSave("quick_links", localQuickLinks);
       }
+
+      dbSyncedRef.current = true;
     }
     loadFromSupabase();
   }, []);
@@ -3287,17 +3305,20 @@ export default function CSCBilling() {
   }, [sidePanelExpanded]);
 
   useEffect(() => {
+    if (!dbSyncedRef.current) return;
     writeStoredJSON(STORAGE_KEYS.services, services);
     dbSave("services", services);
   }, [services]);
 
   useEffect(() => {
+    if (!dbSyncedRef.current) return;
     const serialized = serializeTickets(tickets);
     writeStoredJSON(STORAGE_KEYS.tickets, serialized);
     dbSave("tickets", serialized);
   }, [tickets]);
 
   useEffect(() => {
+    if (!dbSyncedRef.current) return;
     writeStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks);
     dbSave("quick_links", customQuickLinks);
   }, [customQuickLinks]);
