@@ -40,6 +40,7 @@ const CAT_COLORS = {
 
 const OPERATORS = ["Samar", "Navneet Mam"];
 const REFERENCE_TYPES = [
+  { id: "none", label: "No Reference" },
   { id: "guardian", label: "Guardian / Parent" },
   { id: "gatekeeper", label: "Gatekeeper / Agent" },
   { id: "walkin_partner", label: "Walk-in Partner" },
@@ -47,6 +48,10 @@ const REFERENCE_TYPES = [
 ];
 
 const REFERENCE_TYPE_CONFIG = {
+  none: {
+    label: "No Reference",
+    description: "Customer walked in directly with no representative.",
+  },
   guardian: {
     label: "Guardian / Parent",
     description: "Representative is a guardian/parent of the document holder.",
@@ -1203,7 +1208,7 @@ function TicketWorkspace({ services, onSaveTicket }) {
   const [draftSeed] = useState(() => getStoredTicketDraft());
   const [step, setStep] = useState(() => Number(draftSeed.step) === 2 ? 2 : 1);
   const [referenceType, setReferenceType] = useState(() => (
-    typeof draftSeed.referenceType === "string" ? draftSeed.referenceType : "guardian"
+    typeof draftSeed.referenceType === "string" ? draftSeed.referenceType : "none"
   ));
   const [customerName, setCustomerName] = useState(() => draftSeed.customerName || "");
   const [customerPhone, setCustomerPhone] = useState(() => draftSeed.customerPhone || "");
@@ -1399,7 +1404,7 @@ function TicketWorkspace({ services, onSaveTicket }) {
       return;
     }
 
-    if (!trimmedReferenceName) {
+    if (referenceType !== "none" && !trimmedReferenceName) {
       setError("Reference person name is required.");
       return;
     }
@@ -1732,15 +1737,17 @@ function TicketWorkspace({ services, onSaveTicket }) {
                   style={inputStyle}
                 />
               </label>
-              <label style={{ display: "grid", gap: 8 }}>
-                <span style={sectionEyebrowStyle}>Reference Person</span>
-                <input
-                  placeholder="Riya Sharma"
-                  value={referenceName}
-                  onChange={(e) => setReferenceName(e.target.value)}
-                  style={inputStyle}
-                />
-              </label>
+              {referenceType !== "none" && (
+                <label style={{ display: "grid", gap: 8 }}>
+                  <span style={sectionEyebrowStyle}>Reference Person</span>
+                  <input
+                    placeholder="Riya Sharma"
+                    value={referenceName}
+                    onChange={(e) => setReferenceName(e.target.value)}
+                    style={inputStyle}
+                  />
+                </label>
+              )}
             </div>
           </div>
 
@@ -2369,7 +2376,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     customerName: "",
     customerPhone: "",
     referenceName: "",
-    referenceType: "guardian",
+    referenceType: "none",
     operator: OPERATORS[0],
     cashCollected: "",
     upiCollected: "",
