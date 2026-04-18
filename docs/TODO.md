@@ -10,7 +10,7 @@
 ### <a id="t-01"></a>[x] T-01: Define beneficiary/reference data schema
 - Priority: `P0`
 - Spec links: [REQ-001](./PROJECT_SPEC.md#req-001)
-- Deliverable: Schema for document holder plus reference person and reference type metadata.
+- Deliverable: Schema for document holder plus optional reference contact and flexible label metadata.
 - Suggested files: `csc_billing.jsx` (or extracted config module).
 
 ### <a id="t-02"></a>[x] T-02: Apply beneficiary/reference capture in ticket form
@@ -22,7 +22,7 @@
 ### <a id="t-03"></a>[x] T-03: Surface reference metadata across ticket flow
 - Priority: `P0`
 - Spec links: [REQ-001](./PROJECT_SPEC.md#req-001)
-- Deliverable: Selected reference type/name is shown in ticket context and slip outputs.
+- Deliverable: Selected reference contact and custom label are shown in ticket context and slip outputs.
 - Suggested files: `csc_billing.jsx`.
 
 ### <a id="t-04"></a>[x] T-04: Add contact number field with validation
@@ -31,25 +31,25 @@
 - Deliverable: Contact number appears where needed, validates, persists in ticket form state.
 - Suggested files: `csc_billing.jsx`.
 
-### <a id="t-05"></a>[ ] T-05: Build type-based listing filter
+### <a id="t-05"></a>[x] T-05: Build type-based listing filter
 - Priority: `P0`
 - Spec links: [REQ-003](./PROJECT_SPEC.md#req-003)
 - Deliverable: Filter control and real-time list update by type.
 - Suggested files: `csc_billing.jsx`.
 
-### <a id="t-06"></a>[ ] T-06: Fix back navigation across flow
+### <a id="t-06"></a>[x] T-06: Fix back navigation across flow
 - Priority: `P0`
 - Spec links: [REQ-004](./PROJECT_SPEC.md#req-004)
 - Deliverable: Consistent previous-page behavior without state corruption.
 - Suggested files: `csc_billing.jsx`, `main.jsx`.
 
-### <a id="t-07"></a>[ ] T-07: Clarify ticket entry points (`Home` / `Second / Go To Page`)
+### <a id="t-07"></a>[x] T-07: Clarify ticket entry points (`Home` / `Second / Go To Page`)
 - Priority: `P0`
 - Spec links: [REQ-005](./PROJECT_SPEC.md#req-005)
 - Deliverable: Explicit navigation map and implemented route/state transitions.
 - Suggested files: `csc_billing.jsx`, `main.jsx`.
 
-### <a id="t-08"></a>[ ] T-08: Improve operator selection card information density
+### <a id="t-08"></a>[x] T-08: Improve operator selection card information density
 - Priority: `P0`
 - Spec links: [REQ-005](./PROJECT_SPEC.md#req-005)
 - Deliverable: Operator cards show meaningful context (name/type/rate/status at minimum).
@@ -57,13 +57,13 @@
 
 ## P1 - Service Detail, Quantity, and Pricing Logic
 
-### <a id="t-09"></a>[ ] T-09: Add per-service detail sections
+### <a id="t-09"></a>[x] T-09: Add per-service detail sections
 - Priority: `P1`
 - Spec links: [REQ-006](./PROJECT_SPEC.md#req-006)
 - Deliverable: Each service stores independent detail payload and validation errors.
 - Suggested files: `csc_billing.jsx`.
 
-### <a id="t-10"></a>[ ] T-10: Implement service-wise quantity toggles and rules
+### <a id="t-10"></a>[x] T-10: Implement service-wise quantity toggles and rules
 - Priority: `P1`
 - Spec links: [REQ-007](./PROJECT_SPEC.md#req-007)
 - Deliverable: Quantity enable/disable per service plus correct validation and totals impact.

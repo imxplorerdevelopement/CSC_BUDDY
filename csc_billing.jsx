@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { dbLoad, dbSave } from "./supabase.js";
+import { DS } from "./design-tokens.js";
 
 const INITIAL_SERVICES = [
   { id: "aadhaar", name: "Aadhaar Update / Correction", category: "Government ID", price: 0, unit: "per application", variable: false },
@@ -31,48 +32,138 @@ const INITIAL_SERVICES = [
 
 const CATEGORIES = ["Government ID", "Certificates", "Legal & Docs", "Government Services", "Typing & Print"];
 const CAT_COLORS = {
-  "Government ID": "#14B8A6", // Indigo
-  "Certificates": "#0284C7",   // Sky Blue
-  "Legal & Docs": "#0D9488",   // Teal
-  "Government Services": "#16A34A", // Emerald
-  "Typing & Print": "#0E7490", // Violet
+  "Government ID":       "#4a82c0",
+  "Certificates":        "#3a9e78",
+  "Legal & Docs":        "#c0414a",
+  "Government Services": "#c8922a",
+  "Typing & Print":      "#8b6fc0",
 };
 
-const OPERATORS = ["Samar", "Navneet Mam"];
-const REFERENCE_TYPES = [
-  { id: "none", label: "No Reference" },
-  { id: "guardian", label: "Guardian / Parent" },
-  { id: "gatekeeper", label: "Gatekeeper / Agent" },
-  { id: "walkin_partner", label: "Walk-in Partner" },
-  { id: "incharge", label: "Incharge / Office Rep" },
+const OPERATOR_DIRECTORY = [
+  {
+    id: "samar",
+    name: "Samar",
+    role: "Home Desk Lead",
+    desk: "Front Counter",
+    status: "Available",
+    focus: "Fast walk-in intake and ID submissions",
+    specialties: ["Government ID", "Certificates"],
+  },
+  {
+    id: "navneet_mam",
+    name: "Navneet Mam",
+    role: "Second Desk Review",
+    desk: "Verification Counter",
+    status: "Available",
+    focus: "Corrections, legal work, and follow-up cases",
+    specialties: ["Legal & Docs", "Government Services"],
+  },
 ];
-
-const REFERENCE_TYPE_CONFIG = {
-  none: {
-    label: "No Reference",
-    description: "Customer walked in directly with no representative.",
+const OPERATORS = OPERATOR_DIRECTORY.map((operator) => operator.name);
+const DEFAULT_OPERATOR = OPERATORS[0];
+const LEGACY_REFERENCE_TYPE_LABELS = {
+  guardian: "Guardian / Parent",
+  gatekeeper: "Gatekeeper / Agent",
+  walkin_partner: "Walk-in Partner",
+  incharge: "Incharge / Office Rep",
+};
+const QUANTITY_MODE_CONFIG = {
+  fixed: {
+    label: "Single",
+    inputLabel: "Locked Qty",
+    helper: "This service stays at one entry per line item.",
+    min: 1,
+    defaultMax: 1,
   },
-  guardian: {
-    label: "Guardian / Parent",
-    description: "Representative is a guardian/parent of the document holder.",
+  multiple: {
+    label: "Qty",
+    inputLabel: "Quantity",
+    helper: "Use when the same service repeats by page, piece, or batch.",
+    min: 1,
+    defaultMax: 200,
   },
-  gatekeeper: {
-    label: "Gatekeeper / Agent",
-    description: "Representative is handling docs on behalf of the holder.",
+  people: {
+    label: "Per Person",
+    inputLabel: "People / Entries",
+    helper: "Use when one service applies to multiple beneficiaries.",
+    min: 1,
+    defaultMax: 25,
   },
-  walkin_partner: {
-    label: "Walk-in Partner",
-    description: "Representative is a walk-in partner for the holder.",
+};
+const SERVICE_DETAIL_LIBRARY = {
+  government_id: {
+    id: "government_id",
+    title: "Application Details",
+    description: "Capture the exact ID work being handled so follow-up is clear later.",
+    fields: [
+      { key: "requestType", label: "Request Type", type: "select", required: true, options: ["New Application", "Correction / Update", "Reprint / Download"] },
+      { key: "proofUsed", label: "Proof / Source", type: "text", required: true, placeholder: "Aadhaar, PAN, birth proof" },
+      { key: "submissionMode", label: "Submission Mode", type: "select", required: false, options: ["Online", "Offline", "Appointment"] },
+    ],
   },
-  incharge: {
-    label: "Incharge / Office Rep",
-    description: "Representative is official incharge for the holder.",
+  certificate: {
+    id: "certificate",
+    title: "Certificate Details",
+    description: "Store the purpose and destination so the certificate queue is easy to sort.",
+    fields: [
+      { key: "purpose", label: "Purpose", type: "text", required: true, placeholder: "Scholarship, job, admission" },
+      { key: "officeTarget", label: "Target Office", type: "text", required: false, placeholder: "Tehsil, school, employer" },
+      { key: "urgency", label: "Priority", type: "select", required: false, options: ["Normal", "Today", "Urgent"] },
+    ],
   },
+  legal_docs: {
+    id: "legal_docs",
+    title: "Document Details",
+    description: "Track what legal document is being prepared and who is involved.",
+    fields: [
+      { key: "purpose", label: "Document Purpose", type: "text", required: true, placeholder: "Name change, rental, declaration" },
+      { key: "partyCount", label: "Party Count", type: "number", required: true, min: 1, placeholder: "1" },
+      { key: "paperValue", label: "Stamp / Paper Value", type: "text", required: false, placeholder: "Rs. 100, Rs. 500" },
+    ],
+  },
+  government_service: {
+    id: "government_service",
+    title: "Service Details",
+    description: "Capture the service stage so the desk knows what remains.",
+    fields: [
+      { key: "serviceStage", label: "Current Stage", type: "select", required: true, options: ["Fresh", "Update", "Pending Follow-up"] },
+      { key: "serviceId", label: "Reference ID", type: "text", required: false, placeholder: "Application no. or account id" },
+      { key: "handoverMode", label: "Handover Mode", type: "select", required: false, options: ["Desk Pickup", "WhatsApp", "Print Copy"] },
+    ],
+  },
+  typing_print: {
+    id: "typing_print",
+    title: "Output Details",
+    description: "Store the print or typing spec so the work can be reproduced quickly.",
+    fields: [
+      { key: "format", label: "Format", type: "select", required: true, options: ["Black & White", "Color", "Soft Copy", "Print + Soft Copy"] },
+      { key: "size", label: "Paper / Size", type: "select", required: false, options: ["A4", "Legal", "Photo", "Custom"] },
+      { key: "notes", label: "Job Note", type: "text", required: false, placeholder: "Single side, Hindi draft, lamination gloss" },
+    ],
+  },
+};
+const CATEGORY_DETAIL_SCHEMA_IDS = {
+  "Government ID": "government_id",
+  "Certificates": "certificate",
+  "Legal & Docs": "legal_docs",
+  "Government Services": "government_service",
+  "Typing & Print": "typing_print",
 };
 
 const PHONE_REGEX = /^[0-9]{10}$/;
-const MENU_OPTION_STYLE = { color: "#0F172A", backgroundColor: "#FFFFFF" };
-const MENU_OPTGROUP_STYLE = { color: "#334155", backgroundColor: "#FFFFFF" };
+const MENU_OPTION_STYLE = { color: "#15120f", backgroundColor: "#fffaf2" };
+const MENU_OPTGROUP_STYLE = { color: "rgba(21,18,15,0.58)", backgroundColor: "#f8f1e4" };
+const BRAND_PRIMARY = DS.wine;
+const BRAND_PRIMARY_DARK = "#6b2323";
+const BRAND_PRIMARY_SOFT = "rgba(143,47,47,0.14)";
+const NEGOTIATION_FACTOR_MIN = 0.5;
+const NEGOTIATION_FACTOR_MAX = 1.5;
+const NEGOTIATION_FACTOR_STEP = 0.05;
+const RATE_CONTEXT_OPTIONS = OPERATOR_DIRECTORY.map((operator) => ({
+  key: `operator:${operator.id}`,
+  label: `${operator.name} Desk`,
+  helper: operator.role,
+}));
 const DOCUMENT_PRESETS = [
   { id: "aadhaar", label: "Aadhaar" },
   { id: "pan", label: "PAN" },
@@ -83,7 +174,9 @@ const DOCUMENT_PRESETS = [
   { id: "bank_passbook", label: "Bank Passbook" },
   { id: "photo", label: "Photograph" },
 ];
-const APP_FONT_STACK = "'Outfit', 'Manrope', 'Segoe UI', sans-serif";
+const APP_FONT_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
+const APP_SERIF_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
+const APP_BRAND_STACK = "'League Spartan', 'Manrope', sans-serif";
 const APP_MONO_STACK = "'JetBrains Mono', 'Cascadia Code', Consolas, monospace";
 const APP_MAX_WIDTH = 1240;
 const STORAGE_KEYS = {
@@ -92,28 +185,26 @@ const STORAGE_KEYS = {
   services: "csc-buddy.services",
   tickets: "csc-buddy.tickets",
   ticketDraft: "csc-buddy.ticket-draft",
+  ticketCounter: "csc-buddy.ticket-counter",
   quickLinks: "csc-buddy.quick-links",
 };
 const TAB_CONFIG = [
-  { id: "desk", label: "Today's Desk", description: "Start with pending work and today's totals.", shortLabel: "TDK", navGroup: "primary" },
   { id: "entry", label: "Service Entry", description: "Create tickets and capture walk-ins.", shortLabel: "SE", navGroup: "primary" },
   { id: "rates", label: "Rate Card", description: "Maintain service pricing and categories.", shortLabel: "RC", navGroup: "primary" },
   { id: "log", label: "Ticket Dashboard", description: "Track payment, status, and document flow.", shortLabel: "TD", navGroup: "panel" },
   { id: "b2b", label: "B2B Desk", description: "Prepare partner and bulk workflows.", shortLabel: "B2", navGroup: "panel" },
+  { id: "monthly", label: "Monthly Overview", description: "Revenue, volume, and service trends by month.", shortLabel: "MO", navGroup: "panel" },
+  { id: "customers", label: "Customers", description: "Customer profiles, documents, and contact history.", shortLabel: "CU", navGroup: "panel" },
 ];
 const PRIMARY_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "primary");
 const PANEL_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "panel");
 const QUICK_LINK_DEFAULTS = [
   { id: "default_esathi", name: "e-Saathi", description: "UP state citizen services portal.", url: "https://edistrict.up.gov.in", isDefault: true },
   { id: "default_digitalseva", name: "Digital Seva Portal", description: "CSC services and transaction desk.", url: "https://digitalseva.csc.gov.in", isDefault: true },
-  { id: "default_csc_edistrict", name: "CSC e-District", description: "e-District workflows and submissions.", url: "https://edistrict.up.gov.in", isDefault: true },
   { id: "default_estamping", name: "Estamping", description: "Stamp and registration services.", url: "https://igrsup.gov.in", isDefault: true },
   { id: "default_pf", name: "PF (EPFO)", description: "Provident fund member services.", url: "https://www.epfindia.gov.in", isDefault: true },
   { id: "default_pension", name: "Pension (NPS)", description: "NPS CRA account and pension tools.", url: "https://npscra.nsdl.co.in", isDefault: true },
   { id: "default_crsorgi", name: "dc.crsorgi", description: "Civil registration and certificate access.", url: "https://dc.crsorgi.gov.in", isDefault: true },
-  { id: "default_pdf_compress", name: "PDF Compressor", description: "Quickly reduce PDF file size.", url: "https://www.ilovepdf.com/compress_pdf", isDefault: true },
-  { id: "default_img_to_pdf", name: "Image to PDF", description: "Convert JPG or PNG to PDF.", url: "https://www.ilovepdf.com/jpg_to_pdf", isDefault: true },
-  { id: "default_pdf_to_img", name: "PDF to Image", description: "Convert PDF pages to image files.", url: "https://www.ilovepdf.com/pdf_to_jpg", isDefault: true },
 ];
 
 function normalizeExternalUrl(url) {
@@ -123,21 +214,239 @@ function normalizeExternalUrl(url) {
   return `https://${trimmed}`;
 }
 
-function getReferenceTypeConfig(typeId) {
-  return REFERENCE_TYPE_CONFIG[typeId] || REFERENCE_TYPE_CONFIG.incharge;
+function canUseBrowserHistory() {
+  return typeof window !== "undefined" && typeof window.history !== "undefined";
 }
 
-function getReferenceTypeIdByLabel(label) {
-  const normalized = String(label || "").trim().toLowerCase();
-  const match = REFERENCE_TYPES.find((item) => item.label.toLowerCase() === normalized);
-  return match ? match.id : "guardian";
+function updateBrowserState(nextState, mode = "push") {
+  if (!canUseBrowserHistory()) return;
+  const mergedState = { ...(window.history.state || {}), ...nextState };
+  if (mode === "replace") {
+    window.history.replaceState(mergedState, "");
+    return;
+  }
+  window.history.pushState(mergedState, "");
+}
+
+function getOperatorConfig(operatorName) {
+  return OPERATOR_DIRECTORY.find((operator) => operator.name === operatorName) || OPERATOR_DIRECTORY[0];
+}
+
+function getInitialActiveTab() {
+  if (canUseBrowserHistory()) {
+    const historyTab = window.history.state?.tab;
+    if (TAB_CONFIG.some((item) => item.id === historyTab)) return historyTab;
+  }
+  return getStoredActiveTab();
+}
+
+function getInitialEntryStep(draftSeed) {
+  if (canUseBrowserHistory()) {
+    const historyStep = Number(window.history.state?.entryStep);
+    if (historyStep === 1 || historyStep === 2) return historyStep;
+  }
+  return Number(draftSeed?.step) === 2 ? 2 : 1;
+}
+
+function getOperatorTicketMetrics(tickets, operatorName) {
+  const base = tickets.reduce((acc, ticket) => {
+    if (ticket.operator !== operatorName) return acc;
+    acc.ticketCount += 1;
+    acc.revenue += Number(ticket.total) || 0;
+    return acc;
+  }, { ticketCount: 0, revenue: 0 });
+  const avgTicketRate = base.ticketCount > 0 ? Math.round((base.revenue / base.ticketCount) * 100) / 100 : 0;
+  return { ...base, avgTicketRate };
+}
+
+function getDefaultQuantityModeForService(service) {
+  const id = String(service?.id || "").trim();
+  const unit = String(service?.unit || "").toLowerCase();
+  if (["resume", "passport", "gazette", "rent_agreement", "deed", "affidavit"].includes(id)) return "fixed";
+  if (unit.includes("page") || unit.includes("piece")) return "multiple";
+  if (unit.includes("card") || unit.includes("application") || unit.includes("certificate") || unit.includes("document") || unit.includes("agreement")) return "people";
+  return "fixed";
+}
+
+function getQuantityModeConfig(quantityMode) {
+  return QUANTITY_MODE_CONFIG[quantityMode] || QUANTITY_MODE_CONFIG.fixed;
+}
+
+function getDefaultDetailSchemaId(category) {
+  return CATEGORY_DETAIL_SCHEMA_IDS[category] || "typing_print";
+}
+
+function getDetailSchemaTitle(schemaId) {
+  return (SERVICE_DETAIL_LIBRARY[schemaId] || SERVICE_DETAIL_LIBRARY.typing_print).title;
+}
+
+function toMoney(value) {
+  return Math.round((Math.max(0, Number(value) || 0) + Number.EPSILON) * 100) / 100;
+}
+
+function clampNegotiationFactor(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 1;
+  const clamped = Math.min(NEGOTIATION_FACTOR_MAX, Math.max(NEGOTIATION_FACTOR_MIN, numeric));
+  return Math.round((clamped + Number.EPSILON) * 100) / 100;
+}
+
+function normalizeRateCard(rawRateCard, fallbackPrice = 0) {
+  const fallback = toMoney(fallbackPrice);
+  const baseRate = toMoney(rawRateCard?.baseRate ?? fallback);
+  const rawContextRates = rawRateCard?.contextRates && typeof rawRateCard.contextRates === "object"
+    ? rawRateCard.contextRates
+    : {};
+  const contextRates = Object.entries(rawContextRates).reduce((acc, [key, value]) => {
+    const contextKey = String(key || "").trim();
+    const parsed = Number(value);
+    if (!contextKey || !Number.isFinite(parsed) || parsed < 0) return acc;
+    acc[contextKey] = toMoney(parsed);
+    return acc;
+  }, {});
+  return { baseRate, contextRates };
+}
+
+function getRateContextMeta(contextKey) {
+  return RATE_CONTEXT_OPTIONS.find((option) => option.key === contextKey) || null;
+}
+
+function resolveServiceRate(service, context = {}) {
+  const rateCard = normalizeRateCard(service?.rateCard, service?.price);
+  const operatorConfig = getOperatorConfig(context.operator || DEFAULT_OPERATOR);
+  const operatorContextKey = `operator:${operatorConfig.id}`;
+  const contextRate = Number.isFinite(Number(rateCard.contextRates[operatorContextKey]))
+    ? toMoney(rateCard.contextRates[operatorContextKey])
+    : null;
+  const resolvedRate = contextRate ?? rateCard.baseRate;
+  return {
+    rateCard,
+    baseRate: rateCard.baseRate,
+    contextKey: operatorContextKey,
+    contextLabel: `${operatorConfig.name} Desk`,
+    contextRate,
+    hasContextOverride: contextRate !== null,
+    resolvedRate,
+  };
+}
+
+function normalizeService(service) {
+  const quantityMode = QUANTITY_MODE_CONFIG[service?.quantityMode] ? service.quantityMode : getDefaultQuantityModeForService(service);
+  const quantityModeConfig = getQuantityModeConfig(quantityMode);
+  const parsedMaxQty = Number(service?.maxQty);
+  const rateCard = normalizeRateCard(service?.rateCard, service?.price);
+  return {
+    ...service,
+    price: rateCard.baseRate,
+    rateCard,
+    detailSchemaId: SERVICE_DETAIL_LIBRARY[service?.detailSchemaId] ? service.detailSchemaId : CATEGORY_DETAIL_SCHEMA_IDS[service?.category] || "typing_print",
+    quantityMode,
+    quantityEnabled: quantityMode !== "fixed",
+    minQty: quantityModeConfig.min,
+    maxQty: Number.isFinite(parsedMaxQty) && parsedMaxQty > 0 ? parsedMaxQty : quantityModeConfig.defaultMax,
+  };
+}
+
+function getServiceDetailSchema(service) {
+  const schemaId = service?.detailSchemaId || CATEGORY_DETAIL_SCHEMA_IDS[service?.category];
+  return SERVICE_DETAIL_LIBRARY[schemaId] || SERVICE_DETAIL_LIBRARY.typing_print;
+}
+
+function createDetailDraftForService(service, existingValues = {}) {
+  const schema = getServiceDetailSchema(service);
+  return schema.fields.reduce((acc, field) => {
+    const fallbackValue = field.type === "number" ? "" : "";
+    acc[field.key] = existingValues[field.key] ?? fallbackValue;
+    return acc;
+  }, {});
+}
+
+function validateServiceDetailValues(service, values) {
+  const schema = getServiceDetailSchema(service);
+  return schema.fields.reduce((errors, field) => {
+    const rawValue = values?.[field.key];
+    const textValue = String(rawValue ?? "").trim();
+    if (field.required && !textValue) {
+      errors[field.key] = `${field.label} is required.`;
+      return errors;
+    }
+    if (field.type === "number" && textValue) {
+      const numericValue = Number(textValue);
+      if (!Number.isFinite(numericValue) || numericValue < (field.min || 0)) {
+        errors[field.key] = `${field.label} must be ${field.min || 0} or more.`;
+      }
+    }
+    return errors;
+  }, {});
+}
+
+function getServiceDetailEntries(service, values) {
+  const schema = getServiceDetailSchema(service);
+  return schema.fields
+    .map((field) => {
+      const value = String(values?.[field.key] ?? "").trim();
+      return value ? { label: field.label, value } : null;
+    })
+    .filter(Boolean);
+}
+
+function buildServiceDetailSummary(service, values) {
+  return getServiceDetailEntries(service, values)
+    .slice(0, 3)
+    .map((entry) => `${entry.label}: ${entry.value}`)
+    .join(" | ");
+}
+
+function getTicketServiceTypes(items) {
+  return Array.from(new Set((Array.isArray(items) ? items : []).map((item) => item.category).filter(Boolean)));
+}
+
+function getLegacyReferenceTypeLabel(typeId) {
+  return LEGACY_REFERENCE_TYPE_LABELS[String(typeId || "").trim()] || "";
+}
+
+function getHasReferenceValue(source) {
+  if (!source || typeof source !== "object") return false;
+  if (typeof source.hasReference === "boolean") return source.hasReference;
+  return Boolean(String(source.referenceName || "").trim());
+}
+
+function getReferenceLabelValue(source) {
+  if (!source || typeof source !== "object") return "";
+  const explicitLabel = String(source.referenceLabel || "").trim();
+  if (explicitLabel) return explicitLabel;
+  const legacyLabel = String(source.referenceTypeLabel || "").trim();
+  if (legacyLabel) return legacyLabel;
+  return getLegacyReferenceTypeLabel(source.referenceType);
+}
+
+function formatReferenceSummary(reference, emptyText = "No reference added") {
+  if (!reference?.hasReference || !reference?.name) return emptyText;
+  return reference.label ? `${reference.name} (${reference.label})` : reference.name;
+}
+
+function getTicketCounterDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getNextTicketSequence(date = new Date()) {
+  if (!canUseStorage()) return 1;
+  const dateKey = getTicketCounterDateKey(date);
+  const storedCounter = readStoredJSON(STORAGE_KEYS.ticketCounter, {});
+  const lastSeq = storedCounter?.dateKey === dateKey ? Number(storedCounter.lastSeq) || 0 : 0;
+  const nextSeq = lastSeq + 1;
+  writeStoredJSON(STORAGE_KEYS.ticketCounter, { dateKey, lastSeq: nextSeq });
+  return nextSeq;
 }
 
 function generateBillNo() {
   const d = new Date();
   const day = String(d.getDate()).padStart(2, "0");
   const mon = String(d.getMonth() + 1).padStart(2, "0");
-  const seq = String(Math.floor(Math.random() * 900) + 100);
+  const seq = String(getNextTicketSequence(d)).padStart(3, "0");
   return `SLP-${day}${mon}-${seq}`;
 }
 
@@ -164,6 +473,10 @@ function toStructuredTicket(ticket) {
   const requiredDocs = docItems.filter((doc) => doc.required).map((doc) => doc.name);
   const submittedDocs = docItems.filter((doc) => doc.submitted).map((doc) => doc.name);
   const providedDocs = docItems.filter((doc) => doc.submitted).map((doc) => doc.name);
+  const referenceName = String(ticket.referenceName || "").trim();
+  const hasReference = getHasReferenceValue(ticket) && Boolean(referenceName);
+  const referenceLabel = hasReference ? getReferenceLabelValue(ticket) : "";
+  const serviceTypes = getTicketServiceTypes(services);
 
   return {
     meta: {
@@ -172,6 +485,8 @@ function toStructuredTicket(ticket) {
       createdTime: ticket.time || "",
       updatedAt: ticket.updatedAt || "",
       status: ticket.status || "Open",
+      primaryType: serviceTypes[0] || "Unassigned",
+      serviceTypes,
     },
     parties: {
       documentHolder: {
@@ -179,9 +494,11 @@ function toStructuredTicket(ticket) {
         phone: ticket.customerPhone || "",
       },
       reference: {
-        name: ticket.referenceName || "",
-        typeId: ticket.referenceType || "",
-        typeLabel: ticket.referenceTypeLabel || "",
+        hasReference,
+        name: hasReference ? referenceName : "",
+        label: referenceLabel,
+        typeId: hasReference ? ticket.referenceType || "" : "",
+        typeLabel: referenceLabel,
       },
     },
     assignment: {
@@ -242,8 +559,8 @@ function buildPrintableTicketHtml(ticket) {
     .filter((doc) => doc.submitted)
     .map((doc) => doc.name)
     .join(", ");
-  const ackNumber = String(normalizedTicket?.ackNumber || "").trim();
   const statusColor = structured.meta.status === "Closed" ? "#047857" : "#B45309";
+  const referenceSummary = formatReferenceSummary(structured.parties.reference);
 
   return `<!doctype html>
 <html>
@@ -348,9 +665,8 @@ function buildPrintableTicketHtml(ticket) {
           <div class="value">${escapeHtml(structured.meta.ticketNo)}</div>
         </div>
       </div>
-      <div class="meta-line">Reference: ${escapeHtml(structured.parties.reference.name || "N/A")} (${escapeHtml(structured.parties.reference.typeLabel || "N/A")})</div>
+      <div class="meta-line">Reference Contact: ${escapeHtml(referenceSummary)}</div>
       ${structured.parties.documentHolder.phone ? `<div class="meta-line">Contact: ${escapeHtml(structured.parties.documentHolder.phone)}</div>` : ""}
-      ${ackNumber ? `<div class="meta-line">Acknowledgement No.: ${escapeHtml(ackNumber)}</div>` : ""}
       <div class="meta-line">Created: ${escapeHtml(structured.meta.createdDate)} ${escapeHtml(structured.meta.createdTime)}</div>
       <div class="divider">
         ${servicesHtml}
@@ -416,9 +732,30 @@ function removeStoredValue(key) {
   }
 }
 
+function useDebouncedStoredJSON(key, value, delay = 180, enabled = true) {
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      writeStoredJSON(key, value);
+      timeoutRef.current = null;
+    }, delay);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [key, value, delay, enabled]);
+}
+
 function hydrateServices(storedServices) {
   if (!Array.isArray(storedServices) || storedServices.length === 0) {
-    return INITIAL_SERVICES.map((service) => ({ ...service }));
+    return INITIAL_SERVICES.map((service) => normalizeService(service));
   }
 
   const defaultIds = new Set(INITIAL_SERVICES.map((service) => service.id));
@@ -429,7 +766,7 @@ function hydrateServices(storedServices) {
   );
 
   const mergedDefaults = INITIAL_SERVICES.map((service) => (
-    savedById.has(service.id) ? { ...service, ...savedById.get(service.id) } : { ...service }
+    savedById.has(service.id) ? normalizeService({ ...service, ...savedById.get(service.id) }) : normalizeService(service)
   ));
 
   const customServices = storedServices.filter((service) => (
@@ -439,7 +776,7 @@ function hydrateServices(storedServices) {
     !defaultIds.has(service.id)
   ));
 
-  return [...mergedDefaults, ...customServices];
+  return [...mergedDefaults, ...customServices.map((service) => normalizeService(service))];
 }
 
 function hydrateTickets(storedTickets) {
@@ -457,8 +794,8 @@ function serializeTickets(tickets) {
 }
 
 function getStoredActiveTab() {
-  const storedTab = readStoredJSON(STORAGE_KEYS.activeTab, "desk");
-  return TAB_CONFIG.some((item) => item.id === storedTab) ? storedTab : "desk";
+  const storedTab = readStoredJSON(STORAGE_KEYS.activeTab, "entry");
+  return TAB_CONFIG.some((item) => item.id === storedTab) ? storedTab : "entry";
 }
 
 function getStoredSidePanelExpanded() {
@@ -471,54 +808,63 @@ function getStoredTicketDraft() {
   return draft && typeof draft === "object" ? draft : {};
 }
 
-function getStoredQuickLinks() {
-  const stored = readStoredJSON(STORAGE_KEYS.quickLinks, []);
-  if (!Array.isArray(stored)) return [];
-  return stored
-    .filter((item) => item && typeof item === "object")
-    .map((item) => {
-      const name = String(item.name || "").trim();
-      const url = normalizeExternalUrl(item.url);
-      if (!name || !url) return null;
-      return {
-        id: String(item.id || `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`),
-        name,
-        description: String(item.description || "Custom quick access link"),
-        url,
-        isDefault: false,
-      };
-    })
-    .filter(Boolean);
+function normalizeQuickLinksList(list) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((item) => ({
+      id: String(item?.id || `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`),
+      name: String(item?.name || "").trim(),
+      description: String(item?.description || "Custom quick access link").trim() || "Custom quick access link",
+      url: normalizeExternalUrl(item?.url || ""),
+      isDefault: false,
+    }))
+    .filter((item) => item.name && item.url);
 }
 
-//  Tab Button
+function getStoredQuickLinks() {
+  const stored = readStoredJSON(STORAGE_KEYS.quickLinks, []);
+  return normalizeQuickLinksList(stored);
+}
+
+//  Tab Button — vertical sidebar nav item
 function TabBtn({ label, description, active, onClick }) {
   return (
     <button
       onClick={onClick}
       aria-pressed={active}
       style={{
-      padding: "16px 18px",
-      border: active ? "1px solid rgba(20,184,166,0.34)" : "1px solid rgba(148,163,184,0.18)",
-      background: active
-        ? "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(240,253,250,0.92) 100%)"
-        : "rgba(255,255,255,0.62)",
-      color: "#0F172A",
-      fontFamily: APP_FONT_STACK,
-      fontWeight: 600,
-      cursor: "pointer",
-      transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease",
-      display: "grid",
-      gap: 6,
-      textAlign: "left",
-      borderRadius: 18,
-      minWidth: 210,
-      flex: "1 1 220px",
-      boxShadow: active ? "0 18px 36px rgba(15,23,42,0.10)" : "0 10px 20px rgba(15,23,42,0.04)",
-    }}
+        width: "100%",
+        padding: "11px 14px 11px 18px",
+        border: "none",
+        background: active ? "rgba(143,47,47,0.08)" : "transparent",
+        cursor: "pointer",
+        transition: DS.transStd,
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        textAlign: "left",
+        borderRadius: 12,
+        boxShadow: active ? "inset 3px 0 0 rgba(143,47,47,0.70)" : "inset 3px 0 0 transparent",
+        outline: "none",
+      }}
     >
-      <span style={{ fontSize: 15, letterSpacing: -0.2 }}>{label}</span>
-      <span style={{ fontSize: 12, lineHeight: 1.45, color: active ? "#0F766E" : "#64748B", fontWeight: 500 }}>
+      <span style={{
+        fontSize: "0.65rem",
+        fontWeight: 700,
+        letterSpacing: "0.16em",
+        textTransform: "uppercase",
+        fontFamily: APP_BRAND_STACK,
+        color: active ? "#15120f" : "rgba(21,18,15,0.55)",
+        transition: "color 0.18s ease",
+      }}>{label}</span>
+      <span style={{
+        fontSize: "0.74rem",
+        lineHeight: 1.45,
+        color: active ? "rgba(21,18,15,0.65)" : "rgba(21,18,15,0.38)",
+        fontFamily: APP_FONT_STACK,
+        fontWeight: 400,
+        transition: "color 0.18s ease",
+      }}>
         {description}
       </span>
     </button>
@@ -548,37 +894,38 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
         justifyContent: expanded ? "space-between" : "center",
         gap: 12,
         padding: expanded ? "12px 14px" : "12px 10px",
-        borderRadius: 16,
-        border: active ? "1px solid rgba(20,184,166,0.30)" : "1px solid transparent",
-        background: active
-          ? "linear-gradient(180deg, rgba(240,253,250,0.98) 0%, rgba(236,253,245,0.94) 100%)"
-          : "transparent",
-        color: active ? "#0F766E" : "#334155",
+        borderRadius: 12,
+        border: active ? "1px solid rgba(143,47,47,0.22)" : "1px solid rgba(21,18,15,0.07)",
+        background: active ? "rgba(143,47,47,0.08)" : "rgba(255,255,255,0.45)",
+        color: active ? "#15120f" : "rgba(21,18,15,0.65)",
         cursor: "pointer",
-        transition: "all 0.18s ease",
+        transition: DS.transStd,
+        fontFamily: APP_FONT_STACK,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
         <div style={{
-          width: 36,
-          height: 36,
-          borderRadius: 12,
+          width: 34,
+          height: 34,
+          borderRadius: 10,
           display: "grid",
           placeItems: "center",
-          background: active ? "rgba(20,184,166,0.16)" : "rgba(15,23,42,0.05)",
-          color: active ? "#0F766E" : "#475569",
-          fontSize: 12,
+          background: active ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.06)",
+          color: active ? DS.wine : "rgba(21,18,15,0.45)",
+          fontSize: 11,
           fontWeight: 800,
           flexShrink: 0,
+          fontFamily: APP_BRAND_STACK,
+          letterSpacing: "0.06em",
         }}>
           {item.shortLabel}
         </div>
         {expanded && (
           <div style={{ minWidth: 0, textAlign: "left" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: active ? "#0F766E" : "#0F172A" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#15120f" : "rgba(21,18,15,0.70)", fontFamily: APP_FONT_STACK }}>
               {item.label}
             </div>
-            <div style={{ fontSize: 11, color: "#64748B", lineHeight: 1.4 }}>
+            <div style={{ fontSize: 11, color: "rgba(21,18,15,0.42)", lineHeight: 1.4, fontFamily: APP_FONT_STACK }}>
               {item.description}
             </div>
           </div>
@@ -587,12 +934,14 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
       {expanded && !!badge && (
         <div style={{
           borderRadius: 999,
-          padding: "5px 8px",
-          background: active ? "rgba(20,184,166,0.12)" : "rgba(15,23,42,0.05)",
-          color: active ? "#0F766E" : "#475569",
+          padding: "4px 8px",
+          background: active ? "rgba(143,47,47,0.12)" : "rgba(21,18,15,0.07)",
+          color: active ? DS.wine : "rgba(21,18,15,0.45)",
           fontSize: 11,
           fontWeight: 700,
           flexShrink: 0,
+          fontFamily: APP_BRAND_STACK,
+          letterSpacing: "0.05em",
         }}>
           {badge}
         </div>
@@ -609,101 +958,208 @@ function RateCard({ services, setServices }) {
   const [customCat, setCustomCat] = useState("Typing & Print");
   const [customPrice, setCustomPrice] = useState("");
   const [customUnit, setCustomUnit] = useState("per service");
+  const [customQuantityMode, setCustomQuantityMode] = useState("fixed");
+  const [customDetailSchemaId, setCustomDetailSchemaId] = useState(getDefaultDetailSchemaId("Typing & Print"));
+  const [customVariable, setCustomVariable] = useState(false);
+
+  const updateService = (id, updates) => {
+    setServices((prev) => prev.map((service) => (
+      service.id === id ? normalizeService({ ...service, ...updates }) : service
+    )));
+  };
 
   const updatePrice = (id, val) => {
-    setServices((prev) => prev.map((s) => s.id === id ? { ...s, price: Number(val) || 0 } : s));
+    updateService(id, { price: Math.max(0, Number(val) || 0) });
   };
 
   const addCustom = () => {
     if (!customName.trim()) return;
     const newId = "custom_" + Date.now();
-    setServices((prev) => [...prev, {
-      id: newId, name: customName.trim(), category: customCat,
-      price: Number(customPrice) || 0, unit: customUnit, variable: false,
-    }]);
-    setCustomName(""); setCustomPrice(""); setAddingCustom(false);
+    const newService = normalizeService({
+      id: newId,
+      name: customName.trim(),
+      category: customCat,
+      price: Math.max(0, Number(customPrice) || 0),
+      unit: customUnit.trim() || "per service",
+      variable: customVariable,
+      quantityMode: customQuantityMode,
+      detailSchemaId: customDetailSchemaId,
+    });
+    setServices((prev) => [...prev, newService]);
+    setCustomName("");
+    setCustomPrice("");
+    setCustomUnit("per service");
+    setCustomQuantityMode("fixed");
+    setCustomDetailSchemaId(getDefaultDetailSchemaId(customCat));
+    setCustomVariable(false);
+    setAddingCustom(false);
   };
 
   const unpriced = services.filter((s) => s.price === 0).length;
+  const quantityModeSummary = Object.keys(QUANTITY_MODE_CONFIG).map((modeId) => ({
+    id: modeId,
+    label: QUANTITY_MODE_CONFIG[modeId].label,
+    count: services.filter((service) => service.quantityMode === modeId).length,
+  }));
+
+  useEffect(() => {
+    setCustomDetailSchemaId((current) => (
+      current ? current : getDefaultDetailSchemaId(customCat)
+    ));
+  }, [customCat]);
+
+  // Cream ink helpers
+  const rcInput = {
+    padding: "9px 12px", borderRadius: 10, border: "1px solid rgba(21,18,15,0.13)",
+    background: "rgba(255,255,255,0.80)", color: "#15120f", outline: "none",
+    fontSize: "0.85rem", fontFamily: APP_FONT_STACK,
+  };
+  const rcEyebrow = {
+    fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.28em",
+    textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 4,
+  };
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+
+      {/* Unpriced warning */}
       {unpriced > 0 && (
         <div style={{
-          background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 12,
-          padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12,
-          fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", color: "#991B1B",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+          background: "rgba(214,5,43,0.06)", border: "1px solid rgba(214,5,43,0.20)",
+          borderRadius: 12, padding: "13px 18px", marginBottom: 22,
+          display: "flex", alignItems: "center", gap: 12,
+          fontSize: "0.86rem", fontFamily: APP_FONT_STACK, color: "#8f1020",
         }}>
-          <span style={{ fontSize: 20 }}>!</span>
-          <span><strong>{unpriced} services</strong> have a Rs. 0 rate. Tap any price to update your backend pricing.</span>
+          <span style={{ fontWeight: 700, fontSize: "1rem", color: "#c0001a" }}>!</span>
+          <span><strong>{unpriced} services</strong> still have a Rs. 0 rate. Tickets with only zero-rated items are blocked at save time.</span>
         </div>
       )}
 
+      {/* Summary stat cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
+        {quantityModeSummary.map((item) => (
+          <div key={item.id} style={{
+            background: "rgba(255,255,255,0.72)", border: "1px solid rgba(21,18,15,0.09)",
+            borderRadius: 14, padding: "14px 16px",
+            boxShadow: "0 4px 12px rgba(17,14,12,0.05)",
+          }}>
+            <div style={rcEyebrow}>{item.label}</div>
+            <div style={{ fontSize: "1.8rem", fontWeight: 300, color: "#15120f", fontFamily: APP_SERIF_STACK, lineHeight: 1.1 }}>{item.count}</div>
+            <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.52)", lineHeight: 1.5, fontFamily: APP_FONT_STACK, marginTop: 4 }}>
+              {QUANTITY_MODE_CONFIG[item.id].helper}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Category sections */}
       {CATEGORIES.map((cat) => {
         const catServices = services.filter((s) => s.category === cat);
         if (catServices.length === 0) return null;
         const color = CAT_COLORS[cat];
+        const rgb = color.replace("#","").match(/.{2}/g).map(h=>parseInt(h,16)).join(",");
         return (
-          <div key={cat} style={{ marginBottom: 20, borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: "1px solid rgba(15,23,42,0.12)" }}>
+          <div key={cat} style={{
+            marginBottom: 20, borderRadius: 16, overflow: "hidden",
+            border: "1px solid rgba(21,18,15,0.10)",
+            boxShadow: "0 4px 16px rgba(17,14,12,0.05)",
+          }}>
+            {/* Category header */}
             <div style={{
-              background: color, color: "white", padding: "12px 18px",
-              fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif",
-              fontWeight: 600, fontSize: 14, letterSpacing: 0.5, textTransform: "uppercase"
+              background: `rgba(${rgb},0.10)`,
+              borderBottom: "1px solid rgba(21,18,15,0.08)",
+              padding: "11px 18px",
+              display: "flex", alignItems: "center", gap: 10,
             }}>
-              {cat}
+              <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+              <span style={{ fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.28em", textTransform: "uppercase", color }}>
+                {cat}
+              </span>
+              <span style={{ marginLeft: "auto", fontSize: "0.72rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+                {catServices.length} service{catServices.length !== 1 ? "s" : ""}
+              </span>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.74)" }}>
+
+            {/* Service rows */}
+            <div style={{ background: "rgba(255,255,255,0.55)" }}>
               {catServices.map((s, i) => (
-                <div key={s.id} style={{
-                  display: "flex", alignItems: "center", padding: "12px 18px",
-                  borderBottom: i < catServices.length - 1 ? "1px solid #F1F5F9" : "none",
-                  gap: 12, transition: "background 0.2s",
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.72)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.74)'}
+                <div key={s.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1.2fr) minmax(200px, 0.8fr) auto",
+                    alignItems: "start",
+                    padding: "16px 18px",
+                    borderBottom: i < catServices.length - 1 ? "1px solid rgba(21,18,15,0.07)" : "none",
+                    gap: 16, transition: "background 0.15s ease",
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.82)"}
+                  onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
                 >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: "#0F172A", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+                  {/* Service info */}
+                  <div>
+                    <div style={{ fontSize: "0.90rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>
                       {s.name}
                     </div>
-                    <div style={{ fontSize: 12, color: "#475569", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", marginTop: 2 }}>
-                      {s.unit} {s.variable && <span style={{ color: "#F59E0B", fontWeight: 600 }}> variable</span>}
+                    <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK, marginTop: 3, display: "flex", alignItems: "center", gap: 8 }}>
+                      <span>{s.unit}</span>
+                      {s.variable && <span style={{ background: "rgba(211,166,90,0.18)", color: "#7b5d2c", borderRadius: 999, padding: "1px 8px", fontSize: "0.62rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>variable</span>}
+                    </div>
+                    <div style={{ fontSize: "0.70rem", color: "rgba(21,18,15,0.38)", marginTop: 5, fontFamily: APP_FONT_STACK }}>
+                      Template: <strong style={{ color: "rgba(21,18,15,0.55)" }}>{getDetailSchemaTitle(s.detailSchemaId)}</strong>
                     </div>
                   </div>
+
+                  {/* Config selects */}
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <label style={{ display: "grid", gap: 4 }}>
+                      <span style={rcEyebrow}>Quantity Rule</span>
+                      <select value={s.quantityMode} onChange={(e) => updateService(s.id, { quantityMode: e.target.value })} style={rcInput}>
+                        {Object.entries(QUANTITY_MODE_CONFIG).map(([modeId, config]) => (
+                          <option key={`${s.id}_${modeId}`} value={modeId} style={MENU_OPTION_STYLE}>{config.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={{ display: "grid", gap: 4 }}>
+                      <span style={rcEyebrow}>Detail Template</span>
+                      <select value={s.detailSchemaId} onChange={(e) => updateService(s.id, { detailSchemaId: e.target.value })} style={rcInput}>
+                        {Object.values(SERVICE_DETAIL_LIBRARY).map((schema) => (
+                          <option key={`${s.id}_${schema.id}`} value={schema.id} style={MENU_OPTION_STYLE}>{schema.title}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  {/* Price cell */}
                   {editingId === s.id ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: "#14B8A6" }}>Rs.</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 2 }}>
+                      <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "rgba(21,18,15,0.45)", fontFamily: APP_MONO_STACK }}>Rs.</span>
                       <input
-                        autoFocus
-                        type="number"
-                        defaultValue={s.price || ""}
-                        placeholder="0"
+                        autoFocus type="number" defaultValue={s.price || ""} placeholder="0"
                         onBlur={(e) => { updatePrice(s.id, e.target.value); setEditingId(null); }}
                         onKeyDown={(e) => { if (e.key === "Enter") { updatePrice(s.id, e.target.value); setEditingId(null); } }}
                         style={{
-                          width: 80, padding: "8px 10px", border: "2px solid #14B8A6",
-                          borderRadius: 8, fontSize: 14, fontWeight: 600,
-                          fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none",
-                          textAlign: "right",
+                          width: 80, padding: "8px 10px",
+                          border: "2px solid rgba(143,47,47,0.50)", borderRadius: 8,
+                          fontSize: "0.88rem", fontWeight: 600, fontFamily: APP_MONO_STACK,
+                          outline: "none", textAlign: "right",
+                          background: "rgba(255,255,255,0.90)", color: "#15120f",
                         }}
                       />
                     </div>
                   ) : (
                     <div
                       onClick={() => setEditingId(s.id)}
+                      title="Click to edit price"
                       style={{
-                        cursor: "pointer", padding: "6px 14px",
-                        borderRadius: 8, fontSize: 14, fontWeight: 600,
-                        fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif",
-                        color: s.price > 0 ? "#14B8A6" : "#64748B",
-                        background: s.price > 0 ? "rgba(20, 184, 166, 0.16)" : "rgba(255,255,255,0.72)",
-                        border: s.price > 0 ? "1px solid rgba(45, 212, 191, 0.5)" : "1px dashed #CBD5E1",
-                        minWidth: 80, textAlign: "right",
-                        transition: "all 0.2s",
+                        cursor: "pointer", padding: "7px 14px", borderRadius: 8, paddingTop: 4,
+                        fontSize: "0.88rem", fontWeight: 600, fontFamily: APP_MONO_STACK,
+                        color: s.price > 0 ? "#7b5d2c" : "rgba(21,18,15,0.30)",
+                        background: s.price > 0 ? "rgba(211,166,90,0.14)" : "rgba(21,18,15,0.04)",
+                        border: s.price > 0 ? "1px solid rgba(211,166,90,0.30)" : "1px dashed rgba(21,18,15,0.16)",
+                        minWidth: 88, textAlign: "right", transition: DS.transColor,
                       }}
                     >
-                      {s.price > 0 ? `Rs. ${s.price}` : "Rs. ---"}
+                      {s.price > 0 ? `Rs. ${s.price}` : "Rs. —"}
                     </div>
                   )}
                 </div>
@@ -716,40 +1172,76 @@ function RateCard({ services, setServices }) {
       {/* Add Custom Service */}
       {!addingCustom ? (
         <button onClick={() => setAddingCustom(true)} style={{
-          width: "100%", padding: "14px", border: "2px dashed rgba(255,255,255,0.25)",
-          borderRadius: 12, background: "rgba(255,255,255,0.74)", cursor: "pointer",
-          fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", fontSize: 14, color: "#64748B",
-          fontWeight: 600, transition: "all 0.2s",
+          width: "100%", padding: "14px",
+          border: "1px dashed rgba(21,18,15,0.18)", borderRadius: 12,
+          background: "rgba(255,255,255,0.60)", cursor: "pointer",
+          fontFamily: APP_BRAND_STACK, fontSize: "0.60rem",
+          letterSpacing: "0.22em", textTransform: "uppercase",
+          color: "rgba(21,18,15,0.45)", fontWeight: 700, transition: DS.transColor,
         }}>
-          + Add New Service
+          + Add Custom Service
         </button>
       ) : (
         <div style={{
-          border: "2px solid #14B8A6", borderRadius: 12, padding: 20,
-          background: "rgba(255,255,255,0.74)", boxShadow: "0 4px 12px rgba(20, 184, 166, 0.14)"
+          border: "1px solid rgba(143,47,47,0.22)", borderRadius: 16, padding: 22,
+          background: "rgba(255,255,255,0.72)", boxShadow: "0 6px 18px rgba(17,14,12,0.06)",
         }}>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+          <div style={rcEyebrow}>New Service</div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12, marginTop: 8 }}>
             <input placeholder="Service name" value={customName} onChange={(e) => setCustomName(e.target.value)}
-              style={{ flex: 2, minWidth: 160, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 8, fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none" }} />
-            <div style={{ display: "flex", alignItems: "center", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 8, background: "rgba(255,255,255,0.72)", paddingRight: 10 }}>
-              <span style={{ paddingLeft: 12, color: "#64748B", fontWeight: 600 }}>Rs.</span>
-              <input placeholder="Price" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} type="number"
-                style={{ width: 80, padding: "10px", border: "none", background: "transparent", fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none", textAlign: "right" }} />
+              style={{ ...rcInput, flex: 2, minWidth: 160 }} />
+            <div style={{ display: "flex", alignItems: "center", border: "1px solid rgba(21,18,15,0.13)", borderRadius: 10, background: "rgba(255,255,255,0.80)", paddingRight: 10 }}>
+              <span style={{ paddingLeft: 12, color: "#7b5d2c", fontWeight: 600, fontSize: "0.85rem", fontFamily: APP_MONO_STACK }}>Rs.</span>
+              <input placeholder="0" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} type="number"
+                style={{ width: 80, padding: "9px 8px", border: "none", background: "transparent", fontSize: "0.88rem", fontFamily: APP_MONO_STACK, outline: "none", textAlign: "right", color: "#15120f" }} />
             </div>
           </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <select value={customCat} onChange={(e) => setCustomCat(e.target.value)}
-              style={{ flex: 1, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 8, fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none", background: "rgba(255,255,255,0.74)" }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+            <select value={customCat} onChange={(e) => setCustomCat(e.target.value)} style={{ ...rcInput, flex: 1 }}>
               {CATEGORIES.map((c) => <option key={c} value={c} style={MENU_OPTION_STYLE}>{c}</option>)}
             </select>
             <input placeholder="Unit (e.g. per page)" value={customUnit} onChange={(e) => setCustomUnit(e.target.value)}
-              style={{ flex: 1, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 8, fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none" }} />
+              style={{ ...rcInput, flex: 1 }} />
           </div>
-          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-            <button onClick={addCustom} style={{ flex: 1, padding: "12px", background: "#14B8A6", color: "white", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 16 }}>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span style={rcEyebrow}>Quantity Rule</span>
+              <select value={customQuantityMode} onChange={(e) => setCustomQuantityMode(e.target.value)} style={rcInput}>
+                {Object.entries(QUANTITY_MODE_CONFIG).map(([modeId, config]) => (
+                  <option key={`custom_mode_${modeId}`} value={modeId} style={MENU_OPTION_STYLE}>{config.label}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span style={rcEyebrow}>Detail Template</span>
+              <select value={customDetailSchemaId} onChange={(e) => setCustomDetailSchemaId(e.target.value)} style={rcInput}>
+                {Object.values(SERVICE_DETAIL_LIBRARY).map((schema) => (
+                  <option key={`custom_schema_${schema.id}`} value={schema.id} style={MENU_OPTION_STYLE}>{schema.title}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", border: "1px solid rgba(21,18,15,0.10)", borderRadius: 10, background: "rgba(255,255,255,0.60)", cursor: "pointer" }}>
+              <input type="checkbox" checked={customVariable} onChange={(e) => setCustomVariable(e.target.checked)} />
+              <span style={{ fontSize: "0.82rem", color: "rgba(21,18,15,0.70)", fontWeight: 500, fontFamily: APP_FONT_STACK }}>Allow custom amount at ticket desk</span>
+            </label>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={addCustom} style={{
+              flex: 1, padding: "12px", borderRadius: 999,
+              background: "rgba(143,47,47,0.12)", color: "#6b1f1f",
+              border: "1px solid rgba(143,47,47,0.38)",
+              fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.20em",
+              textTransform: "uppercase", cursor: "pointer", fontFamily: APP_BRAND_STACK,
+            }}>
               Save Service
             </button>
-            <button onClick={() => setAddingCustom(false)} style={{ padding: "12px 20px", background: "rgba(255,255,255,0.82)", color: "#64748B", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+            <button onClick={() => setAddingCustom(false)} style={{
+              padding: "12px 22px", borderRadius: 999,
+              background: "rgba(255,255,255,0.72)", color: "rgba(21,18,15,0.60)",
+              border: "1px solid rgba(21,18,15,0.14)",
+              fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.18em",
+              textTransform: "uppercase", cursor: "pointer", fontFamily: APP_BRAND_STACK,
+            }}>
               Cancel
             </button>
           </div>
@@ -1204,28 +1696,55 @@ function Dashboard({ bills }) {
   );
 }
 
-function TicketWorkspace({ services, onSaveTicket }) {
+function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isActive }) {
   const [draftSeed] = useState(() => getStoredTicketDraft());
-  const [step, setStep] = useState(() => Number(draftSeed.step) === 2 ? 2 : 1);
-  const [referenceType, setReferenceType] = useState(() => (
-    typeof draftSeed.referenceType === "string" ? draftSeed.referenceType : "none"
-  ));
+  const [step, setStep] = useState(() => getInitialEntryStep(draftSeed));
+  const [hasReference, setHasReference] = useState(() => getHasReferenceValue(draftSeed));
   const [customerName, setCustomerName] = useState(() => draftSeed.customerName || "");
   const [customerPhone, setCustomerPhone] = useState(() => draftSeed.customerPhone || "");
   const [referenceName, setReferenceName] = useState(() => draftSeed.referenceName || "");
+  const [referenceLabel, setReferenceLabel] = useState(() => getReferenceLabelValue(draftSeed));
   const [providedDocIds, setProvidedDocIds] = useState(() => (
     Array.isArray(draftSeed.providedDocIds) ? draftSeed.providedDocIds : []
   ));
   const [operator, setOperator] = useState(() => (
-    typeof draftSeed.operator === "string" ? draftSeed.operator : OPERATORS[0]
+    typeof draftSeed.operator === "string" ? draftSeed.operator : DEFAULT_OPERATOR
   ));
   const [selectedService, setSelectedService] = useState(() => draftSeed.selectedService || "");
   const [qty, setQty] = useState(() => draftSeed.qty || 1);
   const [customAmt, setCustomAmt] = useState(() => draftSeed.customAmt || "");
+  const [serviceDetailMap, setServiceDetailMap] = useState(() => {
+    const seededMap = draftSeed.serviceDetailMap && typeof draftSeed.serviceDetailMap === "object"
+      ? draftSeed.serviceDetailMap
+      : {};
+    const next = {};
+    services.forEach((service) => {
+      const fromMap = seededMap[service.id];
+      const legacySeed = draftSeed.selectedService === service.id ? draftSeed.serviceDetailValues : null;
+      const sourceValues = (fromMap && typeof fromMap === "object")
+        ? fromMap
+        : (legacySeed && typeof legacySeed === "object" ? legacySeed : null);
+      if (sourceValues) {
+        next[service.id] = createDetailDraftForService(service, sourceValues);
+      }
+    });
+    return next;
+  });
+  const [serviceDetailErrorMap, setServiceDetailErrorMap] = useState(() => {
+    if (draftSeed.serviceDetailErrorMap && typeof draftSeed.serviceDetailErrorMap === "object") {
+      return draftSeed.serviceDetailErrorMap;
+    }
+    if (
+      draftSeed.selectedService
+      && draftSeed.serviceDetailErrors
+      && typeof draftSeed.serviceDetailErrors === "object"
+    ) {
+      return { [draftSeed.selectedService]: draftSeed.serviceDetailErrors };
+    }
+    return {};
+  });
   const [paymentCash, setPaymentCash] = useState(() => draftSeed.paymentCash || "");
   const [paymentUpi, setPaymentUpi] = useState(() => draftSeed.paymentUpi || "");
-  const [portalDown, setPortalDown] = useState(() => Boolean(draftSeed.portalDown));
-  const [portalDownNote, setPortalDownNote] = useState(() => draftSeed.portalDownNote || "");
   const [docName, setDocName] = useState(() => draftSeed.docName || "");
   const [docRequired, setDocRequired] = useState(() => (
     typeof draftSeed.docRequired === "boolean" ? draftSeed.docRequired : true
@@ -1239,10 +1758,22 @@ function TicketWorkspace({ services, onSaveTicket }) {
   const [ticketMeta, setTicketMeta] = useState(() => (
     draftSeed.ticketMeta && typeof draftSeed.ticketMeta === "object" ? draftSeed.ticketMeta : null
   ));
+  const [subStep, setSubStep] = useState(1);
   const [saved, setSaved] = useState(null);
   const [error, setError] = useState("");
-
-  const referenceConfig = getReferenceTypeConfig(referenceType);
+  const selectedServiceConfig = services.find((service) => service.id === selectedService) || null;
+  const selectedQuantityConfig = selectedServiceConfig ? getQuantityModeConfig(selectedServiceConfig.quantityMode) : null;
+  const selectedDetailSchema = selectedServiceConfig ? getServiceDetailSchema(selectedServiceConfig) : null;
+  const selectedServiceDetailValues = selectedServiceConfig
+    ? createDetailDraftForService(selectedServiceConfig, serviceDetailMap[selectedServiceConfig.id] || {})
+    : {};
+  const selectedServiceDetailErrors = selectedServiceConfig
+    ? (serviceDetailErrorMap[selectedServiceConfig.id] && typeof serviceDetailErrorMap[selectedServiceConfig.id] === "object"
+      ? serviceDetailErrorMap[selectedServiceConfig.id]
+      : {})
+    : {};
+  const selectedOperatorConfig = getOperatorConfig(operator);
+  const selectedOperatorMetrics = getOperatorTicketMetrics(tickets, operator);
 
   const total = items.reduce((sum, it) => sum + it.amount, 0);
   const cashCollected = Math.max(0, Number(paymentCash) || 0);
@@ -1253,73 +1784,97 @@ function TicketWorkspace({ services, onSaveTicket }) {
   const requiredDocsCount = documents.filter((doc) => doc.required).length;
   const submittedRequiredDocsCount = documents.filter((doc) => doc.required && doc.submitted).length;
   const sanitizePhone = (value) => value.replace(/\D/g, "").slice(0, 10);
-  const canSaveTicket = items.length > 0 && !isOverpaid;
+  const hasOnlyZeroPricedItems = items.length > 0 && total === 0;
+  const canSaveTicket = items.length > 0 && !isOverpaid && !hasOnlyZeroPricedItems;
+  const ticketReferenceSummary = ticketMeta
+    ? formatReferenceSummary({
+      hasReference: getHasReferenceValue(ticketMeta),
+      name: ticketMeta.referenceName,
+      label: getReferenceLabelValue(ticketMeta),
+    })
+    : "No reference added";
   const surfaceCardStyle = {
-    background: "rgba(255,255,255,0.82)",
-    borderRadius: 24,
-    border: "1px solid rgba(148,163,184,0.18)",
+    background: "rgba(255,255,255,0.72)",
+    borderRadius: 20,
+    border: "1px solid rgba(21,18,15,0.10)",
     padding: 22,
-    boxShadow: "0 18px 36px rgba(15,23,42,0.06)",
+    boxShadow: "0 20px 52px rgba(17,14,12,0.10)",
+    backdropFilter: "blur(4px)",
   };
   const softPanelStyle = {
-    background: "rgba(248,250,252,0.82)",
-    borderRadius: 20,
-    border: "1px solid rgba(148,163,184,0.16)",
+    background: "rgba(255,255,255,0.52)",
+    borderRadius: 14,
+    border: "1px solid rgba(21,18,15,0.07)",
     padding: 18,
+    boxShadow: "0 10px 24px rgba(17,14,12,0.06)",
   };
   const sectionEyebrowStyle = {
-    fontSize: 11,
-    color: "#64748B",
+    fontSize: "0.54rem",
+    color: DS.wine,
+    fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
     textTransform: "uppercase",
-    letterSpacing: 1.1,
-    marginBottom: 10,
+    letterSpacing: "0.30em",
+    marginBottom: 8,
+    display: "block",
   };
   const inputStyle = {
     width: "100%",
-    padding: "12px 14px",
-    border: "1px solid rgba(148,163,184,0.22)",
-    borderRadius: 14,
-    background: "#FFFFFF",
-    color: "#0F172A",
+    padding: "11px 14px",
+    border: "1px solid rgba(21,18,15,0.12)",
+    borderRadius: 10,
+    background: "rgba(255,255,255,0.82)",
+    color: "#15120f",
     outline: "none",
-    boxShadow: "inset 0 1px 2px rgba(15,23,42,0.04)",
+    fontFamily: APP_FONT_STACK,
+    fontSize: "0.88rem",
+    boxShadow: "inset 0 1px 2px rgba(21,18,15,0.04)",
   };
   const primaryButtonStyle = {
-    border: "none",
-    borderRadius: 14,
-    padding: "13px 18px",
-    background: "linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)",
-    color: "#FFFFFF",
+    border: "1px solid rgba(143,47,47,0.50)",
+    borderRadius: 999,
+    padding: "12px 22px",
+    background: "rgba(143,47,47,0.14)",
+    color: "#6b1f1f",
+    fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
+    fontSize: "0.6rem",
+    letterSpacing: "0.22em",
+    textTransform: "uppercase",
     cursor: "pointer",
-    boxShadow: "0 16px 28px rgba(20,184,166,0.22)",
+    transition: "all 0.22s ease",
   };
   const secondaryButtonStyle = {
-    border: "1px solid rgba(148,163,184,0.24)",
-    borderRadius: 14,
-    padding: "13px 18px",
-    background: "rgba(255,255,255,0.96)",
-    color: "#0F172A",
+    border: "1px solid rgba(21,18,15,0.14)",
+    borderRadius: 999,
+    padding: "12px 22px",
+    background: "rgba(255,255,255,0.72)",
+    color: "rgba(21,18,15,0.78)",
+    fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
+    fontSize: "0.6rem",
+    letterSpacing: "0.22em",
+    textTransform: "uppercase",
     cursor: "pointer",
+    transition: "all 0.22s ease",
   };
   const smallBadgeStyle = {
     display: "inline-flex",
     alignItems: "center",
     gap: 6,
     borderRadius: 999,
-    padding: "7px 12px",
-    fontSize: 11,
+    padding: "6px 12px",
+    fontSize: "0.5rem",
+    fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
-    letterSpacing: 0.8,
+    letterSpacing: "0.18em",
     textTransform: "uppercase",
   };
   const workspaceMetrics = [
     {
       label: "Current step",
       value: step === 1 ? "Intake" : "Ticket",
-      helper: step === 1 ? "Capture holder and reference" : "Build tasks and payment",
+      helper: step === 1 ? "Capture holder and optional reference" : "Build tasks and payment",
     },
     {
       label: "Services added",
@@ -1337,56 +1892,122 @@ function TicketWorkspace({ services, onSaveTicket }) {
       helper: paidTotal > 0 ? `Collected Rs. ${paidTotal}` : "No payment collected",
     },
   ];
+  const flowNavItems = [
+    {
+      id: "home",
+      label: "Home",
+      helper: "Return to intake details",
+      active: step === 1,
+      action: () => {
+        if (step === 1) return;
+        navigateToStep(1, "replace");
+      },
+    },
+    {
+      id: "second",
+      label: "Second",
+      helper: "Open service and payment builder",
+      active: step === 2,
+      action: () => {
+        if (step === 2) return;
+        createTicket();
+      },
+    },
+  ];
+  const goToPageItems = [
+    { id: "rates", label: "Rate Card", helper: "Edit service rules", tabId: "rates" },
+    { id: "log", label: "Ticket Dashboard", helper: "Review saved tickets", tabId: "log" },
+    { id: "b2b", label: "B2B Desk", helper: "Jump to partner workspace", tabId: "b2b" },
+  ];
 
-  useEffect(() => {
-    if (saved) {
-      removeStoredValue(STORAGE_KEYS.ticketDraft);
+  function navigateToStep(nextStep, mode = "push") {
+    const normalizedStep = nextStep === 2 ? 2 : 1;
+    if (normalizedStep === step) {
+      if (mode === "replace") {
+        updateBrowserState({ tab: "entry", entryStep: normalizedStep }, "replace");
+      }
       return;
     }
+    updateBrowserState({ tab: "entry", entryStep: normalizedStep }, mode);
+    setStep(normalizedStep);
+    setSubStep(1);
+  }
 
-    writeStoredJSON(STORAGE_KEYS.ticketDraft, {
-      step,
-      referenceType,
-      customerName,
-      customerPhone,
-      referenceName,
-      providedDocIds,
-      operator,
-      selectedService,
-      qty,
-      customAmt,
-      paymentCash,
-      paymentUpi,
-      portalDown,
-      portalDownNote,
-      docName,
-      docRequired,
-      documents,
-      items,
-      ticketMeta,
-    });
-  }, [
+  const draftPayload = {
     step,
-    referenceType,
+    hasReference,
     customerName,
     customerPhone,
     referenceName,
+    referenceLabel,
     providedDocIds,
     operator,
     selectedService,
     qty,
     customAmt,
+    serviceDetailMap,
+    serviceDetailErrorMap,
+    serviceDetailValues: selectedServiceDetailValues,
+    serviceDetailErrors: selectedServiceDetailErrors,
     paymentCash,
     paymentUpi,
-    portalDown,
-    portalDownNote,
     docName,
     docRequired,
     documents,
     items,
     ticketMeta,
-    saved,
-  ]);
+  };
+
+  useDebouncedStoredJSON(STORAGE_KEYS.ticketDraft, draftPayload, 180, !saved);
+
+  useEffect(() => {
+    if (saved) {
+      removeStoredValue(STORAGE_KEYS.ticketDraft);
+    }
+  }, [saved]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    updateBrowserState({ tab: "entry", entryStep: step }, "replace");
+  }, [isActive]);
+
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state?.tab === "entry" && (event.state?.entryStep === 1 || event.state?.entryStep === 2)) {
+        setStep(event.state.entryStep);
+      }
+    };
+    if (typeof window === "undefined") return undefined;
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (step !== 2) return;
+    if (ticketMeta) return;
+    setError("Intake details are missing. Please start from Home.");
+    navigateToStep(1, "replace");
+  }, [step, ticketMeta]);
+
+  useEffect(() => {
+    if (!selectedServiceConfig) {
+      return;
+    }
+    setServiceDetailMap((prev) => ({
+      ...prev,
+      [selectedServiceConfig.id]: createDetailDraftForService(selectedServiceConfig, prev[selectedServiceConfig.id] || {}),
+    }));
+    setServiceDetailErrorMap((prev) => {
+      if (prev[selectedServiceConfig.id] && typeof prev[selectedServiceConfig.id] === "object") return prev;
+      return { ...prev, [selectedServiceConfig.id]: {} };
+    });
+    if (selectedServiceConfig.quantityMode === "fixed") {
+      setQty(1);
+    } else {
+      const nextQty = Math.max(selectedServiceConfig.minQty || 1, Number(qty) || selectedServiceConfig.minQty || 1);
+      setQty(nextQty);
+    }
+  }, [selectedService]);
 
   const toggleProvidedDoc = (docId) => {
     setProvidedDocIds((prev) => (
@@ -1398,14 +2019,16 @@ function TicketWorkspace({ services, onSaveTicket }) {
     const trimmedName = customerName.trim();
     const phoneDigits = sanitizePhone(customerPhone);
     const trimmedReferenceName = referenceName.trim();
+    const trimmedReferenceLabel = referenceLabel.trim();
+    const referenceEnabled = hasReference && Boolean(trimmedReferenceName);
 
     if (!trimmedName) {
       setError("Document holder name is required.");
       return;
     }
 
-    if (referenceType !== "none" && !trimmedReferenceName) {
-      setError("Reference person name is required.");
+    if (hasReference && !trimmedReferenceName) {
+      setError("Reference name is required when reference is enabled.");
       return;
     }
 
@@ -1418,9 +2041,11 @@ function TicketWorkspace({ services, onSaveTicket }) {
       ticketNo: generateBillNo(),
       date: todayStr(),
       time: timeStr(),
-      referenceType,
-      referenceTypeLabel: referenceConfig.label,
-      referenceName: trimmedReferenceName,
+      hasReference: referenceEnabled,
+      referenceName: referenceEnabled ? trimmedReferenceName : "",
+      referenceLabel: referenceEnabled ? trimmedReferenceLabel : "",
+      referenceType: "",
+      referenceTypeLabel: referenceEnabled ? trimmedReferenceLabel : "",
       customerName: trimmedName,
       customerPhone: phoneDigits,
       operator,
@@ -1436,7 +2061,8 @@ function TicketWorkspace({ services, onSaveTicket }) {
       };
     });
     setDocuments(intakeDocs);
-    setStep(2);
+    setSubStep(1);
+    navigateToStep(2);
     setError("");
   };
 
@@ -1444,13 +2070,31 @@ function TicketWorkspace({ services, onSaveTicket }) {
     if (!selectedService) return;
     const svc = services.find((s) => s.id === selectedService);
     if (!svc) return;
-    const qtyNum = Math.max(1, Number(qty) || 1);
+    const selectedDetailDraft = createDetailDraftForService(svc, selectedServiceDetailValues);
+    const detailErrors = validateServiceDetailValues(svc, selectedDetailDraft);
+    if (Object.keys(detailErrors).length > 0) {
+      setServiceDetailErrorMap((prev) => ({ ...prev, [svc.id]: detailErrors }));
+      setError("Complete the service detail section before adding this line item.");
+      return;
+    }
+    const quantityConfig = getQuantityModeConfig(svc.quantityMode);
+    const minQty = svc.minQty || quantityConfig.min;
+    const maxQty = svc.maxQty || quantityConfig.defaultMax;
+    const rawQty = Number(qty);
+    const qtyNum = svc.quantityMode === "fixed" ? 1 : Math.max(minQty, rawQty || minQty);
+    if (svc.quantityMode !== "fixed" && (!Number.isFinite(rawQty) || rawQty < minQty || rawQty > maxQty)) {
+      setError(`${quantityConfig.inputLabel} must stay between ${minQty} and ${maxQty} for ${svc.name}.`);
+      return;
+    }
     const unitPrice = svc.variable ? Number(customAmt) || 0 : svc.price;
+    const detailValues = createDetailDraftForService(svc, selectedDetailDraft);
     setItems((prev) => [...prev, {
       ...svc,
       qty: qtyNum,
       unitPrice,
       amount: unitPrice * qtyNum,
+      detailValues,
+      detailSummary: buildServiceDetailSummary(svc, detailValues),
       done: false,
     }]);
     setSelectedService("");
@@ -1515,8 +2159,8 @@ function TicketWorkspace({ services, onSaveTicket }) {
       setError("Collected amount cannot exceed ticket total.");
       return;
     }
-    if (portalDown && !portalDownNote.trim()) {
-      setError("Portal name is required when ticket is marked as portal down.");
+    if (hasOnlyZeroPricedItems) {
+      setError("This ticket is still fully unpriced. Set at least one rate before saving.");
       return;
     }
 
@@ -1532,11 +2176,10 @@ function TicketWorkspace({ services, onSaveTicket }) {
       : paidTotal > 0
         ? "Partial"
         : "Unpaid";
-    const finalStatus = portalDown ? "Open" : status;
 
     const ticket = withStructuredTicket({
       ...ticketMeta,
-      status: finalStatus,
+      status,
       payMode,
       paymentStatus,
       cashCollected,
@@ -1546,8 +2189,6 @@ function TicketWorkspace({ services, onSaveTicket }) {
       operator,
       items: [...items],
       documents: [...documents],
-      portalDown: Boolean(portalDown),
-      portalDownNote: portalDown ? portalDownNote.trim() : "",
       total,
       updatedAt: `${todayStr()} ${timeStr()}`,
     });
@@ -1558,20 +2199,21 @@ function TicketWorkspace({ services, onSaveTicket }) {
 
   const resetTicket = () => {
     removeStoredValue(STORAGE_KEYS.ticketDraft);
-    setStep(1);
-    setReferenceType("guardian");
+    navigateToStep(1, "replace");
+    setHasReference(false);
     setCustomerName("");
     setCustomerPhone("");
     setReferenceName("");
+    setReferenceLabel("");
     setProvidedDocIds([]);
-    setOperator(OPERATORS[0]);
+    setOperator(DEFAULT_OPERATOR);
     setSelectedService("");
     setQty(1);
     setCustomAmt("");
+    setServiceDetailMap({});
+    setServiceDetailErrorMap({});
     setPaymentCash("");
     setPaymentUpi("");
-    setPortalDown(false);
-    setPortalDownNote("");
     setDocName("");
     setDocRequired(true);
     setDocuments([]);
@@ -1584,59 +2226,54 @@ function TicketWorkspace({ services, onSaveTicket }) {
   if (saved) {
     return (
       <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-        <div id="receipt" style={{ background: "rgba(255,255,255,0.82)", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 22, padding: "26px 22px", maxWidth: 420, margin: "0 auto", color: "#0F172A" }}>
-          <div style={{ fontSize: 18, fontWeight: 800, textAlign: "center", marginBottom: 10 }}>CSC TICKET SLIP</div>
-          <div style={{ fontSize: 12, textAlign: "center", color: saved.status === "Open" ? "#F59E0B" : "#10B981", fontWeight: 700, marginBottom: 14 }}>
-            STATUS: {saved.status.toUpperCase()}
+        <div id="receipt" style={{ background: "rgba(255,250,242,0.96)", border: "1px solid rgba(21,18,15,0.12)", borderRadius: 20, padding: "28px 24px", maxWidth: 420, margin: "0 auto", color: "#15120f", boxShadow: "0 20px 52px rgba(17,14,12,0.12)" }}>
+          <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.6rem", letterSpacing: "0.36em", textTransform: "uppercase", color: DS.wine, textAlign: "center", marginBottom: 8 }}>CSC Ticket Slip</div>
+          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "0.72rem", textAlign: "center", color: saved.status === "Open" ? "#7b5d2c" : DS.wine, fontWeight: 400, marginBottom: 16, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            {saved.status}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 12, color: "#475569" }}>Document Holder</div>
-              <div style={{ fontWeight: 700 }}>{saved.customerName}</div>
+              <div style={{ fontSize: "0.66rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(21,18,15,0.45)" }}>Document Holder</div>
+              <div style={{ fontWeight: 700, fontSize: "0.9rem", fontFamily: APP_FONT_STACK }}>{saved.customerName}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 12, color: "#475569" }}>Ticket</div>
-              <div style={{ fontWeight: 700 }}>{saved.ticketNo}</div>
+              <div style={{ fontSize: "0.66rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(21,18,15,0.45)" }}>Ticket</div>
+              <div style={{ fontWeight: 700, fontSize: "0.9rem", fontFamily: APP_MONO_STACK }}>{saved.ticketNo}</div>
             </div>
           </div>
-          <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
-            Reference: {saved.referenceName || "N/A"} ({saved.referenceTypeLabel || "N/A"})
+          <div style={{ fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", marginBottom: 5, fontFamily: APP_FONT_STACK }}>
+            Reference Contact: {formatReferenceSummary(toStructuredTicket(saved).parties.reference)}
           </div>
           {!!saved.customerPhone && (
-            <div style={{ fontSize: 12, color: "#475569", marginBottom: 12 }}>Contact: {saved.customerPhone}</div>
+            <div style={{ fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", marginBottom: 12, fontFamily: APP_FONT_STACK }}>Contact: {saved.customerPhone}</div>
           )}
-          <div style={{ borderTop: "1px dashed rgba(255,255,255,0.3)", borderBottom: "1px dashed rgba(255,255,255,0.3)", padding: "10px 0" }}>
+          <div style={{ borderTop: "1px solid rgba(21,18,15,0.10)", borderBottom: "1px solid rgba(21,18,15,0.10)", padding: "10px 0", marginBottom: 12 }}>
             {saved.items.map((it, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 13 }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, color: "#15120f" }}>
                 <span>{it.name}</span>
-                <span>x{it.qty}</span>
+                <span style={{ color: "rgba(21,18,15,0.55)" }}>×{it.qty}</span>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, color: "rgba(21,18,15,0.60)" }}>
             <span>Operator: {saved.operator}</span>
             <span>Pay: {saved.payMode}</span>
           </div>
-          <div style={{ marginTop: 6, fontSize: 12, color: "#475569" }}>
+          <div style={{ marginTop: 5, fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>
             Payment: {saved.paymentStatus || "Unpaid"} | Paid Rs. {saved.paidTotal || 0} | Pending Rs. {saved.pendingBalance || 0}
           </div>
-          {saved.portalDown && (
-            <div style={{ marginTop: 6, fontSize: 12, color: "#B45309", fontWeight: 700 }}>
-              Portal Down: {saved.portalDownNote || "Submission pending"}
-            </div>
-          )}
-          <div style={{ marginTop: 6, fontSize: 12, color: "#475569" }}>
+          <div style={{ marginTop: 5, fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>
             Docs: {saved.documents?.filter((doc) => doc.required && doc.submitted).length || 0}/{saved.documents?.filter((doc) => doc.required).length || 0} required submitted
           </div>
           {!!saved.documents?.filter((doc) => doc.submitted).length && (
-            <div style={{ marginTop: 6, fontSize: 11, color: "#64748B" }}>
+            <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(21,18,15,0.45)", fontFamily: APP_FONT_STACK }}>
               Provided docs: {saved.documents.filter((doc) => doc.submitted).map((doc) => doc.name).join(", ")}
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18 }}>
-          <button onClick={() => printTicketSlip(saved)} style={{ padding: "11px 18px", borderRadius: 8, border: "1px solid #14B8A6", background: "rgba(255,255,255,0.74)", color: "#14B8A6", cursor: "pointer", fontWeight: 700 }}>Print Ticket</button>
-          <button onClick={resetTicket} style={{ padding: "11px 18px", borderRadius: 8, border: "none", background: "#14B8A6", color: "white", cursor: "pointer", fontWeight: 700 }}>+ New Ticket</button>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 16 }}>
+          <button onClick={() => printTicketSlip(saved)} style={{ ...secondaryButtonStyle }}>Print Ticket</button>
+          <button onClick={resetTicket} style={{ ...primaryButtonStyle }}>+ New Ticket</button>
         </div>
       </div>
     );
@@ -1645,16 +2282,16 @@ function TicketWorkspace({ services, onSaveTicket }) {
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
       {!saved && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 16 }}>
           {workspaceMetrics.map((metric) => (
-            <div key={metric.label} style={{ ...surfaceCardStyle, padding: 18, minHeight: 112 }}>
-              <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 10 }}>
+            <div key={metric.label} style={{ ...surfaceCardStyle, padding: 16, minHeight: 106 }}>
+              <div style={{ ...sectionEyebrowStyle, marginBottom: 6 }}>
                 {metric.label}
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A", marginBottom: 8 }}>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.7rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 4, lineHeight: 1 }}>
                 {metric.value}
               </div>
-              <div style={{ fontSize: 12, lineHeight: 1.5, color: "#475569" }}>
+              <div style={{ fontSize: "0.78rem", lineHeight: 1.55, color: "rgba(21,18,15,0.58)" }}>
                 {metric.helper}
               </div>
             </div>
@@ -1662,910 +2299,1027 @@ function TicketWorkspace({ services, onSaveTicket }) {
         </div>
       )}
 
-      {step === 1 && (
+      {!saved && (
         <div style={{ ...surfaceCardStyle, marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start", marginBottom: 14 }}>
             <div>
-              <div style={sectionEyebrowStyle}>Step 1</div>
-              <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: -1.1, color: "#0F172A", marginBottom: 8 }}>
-                Intake Details
+              <div style={sectionEyebrowStyle}>Flow Map</div>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.45rem", fontWeight: 300, letterSpacing: "-0.015em", color: "#15120f", marginBottom: 6 }}>
+                Home, Second, and Go To Page
               </div>
-              <div style={{ maxWidth: 620, fontSize: 14, lineHeight: 1.65, color: "#475569" }}>
-                Capture the document holder, the reference person, the operator, and the intake documents once.
-                This creates the base record for the rest of the ticket.
-              </div>
-            </div>
-            <div style={{ ...smallBadgeStyle, background: "rgba(20,184,166,0.12)", border: "1px solid rgba(20,184,166,0.24)", color: "#0F766E" }}>
-              Draft autosaves locally
-            </div>
-          </div>
-
-          <div style={{ ...softPanelStyle, marginBottom: 16 }}>
-            <div style={sectionEyebrowStyle}>Reference Type</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-              {REFERENCE_TYPES.map((role) => {
-                const cfg = getReferenceTypeConfig(role.id);
-                const active = referenceType === role.id;
-                return (
-                  <button
-                    key={role.id}
-                    onClick={() => {
-                      setReferenceType(role.id);
-                      setError("");
-                    }}
-                    style={{
-                      textAlign: "left",
-                      padding: "14px 14px 13px",
-                      borderRadius: 16,
-                      border: active ? "1px solid rgba(20,184,166,0.45)" : "1px solid rgba(148,163,184,0.20)",
-                      background: active ? "linear-gradient(180deg, rgba(240,253,250,0.96) 0%, rgba(236,253,245,0.92) 100%)" : "#FFFFFF",
-                      color: active ? "#0F766E" : "#1E293B",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      transition: "all 0.2s ease",
-                      boxShadow: active ? "0 14px 26px rgba(20,184,166,0.14)" : "0 8px 18px rgba(15,23,42,0.04)",
-                    }}
-                  >
-                    <div>{cfg.label}</div>
-                    <div style={{ fontSize: 11, color: active ? "#0F766E" : "#64748B", marginTop: 6, fontWeight: 500, lineHeight: 1.45 }}>
-                      {cfg.description}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ ...softPanelStyle, marginBottom: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-              <label style={{ display: "grid", gap: 8 }}>
-                <span style={sectionEyebrowStyle}>Document Holder Name</span>
-                <input
-                  placeholder="Harsh Kumar"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ display: "grid", gap: 8 }}>
-                <span style={sectionEyebrowStyle}>Contact Number</span>
-                <input
-                  type="tel"
-                  placeholder="Optional, 10 digits"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(sanitizePhone(e.target.value))}
-                  style={inputStyle}
-                />
-              </label>
-              {referenceType !== "none" && (
-                <label style={{ display: "grid", gap: 8 }}>
-                  <span style={sectionEyebrowStyle}>Reference Person</span>
-                  <input
-                    placeholder="Riya Sharma"
-                    value={referenceName}
-                    onChange={(e) => setReferenceName(e.target.value)}
-                    style={inputStyle}
-                  />
-                </label>
-              )}
-            </div>
-          </div>
-
-          <div style={{ ...softPanelStyle, marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
-              <div>
-                <div style={sectionEyebrowStyle}>Documents Received At Intake</div>
-                <div style={{ fontSize: 13, color: "#475569" }}>
-                  Select what the customer handed over right now. These will prefill the ticket checklist.
-                </div>
-              </div>
-              <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(148,163,184,0.18)", color: "#334155" }}>
-                {providedDocIds.length} selected
+              <div style={{ maxWidth: 620, fontSize: "0.84rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
+                Use Home for intake, Second for ticket building, and Go To Page when you need to jump to another workspace without losing the draft.
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-              {DOCUMENT_PRESETS.map((doc) => {
-                const checked = providedDocIds.includes(doc.id);
-                return (
-                  <label key={`intake_${doc.id}`} style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 9,
-                    padding: "11px 12px",
-                    borderRadius: 14,
-                    border: checked ? "1px solid rgba(20,184,166,0.40)" : "1px solid rgba(148,163,184,0.18)",
-                    background: checked ? "rgba(236,253,245,0.96)" : "#FFFFFF",
-                    color: checked ? "#0F766E" : "#1E293B",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    boxShadow: checked ? "0 12px 22px rgba(20,184,166,0.12)" : "0 8px 18px rgba(15,23,42,0.03)",
-                  }}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleProvidedDoc(doc.id)}
-                    />
-                    {doc.label}
-                  </label>
-                );
-              })}
+            <div style={{ ...smallBadgeStyle, background: "rgba(21,18,15,0.05)", border: "1px solid rgba(21,18,15,0.10)", color: "rgba(21,18,15,0.55)" }}>
+              Browser back stays in flow
             </div>
           </div>
-
-          <div style={{ ...softPanelStyle, marginBottom: 14 }}>
-            <div style={sectionEyebrowStyle}>Operator</div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {OPERATORS.map((op) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 12 }}>
+            {flowNavItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={item.action}
+                style={{
+                  textAlign: "left",
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  border: item.active ? "1px solid rgba(143,47,47,0.35)" : "1px solid rgba(21,18,15,0.09)",
+                  background: item.active ? "linear-gradient(180deg, rgba(143,47,47,0.09) 0%, rgba(143,47,47,0.05) 100%)" : "rgba(255,255,255,0.60)",
+                  color: item.active ? DS.wine : "#15120f",
+                  cursor: "pointer",
+                  boxShadow: item.active ? "0 8px 24px rgba(143,47,47,0.10)" : "0 4px 12px rgba(17,14,12,0.04)",
+                  transition: "all 0.2s ease",
+                  fontFamily: APP_FONT_STACK,
+                }}
+              >
+                <div style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: 5, color: item.active ? DS.wine : "#15120f" }}>{item.label}</div>
+                <div style={{ fontSize: "0.78rem", lineHeight: 1.5, color: item.active ? DS.wine : "rgba(21,18,15,0.55)" }}>{item.helper}</div>
+              </button>
+            ))}
+          </div>
+          <div style={{ ...softPanelStyle, padding: 14 }}>
+            <div style={{ ...sectionEyebrowStyle, marginBottom: 8 }}>Go To Page</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+              {goToPageItems.map((item) => (
                 <button
-                  key={op}
-                  onClick={() => setOperator(op)}
+                  key={item.id}
+                  onClick={() => onNavigateTab?.(item.tabId)}
                   style={{
-                    padding: "11px 16px",
-                    borderRadius: 14,
-                    border: operator === op ? "1px solid rgba(20,184,166,0.36)" : "1px solid rgba(148,163,184,0.20)",
-                    background: operator === op ? "rgba(236,253,245,0.96)" : "#FFFFFF",
-                    color: operator === op ? "#0F766E" : "#334155",
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    border: "1px solid rgba(21,18,15,0.08)",
+                    background: "rgba(255,255,255,0.72)",
+                    color: "#15120f",
                     cursor: "pointer",
-                    fontWeight: 700,
-                    boxShadow: operator === op ? "0 12px 22px rgba(20,184,166,0.12)" : "0 8px 18px rgba(15,23,42,0.03)",
+                    fontFamily: APP_FONT_STACK,
+                    transition: "all 0.18s ease",
                   }}
                 >
-                  {op}
+                  <div style={{ fontSize: "0.86rem", fontWeight: 700, marginBottom: 3 }}>{item.label}</div>
+                  <div style={{ fontSize: "0.76rem", lineHeight: 1.5, color: "rgba(21,18,15,0.55)" }}>{item.helper}</div>
                 </button>
               ))}
             </div>
           </div>
-
-          {error && (
-            <div style={{ marginTop: 8, marginBottom: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(254,242,242,0.96)", border: "1px solid rgba(248,113,113,0.28)", color: "#B91C1C", fontSize: 13, fontWeight: 600 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.55 }}>
-              Next step opens service tasks, document tracking, payment collection, and save actions.
-            </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button onClick={resetTicket} style={secondaryButtonStyle}>
-                Clear Draft
-              </button>
-              <button onClick={createTicket} style={primaryButtonStyle}>
-                Continue To Ticket Tasks
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
-      {step === 2 && (
-        <>
-          <div style={{ ...surfaceCardStyle, marginBottom: 16, padding: 18 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
-              <div>
-                <div style={sectionEyebrowStyle}>Step 2</div>
-                <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -1, color: "#0F172A", marginBottom: 8 }}>
-                  Build Ticket
-                </div>
-                <div style={{ fontSize: 14, lineHeight: 1.6, color: "#475569" }}>
-                  Add services, confirm documents, collect payment, and save the ticket when it is ready.
+      {step === 1 && (() => {
+        const WIZARD_STEPS = [
+          { num: 1, label: "Reference", short: "Ref" },
+          { num: 2, label: "Customer", short: "Info" },
+          { num: 3, label: "Documents", short: "Docs" },
+          { num: 4, label: "Operator", short: "Op" },
+        ];
+        const totalSubSteps = WIZARD_STEPS.length;
+
+        const goNextSubStep = () => {
+          if (subStep === 2) {
+            const trimmedName = customerName.trim();
+            if (!trimmedName) { setError("Document holder name is required."); return; }
+            if (hasReference && !referenceName.trim()) { setError("Reference name is required when reference is enabled."); return; }
+            const phoneDigits = sanitizePhone(customerPhone);
+            if (phoneDigits && !PHONE_REGEX.test(phoneDigits)) { setError("Contact number must be exactly 10 digits."); return; }
+          }
+          setError("");
+          if (subStep < totalSubSteps) setSubStep(subStep + 1);
+          else createTicket();
+        };
+
+        const goPrevSubStep = () => {
+          setError("");
+          if (subStep > 1) setSubStep(subStep - 1);
+        };
+
+        return (
+          <div style={{ ...surfaceCardStyle, marginBottom: 16 }}>
+            {/* Wizard progress strip */}
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={sectionEyebrowStyle}>Intake — Step {subStep} of {totalSubSteps}</div>
+                <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.30)", color: "#7b5d2c" }}>
+                  Draft autosaves locally
                 </div>
               </div>
-              <div style={{ display: "grid", gap: 8, minWidth: 280 }}>
-                <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(148,163,184,0.18)", color: "#334155" }}>
-                  Ticket {ticketMeta?.ticketNo}
-                </div>
-                <div style={{ fontSize: 14, color: "#0F172A", fontWeight: 700 }}>
-                  {ticketMeta?.customerName}
-                </div>
-                <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.5 }}>
-                  Ref: {ticketMeta?.referenceName} ({ticketMeta?.referenceTypeLabel})
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 2 }}>
-                  <button onClick={() => setStep(1)} style={secondaryButtonStyle}>
-                    Edit Intake
-                  </button>
-                </div>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                {WIZARD_STEPS.map((ws, i) => {
+                  const done = subStep > ws.num;
+                  const active = subStep === ws.num;
+                  return (
+                    <React.Fragment key={ws.num}>
+                      <button
+                        onClick={() => { setError(""); setSubStep(ws.num); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 7,
+                          padding: "7px 13px", borderRadius: 999, border: "none",
+                          background: active ? DS.wine : done ? "rgba(143,47,47,0.12)" : "rgba(21,18,15,0.06)",
+                          color: active ? "#fff" : done ? DS.wine : "rgba(21,18,15,0.45)",
+                          fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem",
+                          letterSpacing: "0.18em", textTransform: "uppercase",
+                          cursor: done ? "pointer" : active ? "default" : "not-allowed",
+                          transition: "all 0.22s ease",
+                          pointerEvents: done ? "auto" : active ? "none" : "none",
+                        }}
+                      >
+                        <span style={{
+                          width: 18, height: 18, borderRadius: "50%",
+                          background: active ? "rgba(255,255,255,0.22)" : done ? DS.wine : "rgba(21,18,15,0.10)",
+                          color: active ? "#fff" : done ? "#fff" : "rgba(21,18,15,0.40)",
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "0.62rem", fontWeight: 700, fontFamily: APP_BRAND_STACK,
+                          flexShrink: 0,
+                        }}>
+                          {done ? "✓" : ws.num}
+                        </span>
+                        {ws.label}
+                      </button>
+                      {i < WIZARD_STEPS.length - 1 && (
+                        <div style={{ flex: 1, height: 1, background: done ? "rgba(143,47,47,0.25)" : "rgba(21,18,15,0.08)", borderRadius: 1, minWidth: 8 }} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+              {/* thin progress bar */}
+              <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(21,18,15,0.07)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${((subStep - 1) / (totalSubSteps - 1)) * 100}%`, background: `linear-gradient(90deg, ${DS.wine}, rgba(211,166,90,0.80))`, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
               </div>
             </div>
-          </div>
 
-          {error && (
-            <div style={{ marginBottom: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(254,242,242,0.96)", border: "1px solid rgba(248,113,113,0.28)", color: "#B91C1C", fontSize: 13, fontWeight: 600 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16, alignItems: "start" }}>
-            <div style={{ display: "grid", gap: 16 }}>
-              <div style={surfaceCardStyle}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-                  <div>
-                    <div style={sectionEyebrowStyle}>Services</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A", marginBottom: 6 }}>
-                      Add Billable Work
-                    </div>
-                    <div style={{ fontSize: 13, lineHeight: 1.6, color: "#475569" }}>
-                      Pick a service, adjust quantity, and add it to the ticket draft.
-                    </div>
+            {/* Sub-step panels */}
+            {subStep === 1 && (
+              <div style={{ animation: "fadeIn 0.28s ease-out" }}>
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
+                    Reference Contact
                   </div>
-                  {selectedService && (
-                    <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(148,163,184,0.18)", color: "#334155" }}>
-                      {services.find((s) => s.id === selectedService)?.variable ? "Variable amount" : `Rate Rs. ${services.find((s) => s.id === selectedService)?.price || 0}`}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, alignItems: "end" }}>
-                  <label style={{ display: "grid", gap: 8 }}>
-                    <span style={sectionEyebrowStyle}>Select Service</span>
-                    <select value={selectedService} onChange={(e) => { setSelectedService(e.target.value); setCustomAmt(""); }} style={inputStyle}>
-                      <option value="" style={MENU_OPTION_STYLE}>Select service...</option>
-                      {CATEGORIES.map((cat) => (
-                        <optgroup key={cat} label={cat} style={MENU_OPTGROUP_STYLE}>
-                          {services.filter((s) => s.category === cat).map((s) => (
-                            <option key={s.id} value={s.id} style={MENU_OPTION_STYLE}>{s.name}</option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </label>
-                  <label style={{ display: "grid", gap: 8 }}>
-                    <span style={sectionEyebrowStyle}>Qty</span>
-                    <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} style={{ ...inputStyle, textAlign: "center" }} />
-                  </label>
-                  {selectedService && services.find((s) => s.id === selectedService)?.variable ? (
-                    <label style={{ display: "grid", gap: 8 }}>
-                      <span style={sectionEyebrowStyle}>Custom Amount</span>
-                      <input type="number" value={customAmt} onChange={(e) => setCustomAmt(e.target.value)} placeholder="Rs." style={inputStyle} />
-                    </label>
-                  ) : (
-                    <div />
-                  )}
-                  <button onClick={addTask} style={{ ...primaryButtonStyle, minWidth: 140 }}>
-                    Add Service
-                  </button>
-                </div>
-              </div>
-
-              <div style={surfaceCardStyle}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-                  <div>
-                    <div style={sectionEyebrowStyle}>Draft Items</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A" }}>
-                      Current Service List
-                    </div>
-                  </div>
-                  <div style={{ ...smallBadgeStyle, background: "rgba(20,184,166,0.12)", border: "1px solid rgba(20,184,166,0.24)", color: "#0F766E" }}>
-                    Total Rs. {total}
+                  <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)", maxWidth: 560 }}>
+                    Add a reference only when someone else needs to be attached to this ticket.
+                    You can name the reference however it fits the case.
                   </div>
                 </div>
-
-                {items.length === 0 ? (
-                  <div style={{ ...softPanelStyle, textAlign: "center", color: "#475569" }}>
-                    Add the first service to unlock payment and save actions.
-                  </div>
-                ) : (
-                  <div style={{ display: "grid", gap: 10 }}>
-                    {items.map((it, i) => (
-                      <div key={i} style={{ ...softPanelStyle, padding: 14, display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", gap: 12, alignItems: "center" }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>{it.name}</div>
-                          <div style={{ fontSize: 12, color: "#475569" }}>Qty {it.qty} | Unit Rs. {it.unitPrice}</div>
-                        </div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: "#0F766E" }}>Rs. {it.amount}</div>
-                        <button onClick={() => removeTask(i)} style={{ width: 32, height: 32, border: "none", borderRadius: 10, background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontWeight: 800 }}>
-                          x
-                        </button>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                  {[
+                    {
+                      id: "no_reference",
+                      icon: "—",
+                      title: "No Reference",
+                      helper: "The document holder is the only person on this ticket.",
+                      active: !hasReference,
+                      onClick: () => { setHasReference(false); setError(""); },
+                    },
+                    {
+                      id: "with_reference",
+                      icon: "+",
+                      title: "Add Reference",
+                      helper: "Another person should be attached — agent, relative, or colleague.",
+                      active: hasReference,
+                      onClick: () => { setHasReference(true); setError(""); },
+                    },
+                  ].map((choice) => (
+                    <button
+                      key={choice.id}
+                      onClick={choice.onClick}
+                      style={{
+                        textAlign: "left", padding: "20px 18px", borderRadius: 16,
+                        border: choice.active ? "1.5px solid rgba(143,47,47,0.45)" : "1px solid rgba(21,18,15,0.10)",
+                        background: choice.active ? "linear-gradient(135deg, rgba(143,47,47,0.09) 0%, rgba(143,47,47,0.04) 100%)" : "rgba(255,255,255,0.72)",
+                        cursor: "pointer", fontFamily: APP_FONT_STACK,
+                        transition: "all 0.22s ease",
+                        boxShadow: choice.active ? "0 10px 28px rgba(143,47,47,0.12)" : "0 4px 14px rgba(17,14,12,0.05)",
+                      }}
+                    >
+                      <div style={{ width: 36, height: 36, borderRadius: 10, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", fontWeight: 700, background: choice.active ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.06)", color: choice.active ? DS.wine : "rgba(21,18,15,0.40)" }}>
+                        {choice.icon}
                       </div>
-                    ))}
+                      <div style={{ fontSize: "1rem", fontWeight: 700, color: choice.active ? DS.wine : "#15120f", marginBottom: 7 }}>{choice.title}</div>
+                      <div style={{ fontSize: "0.83rem", color: choice.active ? "rgba(143,47,47,0.70)" : "rgba(21,18,15,0.52)", lineHeight: 1.55 }}>
+                        {choice.helper}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {subStep === 2 && (
+              <div style={{ animation: "fadeIn 0.28s ease-out" }}>
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
+                    Customer Details
+                  </div>
+                  <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
+                    Who is this file for? {hasReference ? "Add their reference contact below too." : "No reference will be added."}
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+                  <label style={{ display: "grid", gap: 8 }}>
+                    <span style={sectionEyebrowStyle}>Document Holder Name *</span>
+                    <input
+                      autoFocus
+                      placeholder="Harsh Kumar"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
+                      style={{ ...inputStyle, fontSize: "1rem", padding: "13px 16px" }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 8 }}>
+                    <span style={sectionEyebrowStyle}>Contact Number</span>
+                    <input
+                      type="tel"
+                      placeholder="Optional, 10 digits"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(sanitizePhone(e.target.value))}
+                      onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
+                      style={{ ...inputStyle, fontSize: "1rem", padding: "13px 16px" }}
+                    />
+                  </label>
+                  {hasReference && (
+                    <>
+                      <label style={{ display: "grid", gap: 8 }}>
+                        <span style={sectionEyebrowStyle}>Reference Name *</span>
+                        <input
+                          placeholder="Riya Sharma"
+                          value={referenceName}
+                          onChange={(e) => setReferenceName(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
+                          style={{ ...inputStyle, fontSize: "1rem", padding: "13px 16px" }}
+                        />
+                      </label>
+                      <label style={{ display: "grid", gap: 8 }}>
+                        <span style={sectionEyebrowStyle}>Reference Label</span>
+                        <input
+                          placeholder="e.g. relative, agent, office staff"
+                          value={referenceLabel}
+                          onChange={(e) => setReferenceLabel(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
+                          style={{ ...inputStyle, fontSize: "1rem", padding: "13px 16px" }}
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {subStep === 3 && (
+              <div style={{ animation: "fadeIn 0.28s ease-out" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
+                  <div>
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
+                      Documents at Intake
+                    </div>
+                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
+                      What did the customer hand over right now? These prefill the ticket checklist.
+                    </div>
+                  </div>
+                  {providedDocIds.length > 0 && (
+                    <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.30)", color: "#7b5d2c" }}>
+                      {providedDocIds.length} selected
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
+                  {DOCUMENT_PRESETS.map((doc) => {
+                    const checked = providedDocIds.includes(doc.id);
+                    return (
+                      <button
+                        key={`intake_${doc.id}`}
+                        onClick={() => toggleProvidedDoc(doc.id)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          padding: "13px 14px", borderRadius: 12,
+                          border: checked ? "1.5px solid rgba(184,148,63,0.50)" : "1px solid rgba(21,18,15,0.10)",
+                          background: checked ? "linear-gradient(135deg, rgba(184,148,63,0.13) 0%, rgba(184,148,63,0.06) 100%)" : "rgba(255,255,255,0.72)",
+                          color: checked ? "#7b5d2c" : "#15120f",
+                          cursor: "pointer", fontSize: "0.86rem", fontFamily: APP_FONT_STACK, fontWeight: 600,
+                          transition: "all 0.18s ease", textAlign: "left",
+                          boxShadow: checked ? "0 6px 18px rgba(184,148,63,0.14)" : "0 3px 10px rgba(17,14,12,0.04)",
+                        }}
+                      >
+                        <span style={{
+                          width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                          background: checked ? "rgba(184,148,63,0.22)" : "rgba(21,18,15,0.07)",
+                          color: checked ? "#7b5d2c" : "rgba(21,18,15,0.35)", fontSize: "0.72rem",
+                        }}>
+                          {checked ? "✓" : ""}
+                        </span>
+                        {doc.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {providedDocIds.length === 0 && (
+                  <div style={{ marginTop: 14, fontSize: "0.82rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+                    Nothing selected — you can skip and add documents manually in the ticket.
                   </div>
                 )}
               </div>
-            </div>
+            )}
 
-            <div style={{ display: "grid", gap: 16 }}>
-              <div style={surfaceCardStyle}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
+            {subStep === 4 && (
+              <div style={{ animation: "fadeIn 0.28s ease-out" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
                   <div>
-                    <div style={sectionEyebrowStyle}>Documents</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A" }}>
-                      Checklist Control
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
+                      Assign Operator
+                    </div>
+                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
+                      Pick the desk owner handling this file. Their metrics are live.
                     </div>
                   </div>
-                  <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(148,163,184,0.18)", color: "#334155" }}>
-                    {submittedRequiredDocsCount}/{requiredDocsCount} required submitted
+                  <div style={{ ...smallBadgeStyle, background: "rgba(21,18,15,0.05)", border: "1px solid rgba(21,18,15,0.09)", color: "rgba(21,18,15,0.55)" }}>
+                    {selectedOperatorConfig.role} · Avg Rs. {selectedOperatorMetrics.avgTicketRate}
                   </div>
                 </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+                  {OPERATOR_DIRECTORY.map((op) => {
+                    const metrics = getOperatorTicketMetrics(tickets, op.name);
+                    const active = operator === op.name;
+                    return (
+                      <button
+                        key={op.id}
+                        onClick={() => setOperator(op.name)}
+                        style={{
+                          textAlign: "left", padding: "18px 16px", borderRadius: 16,
+                          border: active ? "1.5px solid rgba(143,47,47,0.45)" : "1px solid rgba(21,18,15,0.10)",
+                          background: active ? "linear-gradient(135deg, rgba(143,47,47,0.09) 0%, rgba(143,47,47,0.04) 100%)" : "rgba(255,255,255,0.72)",
+                          cursor: "pointer", fontFamily: APP_FONT_STACK,
+                          transition: "all 0.22s ease",
+                          boxShadow: active ? "0 10px 28px rgba(143,47,47,0.12)" : "0 4px 14px rgba(17,14,12,0.05)",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
+                          <div>
+                            <div style={{ fontSize: "1rem", fontWeight: 700, color: active ? DS.wine : "#15120f", marginBottom: 3 }}>{op.name}</div>
+                            <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.52)" }}>{op.role} · {op.desk}</div>
+                          </div>
+                          <div style={{ ...smallBadgeStyle, padding: "4px 9px", background: active ? "rgba(143,47,47,0.10)" : "rgba(21,18,15,0.04)", border: active ? "1px solid rgba(143,47,47,0.25)" : "1px solid rgba(21,18,15,0.08)", color: active ? DS.wine : "rgba(21,18,15,0.50)" }}>
+                            {op.status}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: "0.80rem", color: "rgba(21,18,15,0.58)", lineHeight: 1.55, marginBottom: 10 }}>{op.focus}</div>
+                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
+                          {op.specialties.map((specialty) => (
+                            <span key={`${op.id}_${specialty}`} style={{ fontSize: "0.64rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: active ? DS.wine : "rgba(21,18,15,0.50)", background: active ? "rgba(143,47,47,0.08)" : "rgba(21,18,15,0.04)", borderRadius: 999, padding: "4px 8px" }}>
+                              {specialty}
+                            </span>
+                          ))}
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4, fontSize: "0.76rem", color: "rgba(21,18,15,0.52)", borderTop: "1px solid rgba(21,18,15,0.07)", paddingTop: 10 }}>
+                          <span>{metrics.ticketCount} tickets</span>
+                          <span>Rs. {metrics.revenue} today</span>
+                          <span>Avg Rs. {metrics.avgTicketRate}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-                <div style={{ display: "grid", gap: 12 }}>
-                  <label style={{ display: "grid", gap: 8 }}>
-                    <span style={sectionEyebrowStyle}>Add Document</span>
-                    <input
-                      value={docName}
-                      onChange={(e) => setDocName(e.target.value)}
-                      placeholder="e.g. Aadhaar copy"
-                      style={inputStyle}
-                    />
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#334155", fontSize: 13, fontWeight: 600 }}>
-                    <input type="checkbox" checked={docRequired} onChange={(e) => setDocRequired(e.target.checked)} />
-                    Mark as required
-                  </label>
-                  <button onClick={addDocument} style={secondaryButtonStyle}>
-                    Add Doc
+            {/* Error */}
+            {error && (
+              <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f1020", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                {error}
+              </div>
+            )}
+
+            {/* Wizard nav buttons */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 28, gap: 12 }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                {subStep > 1 ? (
+                  <button onClick={goPrevSubStep} style={secondaryButtonStyle}>← Back</button>
+                ) : (
+                  <button onClick={resetTicket} style={secondaryButtonStyle}>Clear Draft</button>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={{ fontSize: "0.75rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+                  {subStep < totalSubSteps ? `${totalSubSteps - subStep} step${totalSubSteps - subStep > 1 ? "s" : ""} left` : "Ready to continue"}
+                </span>
+                <button
+                  onClick={goNextSubStep}
+                  style={{ ...primaryButtonStyle, padding: "13px 28px" }}
+                >
+                  {subStep < totalSubSteps ? "Next →" : "Continue to Ticket"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {step === 2 && (() => {
+        const T2_STEPS = [
+          { num: 1, label: "Services" },
+          { num: 2, label: "Documents" },
+          { num: 3, label: "Payment" },
+        ];
+        const t2Total = T2_STEPS.length;
+
+        const goNextT2 = () => {
+          if (subStep === 1 && items.length === 0) {
+            setError("Add at least one service before continuing.");
+            return;
+          }
+          setError("");
+          if (subStep < t2Total) setSubStep(subStep + 1);
+        };
+
+        const goPrevT2 = () => {
+          setError("");
+          if (subStep > 1) setSubStep(subStep - 1);
+          else navigateToStep(1, "replace");
+        };
+
+        return (
+          <>
+            {/* Ticket identity bar */}
+            <div style={{ ...surfaceCardStyle, marginBottom: 16, padding: "16px 20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div>
+                    <div style={{ ...sectionEyebrowStyle, marginBottom: 3 }}>Ticket in Progress</div>
+                    <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "#15120f", fontFamily: APP_FONT_STACK }}>
+                      {ticketMeta?.customerName}
+                    </div>
+                    <div style={{ fontSize: "0.78rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
+                      #{ticketMeta?.ticketNo} · {ticketReferenceSummary}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  {items.length > 0 && (
+                    <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.30)", color: "#7b5d2c" }}>
+                      Rs. {total}
+                    </div>
+                  )}
+                  <button onClick={() => navigateToStep(1, "replace")} style={secondaryButtonStyle}>
+                    ← Intake
+                  </button>
+                  <button onClick={() => onNavigateTab?.("log")} style={secondaryButtonStyle}>
+                    Dashboard
                   </button>
                 </div>
+              </div>
+            </div>
 
-                <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-                  {documents.length === 0 ? (
-                    <div style={{ ...softPanelStyle, textAlign: "center", color: "#475569" }}>
-                      No documents tracked yet.
-                    </div>
-                  ) : (
-                    documents.map((doc) => (
-                      <div key={doc.id} style={{ ...softPanelStyle, padding: 14, display: "grid", gap: 10 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                          <div style={{ fontSize: 14, color: "#0F172A", fontWeight: 700 }}>
-                            {doc.name}
-                            {doc.source === "intake" && (
-                              <span style={{ marginLeft: 8, ...smallBadgeStyle, padding: "4px 8px", fontSize: 10, background: "rgba(20,184,166,0.12)", border: "1px solid rgba(20,184,166,0.22)", color: "#0F766E" }}>
-                                Intake
-                              </span>
-                            )}
-                          </div>
-                          <button onClick={() => removeDocument(doc.id)} style={{ width: 30, height: 30, border: "none", borderRadius: 10, background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontWeight: 800 }}>
-                            x
-                          </button>
-                        </div>
-                        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                          <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#475569", fontSize: 12 }}>
-                            <input type="checkbox" checked={doc.required} onChange={() => toggleDocumentRequired(doc.id)} />
-                            Required
-                          </label>
-                          <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#475569", fontSize: 12 }}>
-                            <input type="checkbox" checked={doc.submitted} onChange={() => toggleDocumentSubmitted(doc.id)} />
-                            Submitted
-                          </label>
-                        </div>
-                      </div>
-                    ))
-                  )}
+            {/* Wizard card */}
+            <div style={{ ...surfaceCardStyle, marginBottom: 16 }}>
+              {/* Progress strip */}
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <div style={sectionEyebrowStyle}>Build Ticket — Step {subStep} of {t2Total}</div>
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  {T2_STEPS.map((ws, i) => {
+                    const done = subStep > ws.num;
+                    const active = subStep === ws.num;
+                    return (
+                      <React.Fragment key={ws.num}>
+                        <button
+                          onClick={() => done && setSubStep(ws.num)}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 7,
+                            padding: "7px 13px", borderRadius: 999, border: "none",
+                            background: active ? DS.wine : done ? "rgba(143,47,47,0.12)" : "rgba(21,18,15,0.06)",
+                            color: active ? "#fff" : done ? DS.wine : "rgba(21,18,15,0.40)",
+                            fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem",
+                            letterSpacing: "0.18em", textTransform: "uppercase",
+                            cursor: done ? "pointer" : "default",
+                            transition: "all 0.22s ease",
+                          }}
+                        >
+                          <span style={{
+                            width: 18, height: 18, borderRadius: "50%",
+                            background: active ? "rgba(255,255,255,0.22)" : done ? DS.wine : "rgba(21,18,15,0.10)",
+                            color: active ? "#fff" : done ? "#fff" : "rgba(21,18,15,0.40)",
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "0.62rem", fontWeight: 700, fontFamily: APP_BRAND_STACK, flexShrink: 0,
+                          }}>
+                            {done ? "✓" : ws.num}
+                          </span>
+                          {ws.label}
+                        </button>
+                        {i < T2_STEPS.length - 1 && (
+                          <div style={{ flex: 1, height: 1, background: done ? "rgba(143,47,47,0.25)" : "rgba(21,18,15,0.08)", borderRadius: 1, minWidth: 8 }} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(21,18,15,0.07)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${((subStep - 1) / (t2Total - 1)) * 100}%`, background: `linear-gradient(90deg, ${DS.wine}, rgba(211,166,90,0.80))`, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
                 </div>
               </div>
 
-              <div style={surfaceCardStyle}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-                  <div>
-                    <div style={sectionEyebrowStyle}>Payment</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A" }}>
-                      Payment And Save
+              {/* Step A: Services */}
+              {subStep === 1 && (
+                <div style={{ animation: "fadeIn 0.28s ease-out" }}>
+                  <div style={{ marginBottom: 22 }}>
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
+                      Add Services
+                    </div>
+                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.58)" }}>
+                      Pick each service this customer needs. Add them one at a time.
                     </div>
                   </div>
-                  <div style={{ ...smallBadgeStyle, background: pendingBalance > 0 ? "rgba(254,243,199,0.96)" : "rgba(236,253,245,0.96)", border: pendingBalance > 0 ? "1px solid rgba(245,158,11,0.24)" : "1px solid rgba(20,184,166,0.22)", color: pendingBalance > 0 ? "#B45309" : "#0F766E" }}>
-                    Pending Rs. {pendingBalance}
+
+                  {/* Service picker */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 14, alignItems: "end" }}>
+                    <label style={{ display: "grid", gap: 7 }}>
+                      <span style={sectionEyebrowStyle}>Select Service</span>
+                      <select value={selectedService} onChange={(e) => { setSelectedService(e.target.value); setCustomAmt(""); }} style={inputStyle}>
+                        <option value="" style={MENU_OPTION_STYLE}>Choose a service…</option>
+                        {CATEGORIES.map((cat) => (
+                          <optgroup key={cat} label={cat} style={MENU_OPTGROUP_STYLE}>
+                            {services.filter((s) => s.category === cat).map((s) => (
+                              <option key={s.id} value={s.id} style={MENU_OPTION_STYLE}>{s.name}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </label>
+                    {selectedServiceConfig && (
+                      <>
+                        <label style={{ display: "grid", gap: 7 }}>
+                          <span style={sectionEyebrowStyle}>{selectedQuantityConfig?.inputLabel || "Quantity"}</span>
+                          <input
+                            type="number"
+                            min={selectedServiceConfig?.minQty || 1}
+                            max={selectedServiceConfig?.maxQty || 1}
+                            disabled={selectedServiceConfig?.quantityMode === "fixed"}
+                            value={selectedServiceConfig?.quantityMode === "fixed" ? 1 : qty}
+                            onChange={(e) => setQty(e.target.value)}
+                            style={{ ...inputStyle, textAlign: "center", background: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(21,18,15,0.04)" : "rgba(255,255,255,0.82)", color: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(21,18,15,0.40)" : "#15120f" }}
+                          />
+                        </label>
+                        {selectedServiceConfig?.variable && (
+                          <label style={{ display: "grid", gap: 7 }}>
+                            <span style={sectionEyebrowStyle}>Custom Amount (Rs.)</span>
+                            <input type="number" value={customAmt} onChange={(e) => setCustomAmt(e.target.value)} placeholder="0" style={inputStyle} />
+                          </label>
+                        )}
+                      </>
+                    )}
                   </div>
-                </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-                  <label style={{ display: "grid", gap: 8 }}>
-                    <span style={sectionEyebrowStyle}>Cash Collected</span>
-                    <input type="number" min="0" value={paymentCash} onChange={(e) => setPaymentCash(e.target.value)} placeholder="Rs. 0" style={inputStyle} />
-                  </label>
-                  <label style={{ display: "grid", gap: 8 }}>
-                    <span style={sectionEyebrowStyle}>UPI Collected</span>
-                    <input type="number" min="0" value={paymentUpi} onChange={(e) => setPaymentUpi(e.target.value)} placeholder="Rs. 0" style={inputStyle} />
-                  </label>
-                </div>
+                  {/* Detail fields */}
+                  {selectedServiceConfig && selectedDetailSchema?.fields?.length > 0 && (
+                    <div style={{ ...softPanelStyle, marginBottom: 14 }}>
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={sectionEyebrowStyle}>{selectedDetailSchema?.title || "Service Details"}</div>
+                        <div style={{ fontSize: "0.82rem", color: "rgba(21,18,15,0.58)", lineHeight: 1.6 }}>
+                          {selectedDetailSchema?.description}
+                        </div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                        {selectedDetailSchema.fields.map((field) => (
+                          <label key={`${selectedServiceConfig.id}_${field.key}`} style={{ display: "grid", gap: 6 }}>
+                            <span style={sectionEyebrowStyle}>{field.label}{field.required ? " *" : ""}</span>
+                            {field.type === "select" ? (
+                              <select
+                                value={selectedServiceDetailValues[field.key] || ""}
+                                onChange={(e) => {
+                                  setServiceDetailMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: e.target.value } }));
+                                  setServiceDetailErrorMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: "" } }));
+                                }}
+                                style={inputStyle}
+                              >
+                                <option value="" style={MENU_OPTION_STYLE}>Select…</option>
+                                {field.options?.map((option) => (
+                                  <option key={`${field.key}_${option}`} value={option} style={MENU_OPTION_STYLE}>{option}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type={field.type === "number" ? "number" : "text"}
+                                min={field.min}
+                                value={selectedServiceDetailValues[field.key] || ""}
+                                onChange={(e) => {
+                                  setServiceDetailMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: e.target.value } }));
+                                  setServiceDetailErrorMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: "" } }));
+                                }}
+                                placeholder={field.placeholder}
+                                style={inputStyle}
+                              />
+                            )}
+                            {selectedServiceDetailErrors[field.key] && (
+                              <span style={{ fontSize: "0.76rem", color: "#8f1020", fontFamily: APP_FONT_STACK }}>{selectedServiceDetailErrors[field.key]}</span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                <div style={{ ...softPanelStyle, marginBottom: 12, padding: 14 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#0F172A", fontSize: 13, fontWeight: 700, marginBottom: portalDown ? 10 : 0 }}>
-                    <input
-                      type="checkbox"
-                      checked={portalDown}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setPortalDown(checked);
-                        if (!checked) setPortalDownNote("");
-                      }}
-                    />
-                    Mark as portal down - submission pending
-                  </label>
-                  {portalDown && (
-                    <label style={{ display: "grid", gap: 8 }}>
-                      <span style={sectionEyebrowStyle}>Which portal is down?</span>
+                  {/* Add button */}
+                  {selectedServiceConfig && (
+                    <div style={{ marginBottom: 20 }}>
+                      <button onClick={addTask} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
+                        + Add to Ticket
+                      </button>
+                      <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(21,18,15,0.45)", fontFamily: APP_FONT_STACK }}>
+                        {selectedServiceConfig?.variable ? "Variable price" : `Rs. ${selectedServiceConfig?.price || 0}`}
+                        {selectedServiceConfig?.quantityMode !== "fixed" ? ` · max qty ${selectedServiceConfig.maxQty}` : ""}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Draft list */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <div style={sectionEyebrowStyle}>Added Services</div>
+                    {items.length > 0 && (
+                      <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.28)", color: "#7b5d2c" }}>
+                        Rs. {total}
+                      </div>
+                    )}
+                  </div>
+                  {items.length === 0 ? (
+                    <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(21,18,15,0.45)", fontSize: "0.85rem", padding: "22px 16px" }}>
+                      No services added yet. Choose one above and tap + Add to Ticket.
+                    </div>
+                  ) : (
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {items.map((it, i) => (
+                        <div key={i} style={{ ...softPanelStyle, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, color: "#15120f", fontSize: "0.90rem", fontFamily: APP_FONT_STACK }}>{it.name}</div>
+                            <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.52)", marginTop: 2 }}>
+                              {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty} · Unit Rs. {it.unitPrice}
+                            </div>
+                            {!!it.detailSummary && (
+                              <div style={{ fontSize: "0.74rem", color: "rgba(21,18,15,0.48)", lineHeight: 1.5, marginTop: 3 }}>{it.detailSummary}</div>
+                            )}
+                          </div>
+                          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#7b5d2c", whiteSpace: "nowrap" }}>Rs. {it.amount}</div>
+                          <button onClick={() => removeTask(i)} style={{ width: 30, height: 30, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f1020", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step B: Documents */}
+              {subStep === 2 && (
+                <div style={{ animation: "fadeIn 0.28s ease-out" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 22 }}>
+                    <div>
+                      <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
+                        Document Checklist
+                      </div>
+                      <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.58)" }}>
+                        Track which documents were submitted. Intake docs are already prefilled.
+                      </div>
+                    </div>
+                    <div style={{ ...smallBadgeStyle, background: "rgba(21,18,15,0.05)", border: "1px solid rgba(21,18,15,0.09)", color: "rgba(21,18,15,0.52)" }}>
+                      {submittedRequiredDocsCount}/{requiredDocsCount} required submitted
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 16, alignItems: "end" }}>
+                    <label style={{ display: "grid", gap: 7 }}>
+                      <span style={sectionEyebrowStyle}>Add Document</span>
                       <input
-                        value={portalDownNote}
-                        onChange={(e) => setPortalDownNote(e.target.value)}
-                        placeholder="e.g. e-Saathi"
+                        value={docName}
+                        onChange={(e) => setDocName(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addDocument()}
+                        placeholder="e.g. Aadhaar copy"
                         style={inputStyle}
                       />
                     </label>
-                  )}
-                </div>
-
-                <div style={{ ...softPanelStyle, marginBottom: 14 }}>
-                  <div style={{ display: "grid", gap: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#475569" }}>
-                      <span>Collected</span>
-                      <span style={{ color: "#0F172A", fontWeight: 700 }}>Rs. {paidTotal}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#475569" }}>
-                      <span>Required submitted</span>
-                      <span style={{ color: "#0F172A", fontWeight: 700 }}>{submittedRequiredDocsCount}/{requiredDocsCount}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, color: "#0F172A", fontWeight: 800 }}>
-                      <span>Grand Total</span>
-                      <span>Rs. {total}</span>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: 7, color: "rgba(21,18,15,0.65)", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600, cursor: "pointer" }}>
+                        <input type="checkbox" checked={docRequired} onChange={(e) => setDocRequired(e.target.checked)} />
+                        Required
+                      </label>
+                      <button onClick={addDocument} style={secondaryButtonStyle}>Add</button>
                     </div>
                   </div>
-                </div>
 
-                <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: isOverpaid ? "rgba(254,242,242,0.96)" : pendingBalance > 0 ? "rgba(255,251,235,0.96)" : "rgba(236,253,245,0.96)", border: isOverpaid ? "1px solid rgba(248,113,113,0.24)" : pendingBalance > 0 ? "1px solid rgba(245,158,11,0.22)" : "1px solid rgba(20,184,166,0.22)", color: isOverpaid ? "#B91C1C" : pendingBalance > 0 ? "#B45309" : "#0F766E", fontSize: 13, lineHeight: 1.5, fontWeight: 600 }}>
-                  {isOverpaid
-                    ? "Collected amount is greater than the ticket total. Reduce the payment before saving."
-                    : portalDown
-                      ? "Portal is marked down. Ticket will always save as Open until portal-down is unchecked."
-                    : pendingBalance > 0
-                      ? "Partial payment is okay. You can save the ticket and keep the remaining balance pending."
-                      : "Payment is fully collected. This ticket is ready to complete."}
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {documents.length === 0 ? (
+                      <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(21,18,15,0.45)", fontSize: "0.84rem", padding: "22px 16px" }}>
+                        No documents tracked. You can skip this step.
+                      </div>
+                    ) : (
+                      documents.map((doc) => (
+                        <div key={doc.id} style={{ ...softPanelStyle, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "0.88rem", color: "#15120f", fontWeight: 700, fontFamily: APP_FONT_STACK, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              {doc.name}
+                              {doc.source === "intake" && (
+                                <span style={{ ...smallBadgeStyle, padding: "2px 7px", fontSize: "0.52rem", background: "rgba(184,148,63,0.10)", border: "1px solid rgba(184,148,63,0.25)", color: "#7b5d2c" }}>
+                                  Intake
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", gap: 14, marginTop: 6 }}>
+                              <label style={{ display: "flex", alignItems: "center", gap: 5, color: "rgba(21,18,15,0.58)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
+                                <input type="checkbox" checked={doc.required} onChange={() => toggleDocumentRequired(doc.id)} />
+                                Required
+                              </label>
+                              <label style={{ display: "flex", alignItems: "center", gap: 5, color: "rgba(21,18,15,0.58)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
+                                <input type="checkbox" checked={doc.submitted} onChange={() => toggleDocumentSubmitted(doc.id)} />
+                                Submitted
+                              </label>
+                            </div>
+                          </div>
+                          <button onClick={() => removeDocument(doc.id)} style={{ width: 28, height: 28, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 7, background: "rgba(214,5,43,0.06)", color: "#8f1020", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
+              )}
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <button
-                    onClick={() => saveTicket("Open")}
-                    disabled={!canSaveTicket}
-                    style={{
-                      ...secondaryButtonStyle,
-                      background: canSaveTicket ? "rgba(254,243,199,0.96)" : "rgba(241,245,249,0.96)",
-                      border: canSaveTicket ? "1px solid rgba(245,158,11,0.24)" : "1px solid rgba(148,163,184,0.20)",
-                      color: canSaveTicket ? "#B45309" : "#94A3B8",
-                      cursor: canSaveTicket ? "pointer" : "not-allowed",
-                    }}
-                  >
-                    Save for Later
-                  </button>
-                  <button
-                    onClick={() => saveTicket("Closed")}
-                    disabled={!canSaveTicket}
-                    style={{
-                      ...primaryButtonStyle,
-                      background: canSaveTicket ? "linear-gradient(135deg, #10B981 0%, #047857 100%)" : "linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%)",
-                      boxShadow: canSaveTicket ? "0 16px 28px rgba(16,185,129,0.24)" : "none",
-                      cursor: canSaveTicket ? "pointer" : "not-allowed",
-                    }}
-                  >
-                    {portalDown ? "Save (Portal Down)" : "Save and Complete"}
-                  </button>
+              {/* Step C: Payment */}
+              {subStep === 3 && (
+                <div style={{ animation: "fadeIn 0.28s ease-out" }}>
+                  <div style={{ marginBottom: 22 }}>
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
+                      Payment & Save
+                    </div>
+                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.58)" }}>
+                      Enter what was collected. Partial payment is fine — you can keep the balance pending.
+                    </div>
+                  </div>
+
+                  {/* Service summary */}
+                  <div style={{ ...softPanelStyle, marginBottom: 18, padding: "14px 16px" }}>
+                    <div style={sectionEyebrowStyle}>Services Summary</div>
+                    <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+                      {items.map((it, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.86rem", color: "#15120f", fontFamily: APP_FONT_STACK }}>
+                          <span>{it.name} ×{it.qty}</span>
+                          <span style={{ fontWeight: 700 }}>Rs. {it.amount}</span>
+                        </div>
+                      ))}
+                      <div style={{ borderTop: "1px solid rgba(21,18,15,0.09)", paddingTop: 8, marginTop: 4, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1rem", fontFamily: APP_FONT_STACK, color: "#15120f" }}>
+                        <span>Total</span>
+                        <span>Rs. {total}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                    <label style={{ display: "grid", gap: 7 }}>
+                      <span style={sectionEyebrowStyle}>Cash Collected</span>
+                      <input type="number" min="0" value={paymentCash} onChange={(e) => setPaymentCash(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1.1rem", padding: "14px 16px", textAlign: "right" }} />
+                    </label>
+                    <label style={{ display: "grid", gap: 7 }}>
+                      <span style={sectionEyebrowStyle}>UPI Collected</span>
+                      <input type="number" min="0" value={paymentUpi} onChange={(e) => setPaymentUpi(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1.1rem", padding: "14px 16px", textAlign: "right" }} />
+                    </label>
+                  </div>
+
+                  <div style={{ ...softPanelStyle, marginBottom: 16 }}>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(21,18,15,0.60)", fontFamily: APP_FONT_STACK }}>
+                        <span>Collected</span><span style={{ color: "#15120f", fontWeight: 700 }}>Rs. {paidTotal}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(21,18,15,0.60)", fontFamily: APP_FONT_STACK }}>
+                        <span>Docs submitted</span><span style={{ color: "#15120f", fontWeight: 700 }}>{submittedRequiredDocsCount}/{requiredDocsCount}</span>
+                      </div>
+                      <div style={{ borderTop: "1px solid rgba(21,18,15,0.08)", paddingTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.05rem", fontFamily: APP_FONT_STACK, color: pendingBalance > 0 ? "#7b5d2c" : DS.wine }}>
+                        <span>Pending Balance</span><span>Rs. {pendingBalance}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 18, padding: "12px 14px", borderRadius: 10, background: isOverpaid ? "rgba(214,5,43,0.07)" : pendingBalance > 0 ? "rgba(184,148,63,0.10)" : "rgba(143,47,47,0.07)", border: isOverpaid ? "1px solid rgba(214,5,43,0.22)" : pendingBalance > 0 ? "1px solid rgba(184,148,63,0.26)" : "1px solid rgba(143,47,47,0.22)", color: isOverpaid ? "#8f1020" : pendingBalance > 0 ? "#7b5d2c" : DS.wine, fontSize: "0.83rem", lineHeight: 1.6, fontFamily: APP_FONT_STACK, fontWeight: 500 }}>
+                    {hasOnlyZeroPricedItems
+                      ? "All services are still Rs. 0. Update the rate card or enter a custom amount before saving."
+                      : isOverpaid
+                      ? "Collected exceeds the total. Reduce before saving."
+                      : pendingBalance > 0
+                        ? "Partial payment recorded. You can save and keep the balance pending."
+                        : "Fully paid. Ready to complete."}
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <button
+                      onClick={() => saveTicket("Open")}
+                      disabled={!canSaveTicket}
+                      style={{ ...secondaryButtonStyle, background: canSaveTicket ? "rgba(184,148,63,0.12)" : "rgba(21,18,15,0.04)", border: canSaveTicket ? "1px solid rgba(184,148,63,0.34)" : "1px solid rgba(21,18,15,0.09)", color: canSaveTicket ? "#7b5d2c" : "rgba(21,18,15,0.30)", cursor: canSaveTicket ? "pointer" : "not-allowed" }}
+                    >
+                      Save for Later
+                    </button>
+                    <button
+                      onClick={() => saveTicket("Closed")}
+                      disabled={!canSaveTicket}
+                      style={{ ...primaryButtonStyle, padding: "13px 22px", background: canSaveTicket ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.04)", border: canSaveTicket ? "1px solid rgba(143,47,47,0.42)" : "1px solid rgba(21,18,15,0.09)", color: canSaveTicket ? DS.wine : "rgba(21,18,15,0.30)", cursor: canSaveTicket ? "pointer" : "not-allowed" }}
+                    >
+                      Save & Complete
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Error */}
+              {error && (
+                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f1020", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                  {error}
+                </div>
+              )}
+
+              {/* Wizard nav */}
+              {subStep < 3 && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 28, gap: 12 }}>
+                  <button onClick={goPrevT2} style={secondaryButtonStyle}>← Back</button>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ fontSize: "0.75rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+                      {t2Total - subStep} step{t2Total - subStep > 1 ? "s" : ""} left
+                    </span>
+                    <button onClick={goNextT2} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+              {subStep === 3 && (
+                <div style={{ marginTop: 16 }}>
+                  <button onClick={goPrevT2} style={secondaryButtonStyle}>← Documents</button>
+                </div>
+              )}
             </div>
-          </div>
-        </>
-      )}
+          </>
+        );
+      })()}
     </div>
   );
 }
 
-function TodaysDesk({ tickets, onOpenTicket }) {
-  const normalizedTickets = tickets.map((ticket) => (ticket?.structured ? ticket : withStructuredTicket(ticket)));
-  const todayLabel = todayStr();
-  const todayTickets = normalizedTickets.filter((ticket) => ticket.date === todayLabel);
-  const openTickets = normalizedTickets.filter((ticket) => ticket.status === "Open");
-  const pendingWorkTickets = [...openTickets].reverse();
-  const portalDownTickets = openTickets.filter((ticket) => ticket.portalDown === true);
-
-  const getPaidTotal = (ticket) => {
-    if (Number.isFinite(Number(ticket.paidTotal))) return Math.max(0, Number(ticket.paidTotal));
-    const cashCollected = Number(ticket.cashCollected) || 0;
-    const upiCollected = Number(ticket.upiCollected) || 0;
-    return Math.max(0, cashCollected + upiCollected);
-  };
-
-  const getPendingBalance = (ticket) => {
-    if (Number.isFinite(Number(ticket.pendingBalance))) return Math.max(0, Number(ticket.pendingBalance));
-    const total = Number(ticket.total) || 0;
-    return Math.max(0, total - getPaidTotal(ticket));
-  };
-
-  const collectedToday = todayTickets.reduce((sum, ticket) => sum + getPaidTotal(ticket), 0);
-  const stillToCollect = openTickets.reduce((sum, ticket) => sum + getPendingBalance(ticket), 0);
-  const todayOpenCount = todayTickets.filter((ticket) => ticket.status === "Open").length;
-  const todayClosedCount = todayTickets.filter((ticket) => ticket.status === "Closed").length;
-
-  const summaryCards = [
-    {
-      id: "collected",
-      label: "Collected Today",
-      value: `Rs. ${collectedToday}`,
-      note: "Cash + UPI from today's tickets",
-      accent: "#0F766E",
-      background: "linear-gradient(180deg, rgba(236,253,245,0.96) 0%, rgba(255,255,255,0.96) 100%)",
-      border: "1px solid rgba(20,184,166,0.28)",
-    },
-    {
-      id: "pending",
-      label: "Still to Collect",
-      value: `Rs. ${stillToCollect}`,
-      note: "Pending balance across all open tickets",
-      accent: "#B45309",
-      background: "linear-gradient(180deg, rgba(255,251,235,0.98) 0%, rgba(255,255,255,0.96) 100%)",
-      border: "1px solid rgba(245,158,11,0.28)",
-    },
-    {
-      id: "today-open",
-      label: "Open Today",
-      value: String(todayOpenCount),
-      note: `Out of ${todayTickets.length} ticket(s) created today`,
-      accent: "#D97706",
-      background: "linear-gradient(180deg, rgba(255,247,237,0.98) 0%, rgba(255,255,255,0.96) 100%)",
-      border: "1px solid rgba(251,146,60,0.26)",
-    },
-    {
-      id: "today-closed",
-      label: "Closed Today",
-      value: String(todayClosedCount),
-      note: "Tickets completed on today's date",
-      accent: "#047857",
-      background: "linear-gradient(180deg, rgba(240,253,244,0.98) 0%, rgba(255,255,255,0.96) 100%)",
-      border: "1px solid rgba(34,197,94,0.24)",
-    },
-  ];
-
-  return (
-    <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      <div style={{
-        background: "linear-gradient(135deg, rgba(255,255,255,0.94) 0%, rgba(240,253,250,0.92) 42%, rgba(239,246,255,0.92) 100%)",
-        borderRadius: 22,
-        border: "1px solid rgba(148,163,184,0.20)",
-        boxShadow: "0 22px 40px rgba(15,23,42,0.08)",
-        padding: "22px 22px 20px",
-        marginBottom: 14,
-      }}>
-        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", color: "#0F766E", marginBottom: 8 }}>
-          Morning Snapshot
-        </div>
-        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A", marginBottom: 8 }}>
-          Today's Desk
-        </div>
-        <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, maxWidth: 780 }}>
-          Start here to review pending work, cash collected today, and tickets that need follow-up.
-          Select any ticket below to jump directly into Ticket Dashboard.
-        </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 16 }}>
-        {summaryCards.map((card) => (
-          <div key={card.id} style={{
-            background: card.background,
-            borderRadius: 16,
-            border: card.border,
-            boxShadow: "0 12px 24px rgba(15,23,42,0.06)",
-            padding: "14px 14px 12px",
-          }}>
-            <div style={{ fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: 1.05, fontWeight: 700, marginBottom: 6 }}>
-              {card.label}
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.6, color: card.accent, marginBottom: 5 }}>
-              {card.value}
-            </div>
-            <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.45 }}>
-              {card.note}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{
-        marginBottom: 16,
-        background: "linear-gradient(180deg, rgba(255,251,235,0.98) 0%, rgba(255,255,255,0.98) 100%)",
-        border: "1px solid rgba(245,158,11,0.28)",
-        borderRadius: 16,
-        padding: 14,
-      }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#92400E", letterSpacing: 0.3, marginBottom: 8 }}>
-          Portal Down Queue
-        </div>
-        {portalDownTickets.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#A16207", background: "rgba(255,255,255,0.92)", borderRadius: 12, border: "1px dashed rgba(217,119,6,0.30)", padding: "12px 14px" }}>
-            No portal-down tickets right now. This section will auto-populate when tickets are marked as portal down.
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 8 }}>
-            {portalDownTickets.map((ticket) => (
-              <button
-                key={`portal_${ticket.ticketNo}`}
-                onClick={() => onOpenTicket(ticket.ticketNo)}
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  borderRadius: 12,
-                  border: "1px solid rgba(217,119,6,0.26)",
-                  background: "rgba(255,255,255,0.98)",
-                  padding: "10px 12px",
-                  color: "#1E293B",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                  <div style={{ fontWeight: 700 }}>{ticket.ticketNo} | {ticket.customerName || "Walk-in Customer"}</div>
-                  <div style={{ fontWeight: 700, color: "#B45309" }}>Pending Rs. {getPendingBalance(ticket)}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>
-        Pending Work ({pendingWorkTickets.length})
-      </div>
-      {pendingWorkTickets.length === 0 ? (
-        <div style={{ background: "rgba(255,255,255,0.88)", border: "1px dashed rgba(148,163,184,0.34)", borderRadius: 14, padding: "14px 16px", color: "#475569" }}>
-          No open tickets pending right now.
-        </div>
-      ) : (
-        <div style={{ display: "grid", gap: 10 }}>
-          {pendingWorkTickets.map((ticket) => {
-            const structured = ticket.structured || toStructuredTicket(ticket);
-            const serviceNames = structured.services.map((service) => service.name).filter(Boolean);
-            const badgeLabel = ticket.portalDown ? "Portal Down" : "Open";
-            const badgeStyle = ticket.portalDown
-              ? { color: "#B45309", background: "rgba(254,243,199,0.98)", border: "1px solid rgba(245,158,11,0.28)" }
-              : { color: "#D97706", background: "rgba(255,247,237,0.98)", border: "1px solid rgba(251,146,60,0.26)" };
-
-            return (
-              <button
-                key={ticket.ticketNo}
-                onClick={() => onOpenTicket(ticket.ticketNo)}
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  borderRadius: 16,
-                  border: "1px solid rgba(148,163,184,0.24)",
-                  background: "rgba(255,255,255,0.92)",
-                  boxShadow: "0 12px 24px rgba(15,23,42,0.06)",
-                  padding: "14px 14px 12px",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-                  <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 15 }}>
-                    {ticket.customerName || "Walk-in Customer"}
-                  </div>
-                  <span style={{
-                    borderRadius: 999,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: 0.35,
-                    textTransform: "uppercase",
-                    padding: "5px 9px",
-                    ...badgeStyle,
-                  }}>
-                    {badgeLabel}
-                  </span>
-                </div>
-                <div style={{ color: "#334155", fontSize: 13, marginBottom: 7, lineHeight: 1.45 }}>
-                  {serviceNames.length > 0 ? serviceNames.join(", ") : "No services linked"}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <div style={{ color: "#64748B", fontSize: 12, fontFamily: APP_MONO_STACK }}>
-                    {ticket.ticketNo} | {ticket.date}
-                  </div>
-                  <div style={{ color: "#B45309", fontWeight: 700, fontSize: 13 }}>
-                    Pending Rs. {getPendingBalance(ticket)}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUpdateTicket, focusTicketNo, onFocusHandled }) {
+function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUpdateTicket }) {
   const [expandedTickets, setExpandedTickets] = useState({});
   const [viewTicketNo, setViewTicketNo] = useState(null);
-  const [customerRecordTicketNo, setCustomerRecordTicketNo] = useState(null);
   const [showRawJson, setShowRawJson] = useState(false);
   const [editTicketNo, setEditTicketNo] = useState(null);
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
   const [editDraft, setEditDraft] = useState({
     customerName: "",
     customerPhone: "",
+    hasReference: false,
     referenceName: "",
-    referenceType: "none",
-    operator: OPERATORS[0],
+    referenceLabel: "",
+    operator: DEFAULT_OPERATOR,
     cashCollected: "",
     upiCollected: "",
-    portalDown: false,
-    portalDownNote: "",
   });
   const [editError, setEditError] = useState("");
-  const [ackDrafts, setAckDrafts] = useState({});
-  const [ackSavedFlags, setAckSavedFlags] = useState({});
 
   const normalizedTickets = tickets.map((t) => (t.structured ? t : withStructuredTicket(t)));
-  const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(0, 10);
-  const normalizeName = (value) => String(value || "").trim();
-  const getCustomerIdentity = (ticket) => {
-    const phone = normalizePhone(ticket?.customerPhone);
-    if (PHONE_REGEX.test(phone)) return { type: "phone", value: phone };
-    const name = normalizeName(ticket?.customerName);
-    return name ? { type: "name", value: name } : null;
+  const typeFilterOptions = [
+    { id: "all", label: "All Types" },
+    { id: "with_reference", label: "With Reference" },
+    { id: "no_reference", label: "No Reference" },
+    ...CATEGORIES.map((category) => ({ id: `service:${category}`, label: category })),
+  ];
+  const paymentFilterOptions = [
+    { id: "all", label: "All Payments" },
+    { id: "paid", label: "Paid" },
+    { id: "partial", label: "Partial" },
+    { id: "unpaid", label: "Unpaid" },
+  ];
+  const doesTicketMatchTypeFilter = (ticket, nextTypeFilter) => {
+    const structured = ticket.structured || toStructuredTicket(ticket);
+    return nextTypeFilter === "all"
+      ? true
+      : nextTypeFilter === "with_reference"
+        ? structured.parties.reference.hasReference
+        : nextTypeFilter === "no_reference"
+          ? !structured.parties.reference.hasReference
+          : structured.meta.serviceTypes.includes(nextTypeFilter.replace("service:", ""));
   };
-  const ticketMatchesIdentity = (ticket, identity) => {
-    if (!identity) return false;
-    if (identity.type === "phone") {
-      const phone = normalizePhone(ticket?.customerPhone);
-      return PHONE_REGEX.test(phone) && phone === identity.value;
-    }
-    return normalizeName(ticket?.customerName) === identity.value;
-  };
-
-  const openTickets = normalizedTickets.filter((t) => t.status === "Open");
-  const closedTickets = normalizedTickets.filter((t) => t.status === "Closed");
-  const totalTasks = normalizedTickets.reduce((sum, t) => sum + t.items.length, 0);
-  const doneTasks = normalizedTickets.reduce((sum, t) => sum + t.items.filter((it) => it.done).length, 0);
+  const getTypeFilterCount = (nextTypeFilter) => (
+    normalizedTickets.filter((ticket) => doesTicketMatchTypeFilter(ticket, nextTypeFilter)).length
+  );
+  const filteredTickets = normalizedTickets.filter((ticket) => {
+    const structured = ticket.structured || toStructuredTicket(ticket);
+    const matchesType = doesTicketMatchTypeFilter(ticket, typeFilter);
+    const matchesPayment = paymentFilter === "all"
+      ? true
+      : structured.payment.status.toLowerCase() === paymentFilter;
+    return matchesType && matchesPayment;
+  });
+  const openTickets = filteredTickets.filter((t) => t.status === "Open");
+  const closedTickets = filteredTickets.filter((t) => t.status === "Closed");
+  const totalTasks = filteredTickets.reduce((sum, t) => sum + t.items.length, 0);
+  const doneTasks = filteredTickets.reduce((sum, t) => sum + t.items.filter((it) => it.done).length, 0);
+  const activeTypeFilterLabel = typeFilterOptions.find((option) => option.id === typeFilter)?.label || "All Types";
+  const activePaymentFilterLabel = paymentFilterOptions.find((option) => option.id === paymentFilter)?.label || "All Payments";
   const viewingTicket = normalizedTickets.find((t) => t.ticketNo === viewTicketNo) || null;
   const viewingStructured = viewingTicket ? (viewingTicket.structured || toStructuredTicket(viewingTicket)) : null;
   const editingTicket = normalizedTickets.find((t) => t.ticketNo === editTicketNo) || null;
-  const customerRecordAnchorTicket = normalizedTickets.find((t) => t.ticketNo === customerRecordTicketNo) || null;
-  const customerIdentity = customerRecordAnchorTicket ? getCustomerIdentity(customerRecordAnchorTicket) : null;
-  const customerRecordTickets = customerIdentity
-    ? normalizedTickets.filter((ticket) => ticketMatchesIdentity(ticket, customerIdentity))
-    : [];
-  const customerRecordTicketsSorted = [...customerRecordTickets].reverse();
-  const customerPrimaryName = customerRecordTickets.find((ticket) => normalizeName(ticket.customerName))?.customerName || "Walk-in Customer";
-  const customerPrimaryPhone = customerRecordTickets
-    .map((ticket) => normalizePhone(ticket.customerPhone))
-    .find((phone) => PHONE_REGEX.test(phone)) || "";
-  const customerSubmittedDocs = Array.from(new Set(
-    customerRecordTickets.flatMap((ticket) => {
-      const structured = ticket.structured || toStructuredTicket(ticket);
-      return structured.documents.submitted || [];
-    })
-  ));
-
   const detailCardStyle = {
-    background: "rgba(255,255,255,0.88)",
-    border: "1px solid rgba(148,163,184,0.24)",
-    borderRadius: 14,
+    background: "rgba(255,255,255,0.65)",
+    border: "1px solid rgba(21,18,15,0.09)",
+    borderRadius: 12,
     padding: 14,
-    boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
+    boxShadow: "0 8px 20px rgba(17,14,12,0.06)",
   };
   const sectionCardStyle = {
-    background: "rgba(255,255,255,0.92)",
-    border: "1px solid rgba(148,163,184,0.24)",
-    borderRadius: 16,
+    background: "rgba(255,255,255,0.72)",
+    border: "1px solid rgba(21,18,15,0.09)",
+    borderRadius: 14,
     padding: 14,
-    boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
+    boxShadow: "0 10px 24px rgba(17,14,12,0.07)",
   };
-  const dashboardInputStyle = {
+  const dashEyebrowStyle = {
+    fontSize: "0.52rem",
+    color: DS.wine,
+    fontFamily: APP_BRAND_STACK,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.28em",
+    marginBottom: 6,
+    display: "block",
+  };
+  const dashInputStyle = {
     width: "100%",
     padding: "10px 12px",
-    border: "1px solid rgba(148,163,184,0.24)",
-    borderRadius: 10,
-    background: "#FFFFFF",
-    color: "#0F172A",
+    border: "1px solid rgba(21,18,15,0.12)",
+    borderRadius: 8,
+    background: "rgba(255,255,255,0.82)",
+    color: "#15120f",
     outline: "none",
-  };
-  const softPanelStyle = {
-    background: "rgba(248,250,252,0.88)",
-    border: "1px solid rgba(148,163,184,0.20)",
-    borderRadius: 12,
-    padding: 12,
+    fontFamily: APP_FONT_STACK,
+    fontSize: "0.84rem",
   };
   const actionButtonBase = {
-    borderRadius: 10,
-    padding: "8px 12px",
+    borderRadius: 999,
+    padding: "7px 14px",
+    fontFamily: APP_BRAND_STACK,
+    fontSize: "0.52rem",
     fontWeight: 700,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
     cursor: "pointer",
-    background: "#FFFFFF",
     transition: "all 0.18s ease",
-    boxShadow: "0 1px 2px rgba(15,23,42,0.06)",
   };
   const actionButtonStyles = {
     raw: {
       ...actionButtonBase,
-      border: "1px solid rgba(59,130,246,0.28)",
-      background: "rgba(239,246,255,0.96)",
-      color: "#1D4ED8",
+      border: "1px solid rgba(74,130,192,0.35)",
+      background: "rgba(74,130,192,0.10)",
+      color: "#2a5a8f",
     },
     closeView: {
       ...actionButtonBase,
-      border: "1px solid rgba(148,163,184,0.28)",
-      background: "rgba(255,255,255,0.96)",
-      color: "#0F172A",
+      border: "1px solid rgba(21,18,15,0.14)",
+      background: "rgba(255,255,255,0.70)",
+      color: "rgba(21,18,15,0.70)",
     },
     view: {
       ...actionButtonBase,
-      border: "1px solid rgba(59,130,246,0.30)",
-      background: "rgba(219,234,254,0.94)",
-      color: "#1D4ED8",
-    },
-    customer: {
-      ...actionButtonBase,
-      border: "1px solid rgba(15,118,110,0.26)",
-      background: "rgba(240,253,250,0.96)",
-      color: "#0F766E",
+      border: "1px solid rgba(74,130,192,0.35)",
+      background: "rgba(74,130,192,0.10)",
+      color: "#2a5a8f",
     },
     print: {
       ...actionButtonBase,
-      border: "1px solid rgba(20,184,166,0.28)",
-      background: "rgba(236,253,245,0.96)",
-      color: "#0F766E",
+      border: "1px solid rgba(143,47,47,0.35)",
+      background: "rgba(143,47,47,0.08)",
+      color: DS.wine,
     },
     edit: {
       ...actionButtonBase,
-      border: "1px solid rgba(245,158,11,0.32)",
-      background: "rgba(254,243,199,0.94)",
-      color: "#B45309",
+      border: "1px solid rgba(184,148,63,0.38)",
+      background: "rgba(184,148,63,0.10)",
+      color: "#7b5d2c",
     },
     neutral: {
       ...actionButtonBase,
-      border: "1px solid rgba(148,163,184,0.32)",
-      background: "rgba(241,245,249,0.96)",
-      color: "#334155",
+      border: "1px solid rgba(21,18,15,0.14)",
+      background: "rgba(21,18,15,0.04)",
+      color: "rgba(21,18,15,0.60)",
     },
     success: {
       ...actionButtonBase,
-      border: "1px solid rgba(16,185,129,0.24)",
-      background: "#10B981",
-      color: "#FFFFFF",
+      border: "1px solid rgba(58,158,120,0.38)",
+      background: "rgba(58,158,120,0.10)",
+      color: "#1e6447",
     },
     warning: {
       ...actionButtonBase,
-      border: "1px solid rgba(245,158,11,0.32)",
-      background: "rgba(254,243,199,0.96)",
-      color: "#B45309",
+      border: "1px solid rgba(184,148,63,0.38)",
+      background: "rgba(184,148,63,0.10)",
+      color: "#7b5d2c",
     },
   };
 
-  useEffect(() => {
-    if (!focusTicketNo) return;
-    const exists = normalizedTickets.some((ticket) => ticket.ticketNo === focusTicketNo);
-    if (!exists) {
-      if (typeof onFocusHandled === "function") onFocusHandled();
-      return;
-    }
-    setViewTicketNo(focusTicketNo);
-    setShowRawJson(false);
-    setExpandedTickets((prev) => ({ ...prev, [focusTicketNo]: true }));
-    if (typeof onFocusHandled === "function") onFocusHandled();
-  }, [focusTicketNo, normalizedTickets, onFocusHandled]);
-
-  useEffect(() => {
-    if (!customerRecordTicketNo) return;
-    const exists = normalizedTickets.some((ticket) => ticket.ticketNo === customerRecordTicketNo);
-    if (!exists) setCustomerRecordTicketNo(null);
-  }, [customerRecordTicketNo, normalizedTickets]);
-
   const toggleExpand = (ticketNo) => {
     setExpandedTickets((prev) => ({ ...prev, [ticketNo]: !prev[ticketNo] }));
-  };
-
-  const getAckDraftValue = (ticket) => (
-    Object.prototype.hasOwnProperty.call(ackDrafts, ticket.ticketNo)
-      ? ackDrafts[ticket.ticketNo]
-      : (ticket.ackNumber || "")
-  );
-
-  const saveAckNumber = (ticketNo) => {
-    if (typeof onUpdateTicket !== "function") return;
-    const ticket = normalizedTickets.find((item) => item.ticketNo === ticketNo);
-    const draftValue = Object.prototype.hasOwnProperty.call(ackDrafts, ticketNo)
-      ? ackDrafts[ticketNo]
-      : (ticket?.ackNumber || "");
-    const ackNumber = String(draftValue || "").trim();
-    onUpdateTicket(ticketNo, { ackNumber });
-    setAckDrafts((prev) => ({ ...prev, [ticketNo]: ackNumber }));
-    setAckSavedFlags((prev) => ({ ...prev, [ticketNo]: true }));
-    setTimeout(() => {
-      setAckSavedFlags((prev) => ({ ...prev, [ticketNo]: false }));
-    }, 1300);
   };
 
   const startEdit = (ticket) => {
@@ -2573,13 +3327,12 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     setEditDraft({
       customerName: ticket.customerName || "",
       customerPhone: ticket.customerPhone || "",
+      hasReference: getHasReferenceValue(ticket),
       referenceName: ticket.referenceName || "",
-      referenceType: ticket.referenceType || getReferenceTypeIdByLabel(ticket.referenceTypeLabel),
-      operator: ticket.operator || OPERATORS[0],
+      referenceLabel: getReferenceLabelValue(ticket),
+      operator: ticket.operator || DEFAULT_OPERATOR,
       cashCollected: String(Number(ticket.cashCollected) || 0),
       upiCollected: String(Number(ticket.upiCollected) || 0),
-      portalDown: Boolean(ticket.portalDown),
-      portalDownNote: ticket.portalDownNote || "",
     });
     setEditError("");
   };
@@ -2588,21 +3341,21 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     if (!editTicketNo || typeof onUpdateTicket !== "function") return;
     const name = editDraft.customerName.trim();
     const referenceName = editDraft.referenceName.trim();
+    const referenceLabel = editDraft.referenceLabel.trim();
+    const referenceEnabled = editDraft.hasReference && Boolean(referenceName);
     const phone = (editDraft.customerPhone || "").replace(/\D/g, "").slice(0, 10);
     const cashCollected = Math.max(0, Number(editDraft.cashCollected) || 0);
     const upiCollected = Math.max(0, Number(editDraft.upiCollected) || 0);
     const paidTotal = cashCollected + upiCollected;
     const total = Number(editingTicket?.total) || 0;
     const pendingBalance = Math.max(0, total - paidTotal);
-    const portalDown = Boolean(editDraft.portalDown);
-    const portalDownNote = String(editDraft.portalDownNote || "").trim();
 
     if (!name) {
       setEditError("Document holder name is required.");
       return;
     }
-    if (!referenceName) {
-      setEditError("Reference person name is required.");
+    if (editDraft.hasReference && !referenceName) {
+      setEditError("Reference name is required when reference is enabled.");
       return;
     }
     if (phone && !PHONE_REGEX.test(phone)) {
@@ -2613,11 +3366,6 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       setEditError("Collected amount cannot exceed ticket total.");
       return;
     }
-    if (portalDown && !portalDownNote) {
-      setEditError("Portal name is required when ticket is marked as portal down.");
-      return;
-    }
-    const referenceCfg = getReferenceTypeConfig(editDraft.referenceType);
     const payMode = cashCollected > 0 && upiCollected > 0
       ? "Cash+UPI"
       : cashCollected > 0
@@ -2634,9 +3382,11 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     onUpdateTicket(editTicketNo, {
       customerName: name,
       customerPhone: phone,
-      referenceName,
-      referenceType: editDraft.referenceType,
-      referenceTypeLabel: referenceCfg.label,
+      hasReference: referenceEnabled,
+      referenceName: referenceEnabled ? referenceName : "",
+      referenceLabel: referenceEnabled ? referenceLabel : "",
+      referenceType: "",
+      referenceTypeLabel: referenceEnabled ? referenceLabel : "",
       operator: editDraft.operator,
       payMode,
       paymentStatus,
@@ -2644,9 +3394,6 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       upiCollected,
       paidTotal,
       pendingBalance,
-      portalDown,
-      portalDownNote: portalDown ? portalDownNote : "",
-      status: portalDown ? "Open" : (editingTicket?.status || "Open"),
     });
     setEditTicketNo(null);
     setEditError("");
@@ -2655,265 +3402,128 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   const renderExpandedContent = (ticket) => {
     const structured = ticket.structured || toStructuredTicket(ticket);
     return (
-      <div style={{ marginTop: 10, borderTop: "1px dashed rgba(15,23,42,0.14)", paddingTop: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 10 }}>
-          <div style={{ color: "#1E293B", fontSize: 13 }}>
-            <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Document Holder</div>
-            <div>{structured.parties.documentHolder.name}</div>
-            <div style={{ color: "#475569" }}>{structured.parties.documentHolder.phone || "No contact saved"}</div>
-          </div>
-          <div style={{ color: "#1E293B", fontSize: 13 }}>
-            <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Reference</div>
-            <div>{structured.parties.reference.name || "N/A"}</div>
-            <div style={{ color: "#475569" }}>{structured.parties.reference.typeLabel || "N/A"}</div>
-          </div>
-          <div style={{ color: "#1E293B", fontSize: 13 }}>
-            <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Meta</div>
-            <div>Status: {structured.meta.status}</div>
-            <div style={{ color: "#475569" }}>Updated: {structured.meta.updatedAt || "N/A"}</div>
-            {ticket.portalDown && (
-              <div style={{ color: "#B45309", marginTop: 4, fontWeight: 700 }}>
-                Portal Down: {ticket.portalDownNote || "Submission pending"}
-              </div>
-            )}
-          </div>
-          <div style={{ color: "#1E293B", fontSize: 13 }}>
-            <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Payment</div>
-            <div>Status: {structured.payment.status}</div>
-            <div style={{ color: "#475569" }}>
-              Cash Rs. {structured.payment.breakdown.cash} | UPI Rs. {structured.payment.breakdown.upi}
+      <div style={{ marginTop: 10, borderTop: "1px solid rgba(21,18,15,0.09)", paddingTop: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8, marginBottom: 10 }}>
+          {[
+            { label: "Document Holder", main: structured.parties.documentHolder.name, sub: structured.parties.documentHolder.phone || "No contact saved" },
+            { label: "Reference Contact", main: structured.parties.reference.hasReference ? structured.parties.reference.name : "No reference", sub: structured.parties.reference.hasReference ? (structured.parties.reference.label || "No label") : "Optional" },
+            { label: "Meta", main: `Status: ${structured.meta.status}`, sub: `Updated: ${structured.meta.updatedAt || "N/A"}` },
+            { label: "Payment", main: `Status: ${structured.payment.status}`, sub: `Paid Rs. ${structured.payment.paidTotal} | Pending Rs. ${structured.payment.pendingBalance}` },
+          ].map((info) => (
+            <div key={info.label} style={{ ...detailCardStyle, padding: 10 }}>
+              <div style={dashEyebrowStyle}>{info.label}</div>
+              <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK }}>{info.main}</div>
+              <div style={{ fontSize: "0.75rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>{info.sub}</div>
             </div>
-            <div style={{ color: "#475569" }}>
-              Paid Rs. {structured.payment.paidTotal} | Pending Rs. {structured.payment.pendingBalance}
-            </div>
-          </div>
-          <div style={{ color: "#1E293B", fontSize: 13 }}>
-            <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Documents</div>
-            <div>
-              Submitted required: {structured.documents.items.filter((doc) => doc.required && doc.submitted).length}/{structured.documents.items.filter((doc) => doc.required).length}
-            </div>
-            <div style={{ color: "#475569" }}>
-              Total submitted: {structured.documents.submitted.length}/{structured.documents.stats.total}
-            </div>
-          </div>
+          ))}
         </div>
-        <div style={{ color: "#0F172A", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Service Breakdown</div>
-        <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ fontSize: "0.72rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: DS.wine, marginBottom: 6 }}>Service Breakdown</div>
+        <div style={{ display: "grid", gap: 4 }}>
           {structured.services.map((it, idx) => (
-            <div key={`${ticket.ticketNo}_expand_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#334155", fontSize: 12, padding: "4px 0", borderBottom: idx < structured.services.length - 1 ? "1px solid rgba(148,163,184,0.22)" : "none" }}>
-              <span>{it.name}</span>
-              <span>Qty {it.qty} | Rs. {it.amount}</span>
+            <div key={`${ticket.ticketNo}_expand_${idx}`} style={{ fontSize: "0.82rem", color: "#15120f", padding: "5px 0", borderBottom: idx < structured.services.length - 1 ? "1px solid rgba(21,18,15,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                <span>{it.name}</span>
+                <span style={{ color: "rgba(21,18,15,0.55)" }}>{getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty} | Rs. {it.amount}</span>
+              </div>
+              {!!it.detailSummary && (
+                <div style={{ color: "rgba(21,18,15,0.50)", marginTop: 2, lineHeight: 1.5, fontSize: "0.76rem" }}>{it.detailSummary}</div>
+              )}
             </div>
           ))}
         </div>
         {structured.documents.items.length > 0 && (
-          <div style={{ marginTop: 10 }}>
-            <div style={{ color: "#0F172A", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Document Status</div>
-            <div style={{ display: "grid", gap: 5 }}>
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: "0.72rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: DS.wine, marginBottom: 5 }}>Document Status</div>
+            <div style={{ display: "grid", gap: 4 }}>
               {structured.documents.items.map((doc, idx) => (
-                <div key={`${ticket.ticketNo}_doc_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#334155", fontSize: 12 }}>
+                <div key={`${ticket.ticketNo}_doc_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#15120f", fontSize: "0.80rem", fontFamily: APP_FONT_STACK }}>
                   <span>{doc.name}</span>
-                  <span>
-                    {doc.required ? "Required" : "Optional"} | {doc.submitted ? "Submitted" : "Pending"}
-                  </span>
+                  <span style={{ color: "rgba(21,18,15,0.55)" }}>{doc.required ? "Required" : "Optional"} | {doc.submitted ? "Submitted" : "Pending"}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
-        <div style={{ marginTop: 12, ...softPanelStyle, padding: 12 }}>
-          <div style={{ color: "#0F172A", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Acknowledgement / Application No.</div>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, alignItems: "center" }}>
-            <input
-              value={getAckDraftValue(ticket)}
-              onChange={(e) => setAckDrafts((prev) => ({ ...prev, [ticket.ticketNo]: e.target.value }))}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  saveAckNumber(ticket.ticketNo);
-                }
-              }}
-              placeholder="Enter acknowledgement number"
-              style={dashboardInputStyle}
-            />
-            <button onClick={() => saveAckNumber(ticket.ticketNo)} style={actionButtonStyles.neutral}>Save</button>
-          </div>
-          {ackSavedFlags[ticket.ticketNo] && (
-            <div style={{ marginTop: 6, fontSize: 11, color: "#0F766E", fontWeight: 700 }}>
-              Acknowledgement saved.
-            </div>
-          )}
-        </div>
       </div>
     );
   };
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      {customerRecordAnchorTicket && (
-        <div style={{ background: "linear-gradient(180deg, rgba(240,253,250,0.88) 0%, rgba(255,255,255,0.94) 100%)", border: "1px solid rgba(20,184,166,0.34)", borderRadius: 18, padding: 20, marginBottom: 18, boxShadow: "0 16px 34px rgba(15,23,42,0.06)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
-            <div style={{ color: "#0F172A", fontWeight: 800, fontSize: 16 }}>Customer Record: {customerPrimaryName}</div>
-            <button onClick={() => setCustomerRecordTicketNo(null)} style={actionButtonStyles.closeView}>Close Record</button>
-          </div>
-
-          {!customerIdentity ? (
-            <div style={{ color: "#475569", fontSize: 13 }}>Customer identity is not available for this ticket.</div>
-          ) : (
-            <>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 10 }}>
-                <div style={detailCardStyle}>
-                  <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Customer Name</div>
-                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{customerPrimaryName}</div>
-                </div>
-                <div style={detailCardStyle}>
-                  <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Phone Number</div>
-                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{customerPrimaryPhone || "Not captured"}</div>
-                </div>
-                <div style={detailCardStyle}>
-                  <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Total Tickets</div>
-                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{customerRecordTickets.length}</div>
-                </div>
-                <div style={detailCardStyle}>
-                  <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Identification Basis</div>
-                  <div style={{ color: "#0F172A", fontWeight: 700 }}>
-                    {customerIdentity.type === "phone" ? "Phone number match" : "Exact name match"}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ ...sectionCardStyle, marginBottom: 10 }}>
-                <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 12, marginBottom: 8 }}>Submitted Documents (History)</div>
-                {customerSubmittedDocs.length === 0 ? (
-                  <div style={{ color: "#475569", fontSize: 12 }}>No submitted documents recorded yet.</div>
-                ) : (
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {customerSubmittedDocs.map((docName) => (
-                      <span key={`history_doc_${docName}`} style={{ fontSize: 11, fontWeight: 600, color: "#0F766E", borderRadius: 999, padding: "5px 10px", background: "rgba(236,253,245,0.96)", border: "1px solid rgba(20,184,166,0.24)" }}>
-                        {docName}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div style={sectionCardStyle}>
-                <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 12, marginBottom: 8 }}>Ticket History</div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {customerRecordTicketsSorted.map((ticket) => {
-                    const structured = ticket.structured || toStructuredTicket(ticket);
-                    const serviceNames = structured.services.map((item) => item.name).filter(Boolean);
-                    return (
-                      <div key={`history_ticket_${ticket.ticketNo}`} style={{ border: "1px solid rgba(148,163,184,0.22)", borderRadius: 12, padding: 10, background: "rgba(255,255,255,0.92)" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-                          <div style={{ color: "#0F172A", fontSize: 13, fontWeight: 700 }}>{ticket.ticketNo} | {ticket.date}</div>
-                          <div style={{ color: ticket.status === "Closed" ? "#047857" : "#B45309", fontWeight: 700, fontSize: 12 }}>{ticket.status}</div>
-                        </div>
-                        <div style={{ color: "#334155", fontSize: 12, marginBottom: 3 }}>
-                          Services: {serviceNames.length > 0 ? serviceNames.join(", ") : "No services linked"}
-                        </div>
-                        <div style={{ color: "#475569", fontSize: 12, marginBottom: 3 }}>
-                          Amount: Rs. {ticket.total || 0} | Paid: Rs. {ticket.paidTotal || 0} | Pending: Rs. {ticket.pendingBalance || 0}
-                        </div>
-                        <div style={{ color: "#475569", fontSize: 12, marginBottom: 3 }}>
-                          Acknowledgement No.: {ticket.ackNumber ? ticket.ackNumber : "Not available"}
-                        </div>
-                        <div style={{ color: "#475569", fontSize: 12 }}>
-                          Submitted Docs: {structured.documents.submitted.length > 0 ? structured.documents.submitted.join(", ") : "None"}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
       {viewingTicket && (
-        <div style={{ background: "linear-gradient(180deg, rgba(240,253,250,0.84) 0%, rgba(255,255,255,0.92) 100%)", border: "1px solid rgba(45,212,191,0.42)", borderRadius: 18, padding: 20, marginBottom: 18, boxShadow: "0 16px 34px rgba(15,23,42,0.06)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
-            <div style={{ color: "#0F172A", fontWeight: 800, fontSize: 16 }}>Ticket View: {viewingTicket.ticketNo}</div>
+        <div style={{ background: "rgba(255,255,255,0.80)", border: "1px solid rgba(21,18,15,0.12)", borderRadius: 18, padding: 20, marginBottom: 18, boxShadow: "0 16px 40px rgba(17,14,12,0.09)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
+            <div>
+              <div style={dashEyebrowStyle}>Ticket View</div>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.2rem", fontWeight: 300, color: "#15120f" }}>{viewingTicket.ticketNo} — {viewingTicket.customerName}</div>
+            </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => printTicketSlip(viewingTicket)} style={actionButtonStyles.print}>
-                Print Ticket
-              </button>
-              <button onClick={() => setShowRawJson((prev) => !prev)} style={actionButtonStyles.raw}>
-                {showRawJson ? "Hide Raw JSON" : "Show Raw JSON"}
-              </button>
-              <button onClick={() => { setViewTicketNo(null); setShowRawJson(false); }} style={actionButtonStyles.closeView}>Close View</button>
+              <button onClick={() => printTicketSlip(viewingTicket)} style={actionButtonStyles.print}>Print Ticket</button>
+              <button onClick={() => setShowRawJson((prev) => !prev)} style={actionButtonStyles.raw}>{showRawJson ? "Hide JSON" : "Show JSON"}</button>
+              <button onClick={() => { setViewTicketNo(null); setShowRawJson(false); }} style={actionButtonStyles.closeView}>Close</button>
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
             <div style={detailCardStyle}>
-              <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Document Holder</div>
-              <div style={{ color: "#0F172A", fontWeight: 700 }}>{viewingStructured.parties.documentHolder.name}</div>
-              <div style={{ color: "#475569", fontSize: 12 }}>{viewingStructured.parties.documentHolder.phone || "No contact saved"}</div>
+              <div style={dashEyebrowStyle}>Document Holder</div>
+              <div style={{ color: "#15120f", fontWeight: 700, fontSize: "0.88rem", fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.documentHolder.name}</div>
+              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.documentHolder.phone || "No contact saved"}</div>
             </div>
             <div style={detailCardStyle}>
-              <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Reference</div>
-              <div style={{ color: "#0F172A", fontWeight: 700 }}>{viewingStructured.parties.reference.name || "N/A"}</div>
-              <div style={{ color: "#475569", fontSize: 12 }}>{viewingStructured.parties.reference.typeLabel || "N/A"}</div>
-            </div>
-            <div style={detailCardStyle}>
-              <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Meta</div>
-              <div style={{ color: "#0F172A", fontSize: 12 }}>Status: {viewingStructured.meta.status}</div>
-              <div style={{ color: "#475569", fontSize: 12 }}>Created: {viewingStructured.meta.createdDate} {viewingStructured.meta.createdTime}</div>
-              <div style={{ color: "#475569", fontSize: 12 }}>Updated: {viewingStructured.meta.updatedAt || "N/A"}</div>
-              {viewingTicket.portalDown && (
-                <div style={{ color: "#B45309", fontSize: 12, fontWeight: 700, marginTop: 4 }}>
-                  Portal Down: {viewingTicket.portalDownNote || "Submission pending"}
-                </div>
-              )}
-            </div>
-            <div style={detailCardStyle}>
-              <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Assignment & Payment</div>
-              <div style={{ color: "#0F172A", fontSize: 12 }}>Operator: {viewingStructured.assignment.operator || "N/A"}</div>
-              <div style={{ color: "#475569", fontSize: 12 }}>Mode: {viewingStructured.payment.mode}</div>
-              <div style={{ color: "#475569", fontSize: 12 }}>Status: {viewingStructured.payment.status}</div>
-              <div style={{ color: "#475569", fontSize: 12 }}>
-                Cash Rs. {viewingStructured.payment.breakdown.cash} | UPI Rs. {viewingStructured.payment.breakdown.upi}
+              <div style={dashEyebrowStyle}>Reference Contact</div>
+              <div style={{ color: "#15120f", fontWeight: 700, fontSize: "0.88rem", fontFamily: APP_FONT_STACK }}>
+                {viewingStructured.parties.reference.hasReference ? viewingStructured.parties.reference.name : "No reference"}
               </div>
-              <div style={{ color: "#475569", fontSize: 12 }}>
-                Paid Rs. {viewingStructured.payment.paidTotal} | Pending Rs. {viewingStructured.payment.pendingBalance}
+              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>
+                {viewingStructured.parties.reference.hasReference ? (viewingStructured.parties.reference.label || "No label") : "Optional"}
               </div>
             </div>
-            {viewingTicket.ackNumber && (
-              <div style={detailCardStyle}>
-                <div style={{ color: "#64748B", fontSize: 11, textTransform: "uppercase", marginBottom: 4 }}>Acknowledgement / Application No.</div>
-                <div style={{ color: "#0F172A", fontWeight: 800, fontSize: 15 }}>{viewingTicket.ackNumber}</div>
-              </div>
-            )}
+            <div style={detailCardStyle}>
+              <div style={dashEyebrowStyle}>Meta</div>
+              <div style={{ color: "#15120f", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>Status: {viewingStructured.meta.status}</div>
+              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Created: {viewingStructured.meta.createdDate} {viewingStructured.meta.createdTime}</div>
+              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Updated: {viewingStructured.meta.updatedAt || "N/A"}</div>
+            </div>
+            <div style={detailCardStyle}>
+              <div style={dashEyebrowStyle}>Payment</div>
+              <div style={{ color: "#15120f", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>Operator: {viewingStructured.assignment.operator || "N/A"}</div>
+              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Mode: {viewingStructured.payment.mode} | Status: {viewingStructured.payment.status}</div>
+              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Paid Rs. {viewingStructured.payment.paidTotal} | Pending Rs. {viewingStructured.payment.pendingBalance}</div>
+            </div>
           </div>
 
           <div style={{ ...sectionCardStyle, marginTop: 10 }}>
-            <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 12, marginBottom: 8 }}>Services</div>
+            <div style={dashEyebrowStyle}>Services</div>
             {viewingStructured.services.length === 0 ? (
-              <div style={{ color: "#475569", fontSize: 12 }}>No services linked to this ticket.</div>
+              <div style={{ color: "rgba(21,18,15,0.50)", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>No services linked to this ticket.</div>
             ) : (
-              <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ display: "grid", gap: 5 }}>
                 {viewingStructured.services.map((it, idx) => (
-                  <div key={`view_${viewingTicket.ticketNo}_${idx}`} style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "#1E293B", fontSize: 12, paddingBottom: 6, borderBottom: idx < viewingStructured.services.length - 1 ? "1px solid rgba(148,163,184,0.22)" : "none" }}>
-                    <span>{it.name}</span>
-                    <span>Qty {it.qty} | Unit Rs. {it.unitPrice} | Amount Rs. {it.amount}</span>
+                  <div key={`view_${viewingTicket.ticketNo}_${idx}`} style={{ color: "#15120f", fontSize: "0.82rem", paddingBottom: 5, borderBottom: idx < viewingStructured.services.length - 1 ? "1px solid rgba(21,18,15,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <span>{it.name}</span>
+                      <span style={{ color: "rgba(21,18,15,0.55)" }}>{getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty} | Rs. {it.amount}</span>
+                    </div>
+                    {!!it.detailSummary && (
+                      <div style={{ color: "rgba(21,18,15,0.45)", marginTop: 3, lineHeight: 1.5, fontSize: "0.76rem" }}>{it.detailSummary}</div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div style={{ ...sectionCardStyle, marginTop: 10 }}>
-            <div style={{ color: "#0F172A", fontWeight: 700, fontSize: 12, marginBottom: 8 }}>Document Status</div>
+          <div style={{ ...sectionCardStyle, marginTop: 8 }}>
+            <div style={dashEyebrowStyle}>Document Status</div>
             {viewingStructured.documents.items.length === 0 ? (
-              <div style={{ color: "#475569", fontSize: 12 }}>No document checklist added.</div>
+              <div style={{ color: "rgba(21,18,15,0.50)", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>No document checklist added.</div>
             ) : (
-              <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ display: "grid", gap: 5 }}>
                 {viewingStructured.documents.items.map((doc, idx) => (
-                  <div key={`view_doc_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#1E293B", fontSize: 12, paddingBottom: 6, borderBottom: idx < viewingStructured.documents.items.length - 1 ? "1px solid rgba(148,163,184,0.22)" : "none" }}>
+                  <div key={`view_doc_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#15120f", fontSize: "0.82rem", paddingBottom: 5, borderBottom: idx < viewingStructured.documents.items.length - 1 ? "1px solid rgba(21,18,15,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
                     <span>{doc.name}</span>
-                    <span>{doc.required ? "Required" : "Optional"} | {doc.submitted ? "Submitted" : "Pending"}</span>
+                    <span style={{ color: "rgba(21,18,15,0.55)" }}>{doc.required ? "Required" : "Optional"} | {doc.submitted ? "Submitted" : "Pending"}</span>
                   </div>
                 ))}
               </div>
@@ -2921,7 +3531,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           </div>
 
           {showRawJson && (
-            <pre style={{ margin: "10px 0 0", background: "#0F172A", border: "1px solid rgba(15,23,42,0.18)", borderRadius: 12, padding: 14, color: "#E2E8F0", fontSize: 11, overflowX: "auto" }}>
+            <pre style={{ margin: "10px 0 0", background: "#15120f", border: "1px solid rgba(21,18,15,0.20)", borderRadius: 10, padding: 14, color: "#f8f1e4", fontSize: "0.7rem", overflowX: "auto", fontFamily: APP_MONO_STACK }}>
 {JSON.stringify(viewingStructured, null, 2)}
             </pre>
           )}
@@ -2929,120 +3539,178 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       )}
 
       {editTicketNo && (
-        <div style={{ background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 12, padding: 14, marginBottom: 14 }}>
-          <div style={{ color: "#0F172A", fontWeight: 700, marginBottom: 10 }}>Edit Ticket {editTicketNo}</div>
+        <div style={{ background: "rgba(255,255,255,0.78)", border: "1px solid rgba(21,18,15,0.12)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
+          <div style={dashEyebrowStyle}>Edit Ticket</div>
+          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: "#15120f", marginBottom: 12 }}>{editTicketNo}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-            <input value={editDraft.customerName} onChange={(e) => setEditDraft((prev) => ({ ...prev, customerName: e.target.value }))} placeholder="Document Holder Name" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
-            <input value={editDraft.customerPhone} onChange={(e) => setEditDraft((prev) => ({ ...prev, customerPhone: e.target.value.replace(/\D/g, "").slice(0, 10) }))} placeholder="Contact Number" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
-            <input value={editDraft.referenceName} onChange={(e) => setEditDraft((prev) => ({ ...prev, referenceName: e.target.value }))} placeholder="Reference Name" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
-            <select value={editDraft.referenceType} onChange={(e) => setEditDraft((prev) => ({ ...prev, referenceType: e.target.value }))} style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }}>
-              {REFERENCE_TYPES.map((ref) => <option key={`editref_${ref.id}`} value={ref.id} style={MENU_OPTION_STYLE}>{ref.label}</option>)}
+            <input value={editDraft.customerName} onChange={(e) => setEditDraft((prev) => ({ ...prev, customerName: e.target.value }))} placeholder="Document Holder Name" style={dashInputStyle} />
+            <input value={editDraft.customerPhone} onChange={(e) => setEditDraft((prev) => ({ ...prev, customerPhone: e.target.value.replace(/\D/g, "").slice(0, 10) }))} placeholder="Contact Number" style={dashInputStyle} />
+            <select value={editDraft.hasReference ? "yes" : "no"} onChange={(e) => setEditDraft((prev) => ({ ...prev, hasReference: e.target.value === "yes" }))} style={dashInputStyle}>
+              <option value="no" style={MENU_OPTION_STYLE}>No Reference</option>
+              <option value="yes" style={MENU_OPTION_STYLE}>Add Reference</option>
             </select>
-            <select value={editDraft.operator} onChange={(e) => setEditDraft((prev) => ({ ...prev, operator: e.target.value }))} style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }}>
+            {editDraft.hasReference && (
+              <>
+                <input value={editDraft.referenceName} onChange={(e) => setEditDraft((prev) => ({ ...prev, referenceName: e.target.value }))} placeholder="Reference Name" style={dashInputStyle} />
+                <input value={editDraft.referenceLabel} onChange={(e) => setEditDraft((prev) => ({ ...prev, referenceLabel: e.target.value }))} placeholder="Reference Label (optional)" style={dashInputStyle} />
+              </>
+            )}
+            <select value={editDraft.operator} onChange={(e) => setEditDraft((prev) => ({ ...prev, operator: e.target.value }))} style={dashInputStyle}>
               {OPERATORS.map((op) => <option key={`editop_${op}`} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
             </select>
-            <input type="number" min="0" value={editDraft.cashCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, cashCollected: e.target.value }))} placeholder="Cash collected" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
-            <input type="number" min="0" value={editDraft.upiCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, upiCollected: e.target.value }))} placeholder="UPI collected" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
-            <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#334155", fontSize: 12, fontWeight: 700, padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)" }}>
-              <input type="checkbox" checked={editDraft.portalDown} onChange={(e) => setEditDraft((prev) => ({ ...prev, portalDown: e.target.checked, portalDownNote: e.target.checked ? prev.portalDownNote : "" }))} />
-              Mark as Portal Down
-            </label>
-            {editDraft.portalDown && (
-              <input value={editDraft.portalDownNote} onChange={(e) => setEditDraft((prev) => ({ ...prev, portalDownNote: e.target.value }))} placeholder="Which portal is down?" style={{ padding: "10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.18)", background: "rgba(255,255,255,0.04)", color: "#0F172A", outline: "none" }} />
-            )}
+            <input type="number" min="0" value={editDraft.cashCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, cashCollected: e.target.value }))} placeholder="Cash collected" style={dashInputStyle} />
+            <input type="number" min="0" value={editDraft.upiCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, upiCollected: e.target.value }))} placeholder="UPI collected" style={dashInputStyle} />
           </div>
-          <div style={{ marginTop: 8, fontSize: 12, color: "#475569" }}>
+          <div style={{ marginTop: 8, fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>
             Ticket total Rs. {editingTicket?.total || 0} | Collected Rs. {(Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)} | Pending Rs. {Math.max((Number(editingTicket?.total) || 0) - ((Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)), 0)}
           </div>
           {editError && <div style={{ marginTop: 8, color: "#FCA5A5", fontSize: 12 }}>{editError}</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button onClick={saveEdit} style={{ border: "none", borderRadius: 8, padding: "8px 12px", background: "#14B8A6", color: "white", fontWeight: 700, cursor: "pointer" }}>Save Changes</button>
-            <button onClick={() => { setEditTicketNo(null); setEditError(""); }} style={{ border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8, padding: "8px 12px", background: "rgba(255,255,255,0.74)", color: "#1E293B", fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+            <button onClick={saveEdit} style={{ ...actionButtonStyles.print }}>Save Changes</button>
+            <button onClick={() => { setEditTicketNo(null); setEditError(""); }} style={{ ...actionButtonStyles.closeView }}>Cancel</button>
           </div>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 16 }}>
-        <div style={{ background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 10, padding: 14, color: "#0F172A" }}><div style={{ fontSize: 12, color: "#475569" }}>Total Tickets</div><div style={{ fontSize: 24, fontWeight: 800 }}>{normalizedTickets.length}</div></div>
-        <div style={{ background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 10, padding: 14, color: "#0F172A" }}><div style={{ fontSize: 12, color: "#475569" }}>Open</div><div style={{ fontSize: 24, fontWeight: 800, color: "#F59E0B" }}>{openTickets.length}</div></div>
-        <div style={{ background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 10, padding: 14, color: "#0F172A" }}><div style={{ fontSize: 12, color: "#475569" }}>Closed</div><div style={{ fontSize: 24, fontWeight: 800, color: "#10B981" }}>{closedTickets.length}</div></div>
-        <div style={{ background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 10, padding: 14, color: "#0F172A" }}><div style={{ fontSize: 12, color: "#475569" }}>Task Progress</div><div style={{ fontSize: 22, fontWeight: 800, color: "#14B8A6" }}>{doneTasks}/{totalTasks || 0}</div></div>
+      <div style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(21,18,15,0.10)", borderRadius: 14, padding: 14, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 12 }}>
+          <div>
+            <div style={dashEyebrowStyle}>Filters</div>
+            <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: "#15120f", marginBottom: 5 }}>Type and Payment Status</div>
+            <div style={{ fontSize: "0.80rem", color: "rgba(21,18,15,0.55)", lineHeight: 1.55 }}>
+              Filter tickets by reference state, service type, or payment status without leaving the dashboard.
+            </div>
+          </div>
+          <div style={{ fontSize: "0.80rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+            Showing {filteredTickets.length} of {normalizedTickets.length} tickets
+            <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+              Active: {activeTypeFilterLabel} | {activePaymentFilterLabel}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {typeFilterOptions.map((option) => {
+              const active = typeFilter === option.id;
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => setTypeFilter(option.id)}
+                  style={{
+                    padding: "7px 12px",
+                    borderRadius: 999,
+                    border: active ? "1px solid rgba(143,47,47,0.35)" : "1px solid rgba(21,18,15,0.10)",
+                    background: active ? "rgba(143,47,47,0.09)" : "rgba(255,255,255,0.65)",
+                    color: active ? DS.wine : "rgba(21,18,15,0.65)",
+                    cursor: "pointer",
+                    fontSize: "0.72rem",
+                    fontFamily: APP_BRAND_STACK,
+                    fontWeight: 700,
+                    letterSpacing: "0.10em",
+                    textTransform: "uppercase",
+                    transition: "all 0.18s ease",
+                  }}
+                >
+                  {option.label} ({getTypeFilterCount(option.id)})
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {paymentFilterOptions.map((option) => {
+              const active = paymentFilter === option.id;
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => setPaymentFilter(option.id)}
+                  style={{
+                    padding: "7px 12px",
+                    borderRadius: 999,
+                    border: active ? "1px solid rgba(184,148,63,0.38)" : "1px solid rgba(21,18,15,0.10)",
+                    background: active ? "rgba(184,148,63,0.10)" : "rgba(255,255,255,0.65)",
+                    color: active ? "#7b5d2c" : "rgba(21,18,15,0.65)",
+                    cursor: "pointer",
+                    fontSize: "0.72rem",
+                    fontFamily: APP_BRAND_STACK,
+                    fontWeight: 700,
+                    letterSpacing: "0.10em",
+                    textTransform: "uppercase",
+                    transition: "all 0.18s ease",
+                  }}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      <div style={{ color: "#0F172A", fontWeight: 700, marginBottom: 8 }}>Open Tickets</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
+        {[
+          { label: "Visible", value: filteredTickets.length, color: "#15120f" },
+          { label: "Open", value: openTickets.length, color: "#7b5d2c" },
+          { label: "Closed", value: closedTickets.length, color: DS.wine },
+          { label: "Task Progress", value: `${doneTasks}/${totalTasks || 0}`, color: "#2a5a8f" },
+        ].map((stat) => (
+          <div key={stat.label} style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 10, padding: "12px 14px" }}>
+            <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(21,18,15,0.42)", marginBottom: 4 }}>{stat.label}</div>
+            <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.6rem", fontWeight: 300, color: stat.color, lineHeight: 1 }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: DS.wine, marginBottom: 8 }}>Open Tickets</div>
       {openTickets.length === 0 ? (
-        <div style={{ background: "rgba(255,255,255,0.74)", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: 10, padding: 14, color: "#475569" }}>No open tickets.</div>
+        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px dashed rgba(21,18,15,0.14)", borderRadius: 10, padding: 14, color: "rgba(21,18,15,0.45)", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}>No open tickets.</div>
       ) : (
-        <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
+        <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
           {openTickets.map((t) => (
-            <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 10, padding: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <div style={{ color: "#0F172A", fontWeight: 700 }}>{t.ticketNo} | {t.customerName}</div>
-                  {t.portalDown && (
-                    <span style={{ borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: "#B45309", background: "rgba(254,243,199,0.96)", border: "1px solid rgba(245,158,11,0.26)" }}>
-                      Portal Down
-                    </span>
-                  )}
+            <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(21,18,15,0.10)", borderRadius: 12, padding: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(21,18,15,0.45)", marginBottom: 2 }}>{t.ticketNo}</div>
+                  <div style={{ color: "#15120f", fontWeight: 700, fontSize: "0.92rem", fontFamily: APP_FONT_STACK }}>{t.customerName}</div>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button onClick={() => printTicketSlip(t)} style={actionButtonStyles.print}>Print</button>
                   <button onClick={() => { setViewTicketNo(t.ticketNo); setShowRawJson(false); }} style={actionButtonStyles.view}>View</button>
-                  <button onClick={() => setCustomerRecordTicketNo(t.ticketNo)} style={actionButtonStyles.customer}>View Customer Record</button>
                   <button onClick={() => startEdit(t)} style={actionButtonStyles.edit}>Edit</button>
                   <button onClick={() => toggleExpand(t.ticketNo)} style={actionButtonStyles.neutral}>{expandedTickets[t.ticketNo] ? "Collapse" : "Expand"}</button>
-                  <button
-                    onClick={() => onToggleTicketStatus(t.ticketNo, "Closed")}
-                    disabled={Boolean(t.portalDown)}
-                    style={t.portalDown
-                      ? { ...actionButtonStyles.warning, cursor: "not-allowed", opacity: 0.7 }
-                      : actionButtonStyles.success}
-                  >
-                    {t.portalDown ? "Portal Down" : "Close"}
-                  </button>
+                  <button onClick={() => onToggleTicketStatus(t.ticketNo, "Closed")} style={actionButtonStyles.success}>Close</button>
                 </div>
               </div>
               {t.items.map((it, idx) => (
-                <label key={`${t.ticketNo}_${idx}`} style={{ display: "flex", alignItems: "center", gap: 8, color: "#1E293B", padding: "6px 0", borderBottom: idx < t.items.length - 1 ? "1px solid rgba(15,23,42,0.10)" : "none" }}>
+                <label key={`${t.ticketNo}_${idx}`} style={{ display: "flex", alignItems: "center", gap: 8, color: "#15120f", padding: "5px 0", borderBottom: idx < t.items.length - 1 ? "1px solid rgba(21,18,15,0.07)" : "none", cursor: "pointer" }}>
                   <input type="checkbox" checked={!!it.done} onChange={() => onToggleTaskDone(t.ticketNo, idx)} />
-                  <span style={{ flex: 1, textDecoration: it.done ? "line-through" : "none" }}>{it.name}</span>
-                  <span style={{ fontSize: 12, color: "#475569" }}>x{it.qty}</span>
+                  <span style={{ flex: 1, textDecoration: it.done ? "line-through" : "none", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, color: it.done ? "rgba(21,18,15,0.40)" : "#15120f" }}>
+                    {it.name}
+                    {!!it.detailSummary && <span style={{ display: "block", color: "rgba(21,18,15,0.50)", fontSize: "0.72rem", lineHeight: 1.45, marginTop: 2 }}>{it.detailSummary}</span>}
+                  </span>
+                  <span style={{ fontSize: "0.72rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK }}>{getQuantityModeConfig(it.quantityMode).label} {it.qty}</span>
                 </label>
               ))}
-              <div style={{ marginTop: 8, fontSize: 12, color: "#475569" }}>
-                Payment: {t.paymentStatus || t.structured?.payment?.status || "Unpaid"} | Pending Rs. {t.pendingBalance ?? t.structured?.payment?.pendingBalance ?? 0} | Docs: {t.structured?.documents?.submitted?.length || 0}/{t.structured?.documents?.required?.length || 0} required submitted
+              <div style={{ marginTop: 8, fontSize: "0.74rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK }}>
+                Type: {t.structured?.meta?.primaryType || "Unassigned"} | Payment: {t.paymentStatus || t.structured?.payment?.status || "Unpaid"} | Pending Rs. {t.pendingBalance ?? t.structured?.payment?.pendingBalance ?? 0} | Docs: {t.structured?.documents?.submitted?.length || 0}/{t.structured?.documents?.required?.length || 0} required submitted
               </div>
-              {t.portalDown && (
-                <div style={{ marginTop: 6, fontSize: 12, color: "#B45309", fontWeight: 700 }}>
-                  Portal Down Note: {t.portalDownNote || "Submission pending"}
-                </div>
-              )}
               {expandedTickets[t.ticketNo] && renderExpandedContent(t)}
             </div>
           ))}
         </div>
       )}
 
-      <div style={{ color: "#0F172A", fontWeight: 700, marginBottom: 8 }}>Closed Tickets</div>
+      <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.45)", marginBottom: 8 }}>Closed Tickets</div>
       {closedTickets.length === 0 ? (
-        <div style={{ background: "rgba(255,255,255,0.74)", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: 10, padding: 14, color: "#475569" }}>No closed tickets yet.</div>
+        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px dashed rgba(21,18,15,0.14)", borderRadius: 10, padding: 14, color: "rgba(21,18,15,0.45)", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}>No closed tickets yet.</div>
       ) : (
-        <div style={{ background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 12, overflow: "hidden" }}>
           {[...closedTickets].reverse().map((t, idx) => (
-            <div key={t.ticketNo} style={{ padding: "12px 14px", borderBottom: idx < closedTickets.length - 1 ? "1px solid rgba(15,23,42,0.10)" : "none" }}>
+            <div key={t.ticketNo} style={{ padding: "11px 14px", borderBottom: idx < closedTickets.length - 1 ? "1px solid rgba(21,18,15,0.07)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <div style={{ color: "#0F172A" }}>{t.ticketNo} | {t.customerName} | Rs. {t.total} | {t.paymentStatus || t.structured?.payment?.status || "Unpaid"}</div>
-                  {t.portalDown && (
-                    <span style={{ borderRadius: 999, padding: "4px 8px", fontSize: 10, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: "#B45309", background: "rgba(254,243,199,0.96)", border: "1px solid rgba(245,158,11,0.26)" }}>
-                      Portal Down
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ color: "#15120f", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}><span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.70rem", color: "rgba(21,18,15,0.40)" }}>{t.ticketNo}</span> {t.customerName} · {t.structured?.meta?.primaryType || "Unassigned"} · Rs. {t.total} · {t.paymentStatus || t.structured?.payment?.status || "Unpaid"}</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button onClick={() => printTicketSlip(t)} style={actionButtonStyles.print}>Print</button>
                   <button onClick={() => { setViewTicketNo(t.ticketNo); setShowRawJson(false); }} style={actionButtonStyles.view}>View</button>
-                  <button onClick={() => setCustomerRecordTicketNo(t.ticketNo)} style={actionButtonStyles.customer}>View Customer Record</button>
                   <button onClick={() => startEdit(t)} style={actionButtonStyles.edit}>Edit</button>
                   <button onClick={() => toggleExpand(t.ticketNo)} style={actionButtonStyles.neutral}>{expandedTickets[t.ticketNo] ? "Collapse" : "Expand"}</button>
                   <button onClick={() => onToggleTicketStatus(t.ticketNo, "Open")} style={actionButtonStyles.warning}>Reopen</button>
@@ -3069,41 +3737,43 @@ function B2BWorkspace() {
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
       <div style={{
-        background: "linear-gradient(135deg, #0C1115 0%, #14B8A6 100%)",
-        borderRadius: 16,
+        background: "linear-gradient(145deg, rgba(255,255,255,0.82), rgba(242,232,216,0.88))",
+        borderRadius: 18,
         padding: "22px 24px",
-        color: "white",
-        marginBottom: 18,
-        boxShadow: "0 6px 16px rgba(79, 70, 229, 0.2)"
+        border: "1px solid rgba(21,18,15,0.10)",
+        marginBottom: 16,
+        boxShadow: "0 16px 40px rgba(17,14,12,0.09)",
+        backgroundImage: "radial-gradient(circle at 12% 10%, rgba(184,148,63,0.16), transparent 36%), radial-gradient(circle at 88% 88%, rgba(143,47,47,0.10), transparent 34%), linear-gradient(145deg, rgba(255,255,255,0.84), rgba(242,232,216,0.88))",
       }}>
-        <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.85, textTransform: "uppercase", letterSpacing: 0.6, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+        <div style={{ fontSize: "0.52rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.32em", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 10 }}>
           Partner Desk
         </div>
-        <div style={{ fontSize: 24, fontWeight: 800, marginTop: 8, letterSpacing: -0.4, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.8rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 8 }}>
           B2B Workspace
         </div>
-        <div style={{ fontSize: 13, marginTop: 8, opacity: 0.85, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+        <div style={{ fontSize: "0.86rem", color: "rgba(21,18,15,0.65)", fontFamily: APP_FONT_STACK, lineHeight: 1.72 }}>
           Manage business clients, bulk service requests, and partner operations from one place.
         </div>
       </div>
 
       <div style={{
-        background: "rgba(255,255,255,0.74)",
-        borderRadius: 16,
-        border: "1px solid rgba(15,23,42,0.12)",
+        background: "rgba(255,255,255,0.72)",
+        borderRadius: 14,
+        border: "1px solid rgba(21,18,15,0.10)",
         overflow: "hidden",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-        marginBottom: 16
+        boxShadow: "0 8px 24px rgba(17,14,12,0.07)",
+        marginBottom: 14,
       }}>
         <div style={{
-          padding: "14px 20px",
-          borderBottom: "1px solid rgba(15,23,42,0.12)",
-          background: "rgba(255,255,255,0.72)",
-          fontSize: 14,
+          padding: "12px 18px",
+          borderBottom: "1px solid rgba(21,18,15,0.08)",
+          background: "rgba(255,255,255,0.60)",
+          fontSize: "0.52rem",
           fontWeight: 700,
-          color: "#1E293B",
-          fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif",
-          letterSpacing: 0.4
+          letterSpacing: "0.28em",
+          textTransform: "uppercase",
+          color: DS.wine,
+          fontFamily: APP_BRAND_STACK,
         }}>
           B2B Services
         </div>
@@ -3112,26 +3782,28 @@ function B2BWorkspace() {
             display: "flex",
             alignItems: "center",
             gap: 12,
-            padding: "14px 20px",
-            borderBottom: i < b2bServices.length - 1 ? "1px solid rgba(15,23,42,0.10)" : "none",
+            padding: "13px 18px",
+            borderBottom: i < b2bServices.length - 1 ? "1px solid rgba(21,18,15,0.07)" : "none",
           }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+              <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK }}>
                 {svc.name}
               </div>
-              <div style={{ fontSize: 12, color: "#475569", marginTop: 3, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+              <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.55)", marginTop: 2, fontFamily: APP_FONT_STACK }}>
                 {svc.note}
               </div>
             </div>
             <div style={{
-              fontSize: 12,
+              fontSize: "0.58rem",
+              fontFamily: APP_BRAND_STACK,
               fontWeight: 700,
-              color: "#14B8A6",
-              background: "rgba(20, 184, 166, 0.16)",
-              border: "1px solid rgba(45, 212, 191, 0.5)",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#7b5d2c",
+              background: "rgba(184,148,63,0.12)",
+              border: "1px solid rgba(184,148,63,0.30)",
               borderRadius: 999,
               padding: "5px 10px",
-              fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif"
             }}>
               {svc.unit}
             </div>
@@ -3140,19 +3812,533 @@ function B2BWorkspace() {
       </div>
 
       <div style={{
-        background: "rgba(255,255,255,0.74)",
-        borderRadius: 16,
-        border: "1px dashed rgba(15,23,42,0.18)",
-        padding: "24px 20px",
+        background: "rgba(255,255,255,0.65)",
+        borderRadius: 14,
+        border: "1px dashed rgba(21,18,15,0.14)",
+        padding: "22px 20px",
         textAlign: "center",
-        color: "#475569",
-        fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif"
       }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>
+        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: "#15120f", marginBottom: 8 }}>
           B2B billing board is ready for expansion
         </div>
-        <div style={{ fontSize: 13 }}>
+        <div style={{ fontSize: "0.84rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>
           We can plug in corporate client profiles, credit cycles, and GST invoices in this tab next.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Monthly Overview ---
+function MonthlyOverview({ tickets }) {
+  const normalized = tickets.map((t) => t.structured ? t : withStructuredTicket(t));
+
+  const byMonth = {};
+  normalized.forEach((t) => {
+    const key = (t.structured?.meta?.createdDate || t.date || "").slice(0, 7) || "Unknown";
+    if (!byMonth[key]) byMonth[key] = [];
+    byMonth[key].push(t);
+  });
+  const months = Object.keys(byMonth).sort().reverse();
+
+  const allRevenue = normalized.reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
+  const allPending = normalized.reduce((s, t) => s + (Number(t.structured?.payment?.pendingBalance) || 0), 0);
+  const openCount = normalized.filter((t) => t.status !== "Closed").length;
+  const closedCount = normalized.filter((t) => t.status === "Closed").length;
+
+  const eb = { fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, display: "block", marginBottom: 5 };
+  const card = { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 16, boxShadow: "0 4px 16px rgba(17,14,12,0.06)" };
+
+  const hasData = normalized.length > 0;
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+
+      {/* Hero summary strip */}
+      <div style={{ ...card, padding: "22px 24px", marginBottom: 24, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(184,148,63,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(143,47,47,0.08), transparent 30%)" }}>
+        <span style={eb}>Centre Performance</span>
+        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#15120f", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
+          Monthly <em style={{ fontStyle: "italic", color: "rgba(21,18,15,0.45)" }}>Overview.</em>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
+          {[
+            { label: "Total Tickets", value: normalized.length, color: "#15120f" },
+            { label: "Open", value: openCount, color: "#c8922a" },
+            { label: "Closed", value: closedCount, color: DS.wine },
+            { label: "Revenue", value: `Rs. ${allRevenue.toLocaleString("en-IN")}`, color: "#2a5a8f" },
+            { label: "Pending", value: `Rs. ${allPending.toLocaleString("en-IN")}`, color: DS.wine },
+            { label: "Months Active", value: months.filter((m) => m !== "Unknown").length, color: "#15120f" },
+          ].map((s) => (
+            <div key={s.label} style={{ background: "rgba(21,18,15,0.04)", border: "1px solid rgba(21,18,15,0.08)", borderRadius: 12, padding: "12px 14px" }}>
+              <div style={{ fontSize: "0.44rem", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 5 }}>{s.label}</div>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.4rem", fontWeight: 300, color: s.color, lineHeight: 1 }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Category breakdown bar — always shown */}
+      <div style={{ ...card, padding: "18px 20px", marginBottom: 24 }}>
+        <span style={eb}>Service Mix — All Time</span>
+        <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+          {CATEGORIES.map((cat) => {
+            const count = normalized.filter((t) => (t.structured?.meta?.serviceTypes || []).includes(cat)).length;
+            const pct = normalized.length > 0 ? Math.round((count / normalized.length) * 100) : 0;
+            return (
+              <div key={cat}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: CAT_COLORS[cat], display: "inline-block", flexShrink: 0 }} />
+                    <span style={{ fontSize: "0.80rem", fontFamily: APP_FONT_STACK, color: "rgba(21,18,15,0.72)" }}>{cat}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: "0.72rem", fontFamily: APP_MONO_STACK, color: CAT_COLORS[cat], fontWeight: 700 }}>{count}</span>
+                    <span style={{ fontSize: "0.66rem", fontFamily: APP_MONO_STACK, color: "rgba(21,18,15,0.35)" }}>{pct}%</span>
+                  </div>
+                </div>
+                <div style={{ height: 5, borderRadius: 999, background: "rgba(21,18,15,0.07)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: CAT_COLORS[cat], transition: "width 0.6s ease", minWidth: pct > 0 ? 6 : 0 }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Empty state */}
+      {!hasData && (
+        <div style={{ ...card, padding: "40px 28px", textAlign: "center" }}>
+          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.4rem", fontWeight: 300, color: "#15120f", marginBottom: 10 }}>
+            No tickets recorded yet.
+          </div>
+          <div style={{ fontSize: "0.84rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK, lineHeight: 1.7, maxWidth: 400, margin: "0 auto" }}>
+            Once you start creating service tickets from the <strong>Service Entry</strong> tab, monthly breakdowns, revenue trends, and category insights will appear here automatically.
+          </div>
+        </div>
+      )}
+
+      {/* Per-month cards */}
+      {months.map((month) => {
+        const mTickets = byMonth[month];
+        const mRevenue = mTickets.reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
+        const mPending = mTickets.reduce((s, t) => s + (Number(t.structured?.payment?.pendingBalance) || 0), 0);
+        const mOpen = mTickets.filter((t) => t.status !== "Closed").length;
+        const mClosed = mTickets.filter((t) => t.status === "Closed").length;
+        const paid = mTickets.filter((t) => t.structured?.payment?.status === "Paid").length;
+        const partial = mTickets.filter((t) => t.structured?.payment?.status === "Partial").length;
+        const unpaid = mTickets.filter((t) => ["Unpaid", undefined].includes(t.structured?.payment?.status)).length;
+
+        const catCounts = {};
+        mTickets.forEach((t) => (t.structured?.meta?.serviceTypes || []).forEach((cat) => { catCounts[cat] = (catCounts[cat] || 0) + 1; }));
+
+        const label = month === "Unknown" ? "Undated" : (() => {
+          const [y, m] = month.split("-");
+          return new Date(Number(y), Number(m) - 1).toLocaleString("en-IN", { month: "long", year: "numeric" });
+        })();
+
+        return (
+          <div key={month} style={{ ...card, marginBottom: 18, overflow: "hidden" }}>
+            {/* Month header */}
+            <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(21,18,15,0.07)", backgroundImage: "radial-gradient(circle at 98% 0%, rgba(184,148,63,0.12), transparent 30%)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
+                <div>
+                  <span style={eb}>Period</span>
+                  <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.55rem", fontWeight: 300, color: "#15120f", letterSpacing: "-0.02em", lineHeight: 1 }}>{label}</div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {[
+                    { l: "Tickets", v: mTickets.length, c: "#15120f" },
+                    { l: "Collected", v: `Rs. ${mRevenue.toLocaleString("en-IN")}`, c: "#2a5a8f" },
+                    { l: "Pending", v: `Rs. ${mPending.toLocaleString("en-IN")}`, c: DS.wine },
+                  ].map((s) => (
+                    <div key={s.l} style={{ background: "rgba(21,18,15,0.04)", border: "1px solid rgba(21,18,15,0.08)", borderRadius: 10, padding: "8px 14px", textAlign: "right" }}>
+                      <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: "rgba(21,18,15,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 3 }}>{s.l}</div>
+                      <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.05rem", fontWeight: 300, color: s.c }}>{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 0 }}>
+              {/* Payment breakdown */}
+              <div style={{ padding: "14px 20px", borderRight: "1px solid rgba(21,18,15,0.06)" }}>
+                <span style={eb}>Payment Status</span>
+                <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
+                  {[
+                    { l: "Paid", v: paid, bar: "#2a6647", bg: "rgba(42,102,71,0.10)" },
+                    { l: "Partial", v: partial, bar: "#c8922a", bg: "rgba(200,146,42,0.10)" },
+                    { l: "Unpaid", v: unpaid, bar: DS.wine, bg: "rgba(143,47,47,0.10)" },
+                  ].map((p) => (
+                    <div key={p.l} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 3, background: p.bar, flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.80rem", color: "rgba(21,18,15,0.65)", fontFamily: APP_FONT_STACK, flex: 1 }}>{p.l}</span>
+                      <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.88rem", fontWeight: 700, color: p.bar, background: p.bg, borderRadius: 6, padding: "2px 8px" }}>{p.v}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                  {[{ l: "Open", v: mOpen, c: "#c8922a" }, { l: "Closed", v: mClosed, c: DS.wine }].map((s) => (
+                    <div key={s.l} style={{ flex: 1, background: "rgba(21,18,15,0.04)", borderRadius: 8, padding: "7px 10px", border: "1px solid rgba(21,18,15,0.07)" }}>
+                      <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(21,18,15,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 3 }}>{s.l}</div>
+                      <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: s.c }}>{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category breakdown */}
+              <div style={{ padding: "14px 20px" }}>
+                <span style={eb}>By Service Category</span>
+                <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
+                  {Object.keys(catCounts).length === 0 ? (
+                    <div style={{ fontSize: "0.78rem", color: "rgba(21,18,15,0.35)", fontFamily: APP_FONT_STACK }}>No category data</div>
+                  ) : Object.entries(catCounts).sort((a, b) => b[1] - a[1]).map(([cat, count]) => {
+                    const pct = Math.round((count / mTickets.length) * 100);
+                    return (
+                      <div key={cat}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: CAT_COLORS[cat] || "#888", flexShrink: 0, display: "inline-block" }} />
+                            <span style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.65)", fontFamily: APP_FONT_STACK }}>{cat}</span>
+                          </div>
+                          <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.76rem", fontWeight: 700, color: CAT_COLORS[cat] || "#15120f" }}>{count}</span>
+                        </div>
+                        <div style={{ height: 4, borderRadius: 999, background: "rgba(21,18,15,0.07)" }}>
+                          <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: CAT_COLORS[cat] || "#888", minWidth: pct > 0 ? 4 : 0 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Ticket rows */}
+            <div style={{ borderTop: "1px solid rgba(21,18,15,0.07)" }}>
+              <div style={{ padding: "10px 20px 6px" }}>
+                <span style={{ ...eb, marginBottom: 8 }}>Ticket Log</span>
+              </div>
+              {mTickets.map((t, i) => {
+                const ps = t.structured?.payment?.status || "Unpaid";
+                const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#c8922a" : DS.wine;
+                return (
+                  <div key={t.ticketNo} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "9px 20px", borderTop: i > 0 ? "1px solid rgba(21,18,15,0.05)" : "none", flexWrap: "wrap", transition: "background 0.15s ease" }}
+                    onMouseOver={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.60)"}
+                    onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
+                      <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.65rem", color: "rgba(21,18,15,0.35)", flexShrink: 0 }}>{t.ticketNo}</span>
+                      <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.customerName}</span>
+                      <span style={{ fontSize: "0.72rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK, display: "none" }}>{t.structured?.meta?.primaryType || "—"}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 7, alignItems: "center", flexShrink: 0 }}>
+                      <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.80rem", color: "#2a5a8f", fontWeight: 600 }}>Rs. {(t.total || 0).toLocaleString("en-IN")}</span>
+                      <span style={{ fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: psColor, background: `${psColor}15`, border: `1px solid ${psColor}28`, borderRadius: 999, padding: "3px 9px" }}>{ps}</span>
+                      <span style={{ fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#c8922a", background: t.status === "Closed" ? "rgba(143,47,47,0.07)" : "rgba(200,146,42,0.10)", border: `1px solid ${t.status === "Closed" ? "rgba(143,47,47,0.20)" : "rgba(200,146,42,0.24)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// --- Customers ---
+function CustomersWorkspace({ tickets }) {
+  const [search, setSearch] = useState("");
+  const [selectedKey, setSelectedKey] = useState(null);
+
+  const normalized = tickets.map((t) => t.structured ? t : withStructuredTicket(t));
+
+  const customerMap = {};
+  normalized.forEach((t) => {
+    const phone = (t.customerPhone || "").replace(/\D/g, "") || null;
+    const name = t.customerName || "Unknown";
+    const key = phone || `nophone_${name}`;
+    if (!customerMap[key]) customerMap[key] = { name, phone: phone || "", tickets: [] };
+    customerMap[key].tickets.push(t);
+    if (name !== "Unknown") customerMap[key].name = name;
+  });
+  const customers = Object.values(customerMap).sort((a, b) => b.tickets.length - a.tickets.length);
+  const filtered = customers.filter((c) => {
+    const q = search.toLowerCase();
+    return !q || c.name.toLowerCase().includes(q) || c.phone.includes(q);
+  });
+  const selected = selectedKey ? customers.find((c) => (c.phone || `nophone_${c.name}`) === selectedKey) : null;
+
+  const eb = { fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, display: "block", marginBottom: 5 };
+  const card = { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 16, boxShadow: "0 4px 16px rgba(17,14,12,0.06)" };
+  const inputSt = { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid rgba(21,18,15,0.12)", background: "rgba(255,255,255,0.86)", color: "#15120f", outline: "none", fontFamily: APP_FONT_STACK, fontSize: "0.88rem" };
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+
+      {/* Hero + summary */}
+      <div style={{ ...card, padding: "22px 24px", marginBottom: 22, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(184,148,63,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(143,47,47,0.08), transparent 30%)" }}>
+        <span style={eb}>Customer Registry</span>
+        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#15120f", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
+          Clients &amp; <em style={{ fontStyle: "italic", color: "rgba(21,18,15,0.45)" }}>Documents.</em>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
+          {[
+            { label: "Total Customers", value: customers.length, color: "#15120f" },
+            { label: "With Phone", value: customers.filter((c) => c.phone).length, color: "#2a5a8f" },
+            { label: "Returning", value: customers.filter((c) => c.tickets.length > 1).length, color: "#c8922a" },
+            { label: "Total Tickets", value: normalized.length, color: DS.wine },
+          ].map((s) => (
+            <div key={s.label} style={{ background: "rgba(21,18,15,0.04)", border: "1px solid rgba(21,18,15,0.08)", borderRadius: 12, padding: "12px 14px" }}>
+              <div style={{ fontSize: "0.44rem", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 5 }}>{s.label}</div>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.4rem", fontWeight: 300, color: s.color, lineHeight: 1 }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: selected ? "minmax(280px,1fr) minmax(0,1.4fr)" : "1fr", gap: 16, alignItems: "start" }}>
+
+        {/* Left: search + list */}
+        <div>
+          <div style={{ marginBottom: 12 }}>
+            <input placeholder="Search by name or phone…" value={search} onChange={(e) => setSearch(e.target.value)} style={inputSt} />
+          </div>
+
+          {filtered.length === 0 ? (
+            <div style={{ ...card, padding: "40px 24px", textAlign: "center" }}>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.3rem", fontWeight: 300, color: "#15120f", marginBottom: 8 }}>
+                {customers.length === 0 ? "No customers yet." : "No results."}
+              </div>
+              <div style={{ fontSize: "0.82rem", color: "rgba(21,18,15,0.48)", fontFamily: APP_FONT_STACK, lineHeight: 1.7, maxWidth: 340, margin: "0 auto" }}>
+                {customers.length === 0
+                  ? "Customers are automatically created from tickets. Start by adding a ticket in the Service Entry tab."
+                  : "Try a different name or phone number."}
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 8 }}>
+              {filtered.map((c) => {
+                const key = c.phone || `nophone_${c.name}`;
+                const isSelected = selectedKey === key;
+                const totalPaid = c.tickets.reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
+                const lastDate = c.tickets.map((t) => t.structured?.meta?.createdDate || "").sort().reverse()[0] || null;
+                const allCats = [...new Set(c.tickets.flatMap((t) => t.structured?.meta?.serviceTypes || []))];
+                const initials = c.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+                return (
+                  <div key={key} onClick={() => setSelectedKey(isSelected ? null : key)} style={{
+                    ...card, padding: "14px 16px", cursor: "pointer",
+                    border: isSelected ? "1px solid rgba(143,47,47,0.28)" : "1px solid rgba(21,18,15,0.09)",
+                    background: isSelected ? "rgba(143,47,47,0.05)" : "rgba(255,255,255,0.75)",
+                    boxShadow: isSelected ? "inset 3px 0 0 rgba(143,47,47,0.65), 0 4px 16px rgba(17,14,12,0.06)" : "0 4px 16px rgba(17,14,12,0.06)",
+                    transition: "all 0.18s ease",
+                  }}>
+                    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      {/* Avatar */}
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: isSelected ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.07)", border: `1px solid ${isSelected ? "rgba(143,47,47,0.22)" : "rgba(21,18,15,0.10)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.06em", color: isSelected ? DS.wine : "rgba(21,18,15,0.50)" }}>
+                        {initials}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                          <div>
+                            <div style={{ fontSize: "0.92rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>{c.name}</div>
+                            <div style={{ fontSize: "0.74rem", color: "rgba(21,18,15,0.48)", fontFamily: APP_MONO_STACK, marginTop: 1 }}>
+                              {c.phone ? `+91 ${c.phone.slice(0,5)} ${c.phone.slice(5)}` : "No phone"}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right", flexShrink: 0 }}>
+                            <div style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c.tickets.length > 1 ? "#2a5a8f" : "rgba(21,18,15,0.38)", background: c.tickets.length > 1 ? "rgba(42,90,143,0.09)" : "rgba(21,18,15,0.05)", borderRadius: 999, padding: "3px 9px", border: `1px solid ${c.tickets.length > 1 ? "rgba(42,90,143,0.22)" : "rgba(21,18,15,0.09)"}`, display: "inline-block", marginBottom: 4 }}>
+                              {c.tickets.length} ticket{c.tickets.length !== 1 ? "s" : ""}
+                            </div>
+                            <div style={{ fontSize: "0.70rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_MONO_STACK }}>Rs. {totalPaid.toLocaleString("en-IN")}</div>
+                          </div>
+                        </div>
+                        <div style={{ marginTop: 8, display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
+                          {allCats.map((cat) => (
+                            <span key={cat} style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: CAT_COLORS[cat] || "#888", background: `${CAT_COLORS[cat] || "#888"}18`, border: `1px solid ${CAT_COLORS[cat] || "#888"}28`, borderRadius: 999, padding: "2px 8px" }}>{cat}</span>
+                          ))}
+                          {lastDate && <span style={{ marginLeft: "auto", fontSize: "0.66rem", color: "rgba(21,18,15,0.32)", fontFamily: APP_FONT_STACK }}>Last: {lastDate}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right: detail panel */}
+        {selected && (() => {
+          const totalPaid = selected.tickets.reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
+          const totalPending = selected.tickets.reduce((s, t) => s + (Number(t.structured?.payment?.pendingBalance) || 0), 0);
+          const allDocs = selected.tickets.flatMap((t) => (t.structured?.documents?.items || []).map((d) => ({ ...d, ticketNo: t.ticketNo, ticketDate: t.structured?.meta?.createdDate || "" })));
+          const sortedTickets = [...selected.tickets].sort((a, b) => (b.structured?.meta?.createdDate || "").localeCompare(a.structured?.meta?.createdDate || ""));
+          const initials = selected.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+          return (
+            <div style={{ position: "sticky", top: 80 }}>
+              <div style={{ ...card, overflow: "hidden" }}>
+                {/* Profile header */}
+                <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(21,18,15,0.08)", backgroundImage: "radial-gradient(circle at 90% 0%, rgba(184,148,63,0.12), transparent 36%)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                    <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                      <div style={{ width: 50, height: 50, borderRadius: "50%", background: "rgba(143,47,47,0.10)", border: "1px solid rgba(143,47,47,0.20)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.80rem", letterSpacing: "0.06em", color: DS.wine, flexShrink: 0 }}>
+                        {initials}
+                      </div>
+                      <div>
+                        <span style={eb}>Customer Profile</span>
+                        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.35rem", fontWeight: 300, color: "#15120f", letterSpacing: "-0.02em", lineHeight: 1.1 }}>{selected.name}</div>
+                        <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_MONO_STACK, marginTop: 3 }}>
+                          {selected.phone ? `+91 ${selected.phone.slice(0,5)} ${selected.phone.slice(5)}` : "No phone saved"}
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => setSelectedKey(null)} style={{ border: "1px solid rgba(21,18,15,0.12)", borderRadius: 999, padding: "7px 14px", background: "rgba(255,255,255,0.70)", color: "rgba(21,18,15,0.55)", fontFamily: APP_BRAND_STACK, fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}>Close</button>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 14 }}>
+                    {[
+                      { l: "Tickets", v: selected.tickets.length },
+                      { l: "Collected", v: `Rs. ${totalPaid.toLocaleString("en-IN")}` },
+                      { l: "Pending", v: `Rs. ${totalPending.toLocaleString("en-IN")}` },
+                    ].map((s) => (
+                      <div key={s.l} style={{ background: "rgba(21,18,15,0.04)", borderRadius: 10, padding: "9px 12px", border: "1px solid rgba(21,18,15,0.07)", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(21,18,15,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 4 }}>{s.l}</div>
+                        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.05rem", fontWeight: 300, color: "#15120f" }}>{s.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Documents section */}
+                {allDocs.length > 0 && (
+                  <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(21,18,15,0.07)" }}>
+                    <span style={eb}>All Documents on File</span>
+                    <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
+                      {allDocs.map((doc, di) => (
+                        <div key={di} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderRadius: 9, background: "rgba(21,18,15,0.03)", border: "1px solid rgba(21,18,15,0.07)" }}>
+                          <div>
+                            <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK }}>{doc.name}</div>
+                            <div style={{ fontSize: "0.66rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_MONO_STACK, marginTop: 1 }}>{doc.ticketNo} · {doc.ticketDate || "—"}</div>
+                          </div>
+                          <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                            <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.required ? DS.wine : "rgba(21,18,15,0.40)", background: doc.required ? "rgba(143,47,47,0.07)" : "rgba(21,18,15,0.04)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.required ? "rgba(143,47,47,0.18)" : "rgba(21,18,15,0.08)"}` }}>{doc.required ? "Required" : "Optional"}</span>
+                            <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.submitted ? "#2a6647" : "#c8922a", background: doc.submitted ? "rgba(42,102,71,0.08)" : "rgba(200,146,42,0.09)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.submitted ? "rgba(42,102,71,0.18)" : "rgba(200,146,42,0.22)"}` }}>{doc.submitted ? "Submitted" : "Pending"}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Ticket history */}
+                <div style={{ padding: "14px 20px" }}>
+                  <span style={eb}>Ticket History</span>
+                  <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
+                    {sortedTickets.map((t) => {
+                      const ps = t.structured?.payment?.status || "Unpaid";
+                      const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#c8922a" : DS.wine;
+                      const services = (t.structured?.services || []).map((s) => s.name).join(", ") || "—";
+                      return (
+                        <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.65)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 10, padding: "12px 14px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                            <div>
+                              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.65rem", color: "rgba(21,18,15,0.35)", marginBottom: 2 }}>{t.ticketNo} · {t.structured?.meta?.createdDate || "—"}</div>
+                              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>{services}</div>
+                              <div style={{ fontSize: "0.72rem", color: "rgba(21,18,15,0.45)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
+                                {t.operator || "—"} · Rs. {(t.total || 0).toLocaleString("en-IN")}
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", gap: 5, alignItems: "flex-start", flexShrink: 0 }}>
+                              <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: psColor, background: `${psColor}15`, border: `1px solid ${psColor}28`, borderRadius: 999, padding: "3px 9px" }}>{ps}</span>
+                              <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#c8922a", background: t.status === "Closed" ? "rgba(143,47,47,0.07)" : "rgba(200,146,42,0.09)", border: `1px solid ${t.status === "Closed" ? "rgba(143,47,47,0.18)" : "rgba(200,146,42,0.22)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
+// --- Walk-in Intake Modal ---
+function WalkInModal({ onClose, onStart }) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [operator, setOperator] = useState(DEFAULT_OPERATOR);
+  const [error, setError] = useState("");
+
+  const handleStart = () => {
+    const trimName = name.trim();
+    const cleanPhone = phone.replace(/\D/g, "").slice(0, 10);
+    if (!trimName) { setError("Customer name is required."); return; }
+    if (cleanPhone && !/^[0-9]{10}$/.test(cleanPhone)) { setError("Phone must be exactly 10 digits."); return; }
+    onStart({ name: trimName, phone: cleanPhone, operator });
+  };
+
+  const inputSt = {
+    width: "100%", padding: "11px 14px", borderRadius: 10,
+    border: "1px solid rgba(21,18,15,0.14)", background: "rgba(255,255,255,0.86)",
+    color: "#15120f", outline: "none", fontFamily: APP_FONT_STACK, fontSize: "0.90rem",
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(15,17,22,0.55)", backdropFilter: "blur(6px)" }} />
+      <div style={{
+        position: "relative", zIndex: 1, width: "min(480px, 100%)",
+        background: "#fffaf2", border: "1px solid rgba(21,18,15,0.14)", borderRadius: 20,
+        padding: "28px 24px", boxShadow: "0 28px 68px rgba(17,14,12,0.18)",
+        backgroundImage: "radial-gradient(circle at 8% 8%, rgba(184,148,63,0.18), transparent 32%), radial-gradient(circle at 90% 90%, rgba(143,47,47,0.10), transparent 30%)",
+      }}>
+        <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, marginBottom: 10 }}>
+          Quick Walk-In
+        </div>
+        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.65rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1 }}>
+          Start <em style={{ fontStyle: "italic" }}>instantly.</em>
+        </div>
+        <div style={{ fontSize: "0.84rem", color: "rgba(21,18,15,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.65, marginBottom: 22 }}>
+          Enter the customer name and start the ticket immediately — no WhatsApp needed.
+        </div>
+
+        <div style={{ display: "grid", gap: 14, marginBottom: 18 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: DS.wine }}>Customer Name *</span>
+            <input autoFocus placeholder="e.g. Rahul Sharma" value={name} onChange={(e) => { setName(e.target.value); setError(""); }} style={inputSt} />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.42)" }}>Phone (optional)</span>
+            <input type="tel" placeholder="10-digit mobile" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }} style={inputSt} />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.42)" }}>Operator</span>
+            <select value={operator} onChange={(e) => setOperator(e.target.value)} style={inputSt}>
+              {OPERATORS.map((op) => <option key={op} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
+            </select>
+          </label>
+        </div>
+
+        {error && (
+          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f1020", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ border: "1px solid rgba(21,18,15,0.14)", borderRadius: 999, padding: "11px 20px", background: "rgba(255,255,255,0.72)", color: "rgba(21,18,15,0.70)", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
+            Cancel
+          </button>
+          <button onClick={handleStart} style={{ border: "1px solid rgba(143,47,47,0.48)", borderRadius: 999, padding: "11px 24px", background: "rgba(143,47,47,0.13)", color: "#6b1f1f", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
+            Start Ticket →
+          </button>
         </div>
       </div>
     </div>
@@ -3161,46 +4347,67 @@ function B2BWorkspace() {
 
 // --- MAIN APP ---
 export default function CSCBilling() {
-  const dbSyncedRef = useRef(false);
-  const [tab, setTab] = useState(() => getStoredActiveTab());
+  const [tab, setTab] = useState(() => getInitialActiveTab());
   const [sidePanelExpanded, setSidePanelExpanded] = useState(() => getStoredSidePanelExpanded());
-  const [dashboardFocusTicketNo, setDashboardFocusTicketNo] = useState(null);
-  const [customQuickLinks, setCustomQuickLinks] = useState(() => getStoredQuickLinks());
-  const [showAddQuickLink, setShowAddQuickLink] = useState(false);
-  const [quickLinkName, setQuickLinkName] = useState("");
-  const [quickLinkUrl, setQuickLinkUrl] = useState("");
-  const [quickLinkError, setQuickLinkError] = useState("");
   const [services, setServices] = useState(() => (
     hydrateServices(readStoredJSON(STORAGE_KEYS.services, INITIAL_SERVICES))
   ));
   const [tickets, setTickets] = useState(() => (
     hydrateTickets(readStoredJSON(STORAGE_KEYS.tickets, []))
   ));
+  const [customQuickLinks, setCustomQuickLinks] = useState(() => getStoredQuickLinks());
+  const [showAddQuickLink, setShowAddQuickLink] = useState(false);
+  const [quickLinkName, setQuickLinkName] = useState("");
+  const [quickLinkUrl, setQuickLinkUrl] = useState("");
+  const [quickLinkError, setQuickLinkError] = useState("");
+  const [showWalkIn, setShowWalkIn] = useState(false);
+  const walkInDraftRef = useRef(null);
+  const dbSyncedRef = useRef(false);
   const openTicketCount = tickets.filter((ticket) => ticket.status !== "Closed").length;
   const closedTicketCount = tickets.filter((ticket) => ticket.status === "Closed").length;
   const pricedServiceCount = services.filter((service) => service.price > 0).length;
   const panelBadges = {
     log: openTicketCount > 0 ? String(openTicketCount) : String(tickets.length),
     b2b: "Beta",
+    monthly: "New",
+    customers: "New",
   };
-  const quickLinks = [...QUICK_LINK_DEFAULTS, ...customQuickLinks];
   const headerStats = [
-    { label: "Configured services", value: `${pricedServiceCount}/${services.length}`, note: "Rates ready for billing", accent: "#14B8A6" },
-    { label: "Open tickets", value: String(openTicketCount), note: "Live desk workload", accent: "#F59E0B" },
-    { label: "Closed tickets", value: String(closedTicketCount), note: "Completed and archived", accent: "#10B981" },
-    { label: "Operators", value: String(OPERATORS.length), note: "Front desk staff enabled", accent: "#0F172A" },
+    { label: "Configured services", value: `${pricedServiceCount}/${services.length}`, note: "Rates ready for billing", accent: "#2a5a8f" },
+    { label: "Open tickets", value: String(openTicketCount), note: "Live desk workload", accent: "#7b5d2c" },
+    { label: "Closed tickets", value: String(closedTicketCount), note: "Completed and archived", accent: DS.wine },
+    { label: "Operators", value: String(OPERATORS.length), note: "Front desk staff enabled", accent: "#15120f" },
   ];
+  const quickLinks = [...QUICK_LINK_DEFAULTS, ...customQuickLinks];
+  const navigateTab = (nextTab, mode = "push") => {
+    if (!TAB_CONFIG.some((item) => item.id === nextTab)) return;
+    if (nextTab === tab) return;
+    updateBrowserState({ tab: nextTab }, mode);
+    setTab(nextTab);
+  };
+
+  const handleWalkInStart = ({ name, phone, operator }) => {
+    writeStoredJSON(STORAGE_KEYS.ticketDraft, {
+      step: 1,
+      customerName: name,
+      customerPhone: phone,
+      operator,
+      hasReference: false,
+      referenceName: "",
+      referenceLabel: "",
+      providedDocIds: [],
+      items: [],
+      documents: [],
+    });
+    setShowWalkIn(false);
+    navigateTab("entry");
+    window.location.reload();
+  };
 
   const saveTicket = (ticket) => setTickets((prev) => [...prev, withStructuredTicket(ticket)]);
   const toggleTicketStatus = (ticketNo, status) => {
     setTickets((prev) => prev.map((t) => (
-      t.ticketNo === ticketNo
-        ? withStructuredTicket({
-          ...t,
-          status: t.portalDown && status === "Closed" ? "Open" : status,
-          updatedAt: `${todayStr()} ${timeStr()}`,
-        })
-        : t
+      t.ticketNo === ticketNo ? withStructuredTicket({ ...t, status, updatedAt: `${todayStr()} ${timeStr()}` }) : t
     )));
   };
   const toggleTaskDone = (ticketNo, taskIdx) => {
@@ -3216,16 +4423,9 @@ export default function CSCBilling() {
   const updateTicket = (ticketNo, updates) => {
     setTickets((prev) => prev.map((t) => {
       if (t.ticketNo !== ticketNo) return t;
-      const nextPortalDown = Object.prototype.hasOwnProperty.call(updates || {}, "portalDown")
-        ? Boolean(updates.portalDown)
-        : Boolean(t.portalDown);
-      const requestedStatus = Object.prototype.hasOwnProperty.call(updates || {}, "status")
-        ? updates.status
-        : t.status;
       return withStructuredTicket({
         ...t,
         ...updates,
-        status: nextPortalDown ? "Open" : requestedStatus,
         updatedAt: `${todayStr()} ${timeStr()}`,
       });
     }));
@@ -3259,48 +4459,23 @@ export default function CSCBilling() {
     if (typeof window === "undefined") return;
     const finalUrl = normalizeExternalUrl(url);
     if (!finalUrl) return;
-    window.open(finalUrl, "_blank");
+    window.open(finalUrl, "_blank", "noopener,noreferrer");
   };
 
-  // Load from Supabase on mount.
-  // If DB has data → use it. If DB is empty → push local data up.
-  // Save effects are blocked until this completes to prevent race conditions.
   useEffect(() => {
-    async function loadFromSupabase() {
-      const [remoteTickets, remoteServices, remoteQuickLinks] = await Promise.all([
-        dbLoad("tickets"),
-        dbLoad("services"),
-        dbLoad("quick_links"),
-      ]);
+    updateBrowserState({ tab }, "replace");
+  }, []);
 
-      const localTickets = readStoredJSON(STORAGE_KEYS.tickets, []);
-      const localServices = readStoredJSON(STORAGE_KEYS.services, []);
-      const localQuickLinks = readStoredJSON(STORAGE_KEYS.quickLinks, []);
-
-      if (Array.isArray(remoteTickets) && remoteTickets.length > 0) {
-        setTickets(hydrateTickets(remoteTickets));
-        writeStoredJSON(STORAGE_KEYS.tickets, remoteTickets);
-      } else if (localTickets.length > 0) {
-        await dbSave("tickets", localTickets);
+  useEffect(() => {
+    const handlePopState = (event) => {
+      const nextTab = event.state?.tab;
+      if (TAB_CONFIG.some((item) => item.id === nextTab)) {
+        setTab(nextTab);
       }
-
-      if (Array.isArray(remoteServices) && remoteServices.length > 0) {
-        setServices(hydrateServices(remoteServices));
-        writeStoredJSON(STORAGE_KEYS.services, remoteServices);
-      } else if (localServices.length > 0) {
-        await dbSave("services", localServices);
-      }
-
-      if (Array.isArray(remoteQuickLinks) && remoteQuickLinks.length > 0) {
-        setCustomQuickLinks(remoteQuickLinks);
-        writeStoredJSON(STORAGE_KEYS.quickLinks, remoteQuickLinks);
-      } else if (localQuickLinks.length > 0) {
-        await dbSave("quick_links", localQuickLinks);
-      }
-
-      dbSyncedRef.current = true;
-    }
-    loadFromSupabase();
+    };
+    if (typeof window === "undefined") return undefined;
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   useEffect(() => {
@@ -3312,60 +4487,118 @@ export default function CSCBilling() {
   }, [sidePanelExpanded]);
 
   useEffect(() => {
+    let cancelled = false;
+    async function loadFromSupabase() {
+      const [remoteTickets, remoteServices, remoteQuickLinks] = await Promise.all([
+        dbLoad("tickets"),
+        dbLoad("services"),
+        dbLoad("quick_links"),
+      ]);
+
+      if (cancelled) return;
+
+      const localTickets = readStoredJSON(STORAGE_KEYS.tickets, []);
+      const localServices = readStoredJSON(STORAGE_KEYS.services, []);
+      const localQuickLinks = getStoredQuickLinks();
+
+      if (Array.isArray(remoteTickets) && remoteTickets.length > 0) {
+        setTickets(hydrateTickets(remoteTickets));
+        writeStoredJSON(STORAGE_KEYS.tickets, remoteTickets);
+      } else if (Array.isArray(localTickets) && localTickets.length > 0) {
+        await dbSave("tickets", localTickets);
+      }
+
+      if (Array.isArray(remoteServices) && remoteServices.length > 0) {
+        setServices(hydrateServices(remoteServices));
+        writeStoredJSON(STORAGE_KEYS.services, remoteServices);
+      } else if (Array.isArray(localServices) && localServices.length > 0) {
+        await dbSave("services", localServices);
+      }
+
+      if (Array.isArray(remoteQuickLinks) && remoteQuickLinks.length > 0) {
+        setCustomQuickLinks(normalizeQuickLinksList(remoteQuickLinks));
+        writeStoredJSON(STORAGE_KEYS.quickLinks, remoteQuickLinks);
+      } else if (Array.isArray(localQuickLinks) && localQuickLinks.length > 0) {
+        await dbSave("quick_links", localQuickLinks);
+      }
+
+      if (!cancelled) {
+        dbSyncedRef.current = true;
+      }
+    }
+    loadFromSupabase();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useDebouncedStoredJSON(STORAGE_KEYS.services, services, 180);
+  useDebouncedStoredJSON(STORAGE_KEYS.tickets, serializeTickets(tickets), 180);
+  useDebouncedStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks, 180);
+
+  useEffect(() => {
     if (!dbSyncedRef.current) return;
-    writeStoredJSON(STORAGE_KEYS.services, services);
     dbSave("services", services);
   }, [services]);
 
   useEffect(() => {
     if (!dbSyncedRef.current) return;
-    const serialized = serializeTickets(tickets);
-    writeStoredJSON(STORAGE_KEYS.tickets, serialized);
-    dbSave("tickets", serialized);
+    dbSave("tickets", serializeTickets(tickets));
   }, [tickets]);
 
   useEffect(() => {
     if (!dbSyncedRef.current) return;
-    writeStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks);
     dbSave("quick_links", customQuickLinks);
   }, [customQuickLinks]);
 
   return (
     <div style={{
       minHeight: "100vh",
-      background: "radial-gradient(circle at top left, rgba(20,184,166,0.18), transparent 26%), radial-gradient(circle at top right, rgba(14,116,144,0.12), transparent 24%), linear-gradient(180deg, #F8FBFF 0%, #EDF5FB 48%, #F8FAFC 100%)",
+      background: DS.dark,
       fontFamily: APP_FONT_STACK,
-      color: "#0F172A",
+      color: DS.fg1,
+      display: "flex",
+      flexDirection: "column",
     }}>
+      {showWalkIn && <WalkInModal onClose={() => setShowWalkIn(false)} onStart={handleWalkInStart} />}
       <style>{`
-        :root {
-          color-scheme: light;
-        }
-        * {
-          box-sizing: border-box;
-        }
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
         html, body {
           margin: 0;
-          background: #EDF5FB;
-          color: #0F172A;
+          background: ${DS.dark};
+          color: ${DS.fg1};
         }
         body, button, input, select, textarea {
           font-family: ${APP_FONT_STACK};
+          color: ${DS.fg1};
+        }
+        input::placeholder, textarea::placeholder {
+          color: ${DS.fg4};
+        }
+        select option {
+          background: ${DS.darkDeep};
+          color: ${DS.fg1};
         }
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(4px); }
+          from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulseFloat {
-          from { transform: translateY(0px); }
-          to { transform: translateY(-8px); }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-8px); }
+          to { opacity: 1; transform: translateX(0); }
         }
-        [style*="rgba(255,255,255,0.74)"],
-        [style*="rgba(255,255,255,0.82)"] {
-          backdrop-filter: blur(14px);
-          -webkit-backdrop-filter: blur(14px);
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        @keyframes subtleGlow {
+          from { box-shadow: 0 0 0 0 rgba(143,47,47,0); }
+          to   { box-shadow: 0 0 22px 4px rgba(143,47,47,0.08); }
         }
+        .csc-sidebar-nav::-webkit-scrollbar { width: 4px; }
+        .csc-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+        .csc-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
+        .csc-content-scroll::-webkit-scrollbar { width: 4px; }
+        .csc-content-scroll::-webkit-scrollbar-track { background: transparent; }
+        .csc-content-scroll::-webkit-scrollbar-thumb { background: rgba(21,18,15,0.12); border-radius: 999px; }
+        input[type="checkbox"] { accent-color: ${DS.wine}; cursor: pointer; }
         @media print {
           @page { margin: 8mm; }
           html, body {
@@ -3373,17 +4606,11 @@ export default function CSCBilling() {
             margin: 0 !important;
             padding: 0 !important;
           }
-          body * {
-            visibility: hidden !important;
-          }
-          #receipt, #receipt * {
-            visibility: visible !important;
-          }
+          body * { visibility: hidden !important; }
+          #receipt, #receipt * { visibility: visible !important; }
           #receipt {
             position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
+            top: 0 !important; left: 0 !important; right: 0 !important;
             margin: 0 auto !important;
             width: min(420px, 100%) !important;
             max-width: 420px !important;
@@ -3393,366 +4620,610 @@ export default function CSCBilling() {
             box-shadow: none !important;
             overflow: visible !important;
           }
-          button {
-            display: none !important;
-          }
+          button { display: none !important; }
+          .csc-sidebar { display: none !important; }
         }
       `}</style>
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-      <div style={{ padding: "28px 20px 68px", position: "relative" }}>
-        <div style={{ maxWidth: APP_MAX_WIDTH, margin: "0 auto" }}>
-          {/* Header */}
-          <div style={{
-            position: "relative",
-            overflow: "hidden",
-            background: "linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(240,249,255,0.92) 42%, rgba(236,253,245,0.90) 100%)",
-            padding: "32px 28px 24px",
-            color: "#0F172A",
-            border: "1px solid rgba(148,163,184,0.18)",
-            borderRadius: 30,
-            boxShadow: "0 28px 60px rgba(15,23,42,0.10)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-            marginBottom: 28,
-          }}>
+      {/* ── App Shell: Sidebar + Main ── */}
+      <div style={{ display: "flex", minHeight: "100vh" }}>
+
+        {/* ── Left Sidebar ── */}
+        <aside className="csc-sidebar" style={{
+          width: 260,
+          minWidth: 260,
+          background: `radial-gradient(circle at 110% -8%, rgba(184,148,63,0.12), transparent 38%), radial-gradient(circle at -10% 100%, rgba(143,47,47,0.07), transparent 36%), linear-gradient(180deg, #fdf8f0 0%, #f8f2e6 100%)`,
+          borderRight: `1px solid rgba(21,18,15,0.10)`,
+          display: "flex",
+          flexDirection: "column",
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflow: "hidden",
+          zIndex: 20,
+        }}>
+          {/* Sidebar Header / Logo */}
+          <div style={{ padding: "26px 20px 18px" }}>
             <div style={{
-              position: "absolute",
-              width: 220,
-              height: 220,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(20,184,166,0.20) 0%, rgba(20,184,166,0) 72%)",
-              top: -80,
-              right: -40,
-              animation: "pulseFloat 5s ease-in-out infinite alternate",
-              pointerEvents: "none",
-            }} />
-            <div style={{
-              position: "absolute",
-              width: 180,
-              height: 180,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(14,116,144,0.14) 0%, rgba(14,116,144,0) 72%)",
-              bottom: -70,
-              left: -40,
-              animation: "pulseFloat 6s ease-in-out infinite alternate",
-              pointerEvents: "none",
-            }} />
-
-            <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, flexWrap: "wrap", marginBottom: 28 }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 18, flex: "1 1 760px", minWidth: 280 }}>
-                <button
-                  onClick={() => setSidePanelExpanded((prev) => !prev)}
-                  aria-label={sidePanelExpanded ? "Close utility menu" : "Open utility menu"}
-                  style={{
-                    width: 58,
-                    height: 58,
-                    borderRadius: 20,
-                    border: "1px solid rgba(148,163,184,0.20)",
-                    background: "rgba(248,250,252,0.94)",
-                    display: "grid",
-                    placeItems: "center",
-                    cursor: "pointer",
-                    boxShadow: "0 14px 28px rgba(15,23,42,0.08)",
-                    flexShrink: 0,
-                    marginTop: 4,
-                  }}
-                >
-                  <span style={{ display: "grid", gap: 4 }}>
-                    <span style={{ width: 18, height: 2, borderRadius: 999, background: "#0F172A", display: "block" }} />
-                    <span style={{ width: 18, height: 2, borderRadius: 999, background: "#0F172A", display: "block" }} />
-                    <span style={{ width: 18, height: 2, borderRadius: 999, background: "#0F172A", display: "block" }} />
-                  </span>
-                </button>
-
-                <div style={{ maxWidth: 680 }}>
-                  <div style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    borderRadius: 999,
-                    padding: "8px 12px",
-                    background: "rgba(15,23,42,0.05)",
-                    border: "1px solid rgba(15,23,42,0.08)",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: 1.1,
-                    textTransform: "uppercase",
-                    color: "#0F766E",
-                    marginBottom: 18,
-                  }}>
-                    Operations Console
-                  </div>
-                  <h1 style={{ fontSize: "clamp(2.1rem, 4vw, 3.5rem)", lineHeight: 1.04, fontWeight: 800, margin: 0, letterSpacing: -1.8, color: "#0F172A" }}>
-                    CSC Centre Workspace
-                  </h1>
-                  <p style={{ margin: "14px 0 0", fontSize: 16, lineHeight: 1.6, color: "#475569", maxWidth: 620, fontWeight: 500 }}>
-                    A cleaner control room for billing, service intake, and ticket follow-up at Blue Sapphire Plaza.
-                    This pass focuses on clarity, hierarchy, and faster navigation.
-                  </p>
-                </div>
-              </div>
-              <div style={{
-                minWidth: 220,
-                background: "rgba(255,255,255,0.82)",
-                borderRadius: 20,
-                border: "1px solid rgba(148,163,184,0.18)",
-                padding: "16px 18px",
-                boxShadow: "0 18px 36px rgba(15,23,42,0.08)",
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", color: "#64748B", marginBottom: 8 }}>
-                  Today
-                </div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#0F172A", marginBottom: 10 }}>
-                  {todayStr()}
-                </div>
-                <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6 }}>
-                  Active view:
-                  <span style={{ color: "#0F172A", fontWeight: 700 }}> {TAB_CONFIG.find((item) => item.id === tab)?.label}</span>
-                </div>
-                <div style={{ marginTop: 10, fontSize: 12, color: "#0F766E", fontFamily: APP_MONO_STACK }}>
-                  Desk readiness: Live
-                </div>
-              </div>
-            </div>
-
-            <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 24 }}>
-              {headerStats.map((stat) => (
-                <div
-                  key={stat.label}
-                  style={{
-                    position: "relative",
-                    overflow: "hidden",
-                    borderRadius: 20,
-                    background: "rgba(255,255,255,0.78)",
-                    border: "1px solid rgba(148,163,184,0.16)",
-                    padding: "16px 18px",
-                    minHeight: 104,
-                  }}
-                >
-                  <div style={{
-                    position: "absolute",
-                    width: 88,
-                    height: 88,
-                    borderRadius: "50%",
-                    background: `${stat.accent}18`,
-                    top: -28,
-                    right: -18,
-                  }} />
-                  <div style={{ position: "relative", fontSize: 12, fontWeight: 600, color: "#64748B", marginBottom: 10 }}>
-                    {stat.label}
-                  </div>
-                  <div style={{ position: "relative", fontSize: 28, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A", marginBottom: 8 }}>
-                    {stat.value}
-                  </div>
-                  <div style={{ position: "relative", fontSize: 12, lineHeight: 1.5, color: stat.accent, fontWeight: 600 }}>
-                    {stat.note}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Primary Navigation */}
-            <div style={{
-              display: "flex",
-              gap: 14,
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "space-between",
+              fontSize: "0.50rem", fontWeight: 700, letterSpacing: "0.38em",
+              textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 12,
             }}>
-              <div style={{
-                flex: "1 1 100%",
-                display: "flex",
-                gap: 12,
-                flexWrap: "wrap",
-                padding: 6,
-                background: "rgba(248,250,252,0.72)",
-                border: "1px solid rgba(148,163,184,0.16)",
-                borderRadius: 24,
-              }}>
-                {PRIMARY_TAB_CONFIG.map((item) => (
-                  <TabBtn
-                    key={item.id}
-                    label={item.label}
-                    description={item.description}
-                    active={tab === item.id}
-                    onClick={() => setTab(item.id)}
-                  />
-                ))}
-              </div>
+              Blue Sapphire Plaza
+            </div>
+            <div style={{
+              fontFamily: APP_SERIF_STACK, fontSize: "2rem", fontWeight: 300,
+              lineHeight: 1.0, color: "#15120f", letterSpacing: "-0.02em",
+            }}>
+              CSC<br /><em style={{ fontStyle: "italic", color: "rgba(21,18,15,0.60)" }}>Buddy</em>
+            </div>
+            <div style={{
+              marginTop: 10, fontSize: "0.72rem", color: "rgba(21,18,15,0.40)",
+              fontFamily: APP_FONT_STACK, letterSpacing: "0.04em",
+            }}>
+              Operations Console
             </div>
           </div>
 
-          <div
-            aria-hidden={!sidePanelExpanded}
-            onClick={() => setSidePanelExpanded(false)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(15,23,42,0.24)",
-              opacity: sidePanelExpanded ? 1 : 0,
-              pointerEvents: sidePanelExpanded ? "auto" : "none",
-              transition: "opacity 0.22s ease",
-              zIndex: 40,
-            }}
-          />
+          {/* Hairline divider */}
+          <div style={{ height: 1, background: "rgba(21,18,15,0.08)", margin: "0 20px" }} />
 
-          <aside
-            aria-hidden={!sidePanelExpanded}
-            style={{
-              position: "fixed",
-              top: 20,
-              bottom: 20,
-              left: 20,
-              width: "min(360px, calc(100vw - 40px))",
-              background: "linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(248,250,252,0.95) 100%)",
-              border: "1px solid rgba(148,163,184,0.18)",
-              borderRadius: 28,
-              boxShadow: "0 32px 60px rgba(15,23,42,0.18)",
-              backdropFilter: "blur(18px)",
-              WebkitBackdropFilter: "blur(18px)",
-              padding: 18,
-              transform: sidePanelExpanded ? "translateX(0)" : "translateX(calc(-100% - 28px))",
-              transition: "transform 0.26s ease",
-              zIndex: 50,
-              display: "grid",
-              gridTemplateRows: "auto auto 1fr",
-              gap: 14,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", color: "#64748B", marginBottom: 6 }}>
-                  Utility Menu
-                </div>
-                <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.8, color: "#0F172A" }}>
-                  Workspace Tools
-                </div>
-              </div>
-              <button
-                onClick={() => setSidePanelExpanded(false)}
-                style={{
-                  border: "1px solid rgba(148,163,184,0.18)",
-                  borderRadius: 14,
-                  padding: "10px 12px",
-                  background: "rgba(248,250,252,0.92)",
-                  color: "#334155",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-              >
-                Close
-              </button>
+          {/* Date/Status block */}
+          <div style={{ padding: "16px 20px" }}>
+            <div style={{
+              fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.36em",
+              textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 6,
+            }}>
+              Today
             </div>
+            <div style={{
+              fontFamily: APP_SERIF_STACK, fontSize: "1.15rem", fontWeight: 300,
+              color: "#15120f", letterSpacing: "-0.01em", lineHeight: 1.2,
+            }}>
+              {todayStr()}
+            </div>
+            <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#c8922a", display: "inline-block", boxShadow: "0 0 5px rgba(200,146,42,0.50)" }} />
+              <span style={{ fontSize: "0.62rem", color: "#c8922a", fontFamily: APP_MONO_STACK, letterSpacing: "0.10em" }}>Live</span>
+            </div>
+          </div>
 
-            <div style={{ padding: "14px 16px", borderRadius: 18, background: "rgba(15,23,42,0.04)", border: "1px solid rgba(148,163,184,0.16)" }}>
-              <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.6 }}>
-                Open monitoring and partner workflows from here without crowding the main intake flow.
+          {/* Hairline divider */}
+          <div style={{ height: 1, background: "rgba(21,18,15,0.08)", margin: "0 20px" }} />
+
+          {/* Primary Nav */}
+          <nav className="csc-sidebar-nav" style={{
+            flex: 1, overflowY: "auto",
+            padding: "18px 10px 10px",
+            display: "flex", flexDirection: "column", gap: 2,
+          }}>
+            {/* Section label */}
+            <div style={{
+              fontSize: "0.46rem", fontWeight: 700, letterSpacing: "0.38em",
+              textTransform: "uppercase", color: "rgba(21,18,15,0.35)",
+              fontFamily: APP_BRAND_STACK, padding: "0 8px", marginBottom: 8,
+            }}>
+              Workspaces
+            </div>
+            {PRIMARY_TAB_CONFIG.map((item) => (
+              <TabBtn
+                key={item.id}
+                label={item.label}
+                description={item.description}
+                active={tab === item.id}
+                onClick={() => navigateTab(item.id)}
+              />
+            ))}
+
+            {/* Walk-in CTA */}
+            <div style={{ margin: "14px 8px 0", height: 1, background: "rgba(21,18,15,0.08)" }} />
+            <button
+              onClick={() => setShowWalkIn(true)}
+              style={{
+                width: "100%", padding: "10px 18px", marginTop: 10,
+                border: "none", background: "transparent",
+                cursor: "pointer", textAlign: "left",
+                display: "flex", alignItems: "center", gap: 10,
+                borderRadius: 10, transition: DS.transStd,
+              }}
+            >
+              <span style={{
+                width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                background: "rgba(143,47,47,0.10)", border: "1px solid rgba(143,47,47,0.22)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "0.75rem", color: DS.wine,
+              }}>↗</span>
+              <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", fontFamily: APP_BRAND_STACK, color: DS.wine }}>New Walk-in</span>
+                <span style={{ fontSize: "0.70rem", color: "rgba(21,18,15,0.45)", fontFamily: APP_FONT_STACK }}>Start intake without WhatsApp</span>
+              </span>
+            </button>
+
+            {/* Section label */}
+            <div style={{ margin: "14px 8px 8px", height: 1, background: "rgba(21,18,15,0.08)" }} />
+            <div style={{
+              fontSize: "0.46rem", fontWeight: 700, letterSpacing: "0.38em",
+              textTransform: "uppercase", color: "rgba(21,18,15,0.35)",
+              fontFamily: APP_BRAND_STACK, padding: "0 8px", marginBottom: 8,
+            }}>
+              Tools &amp; Logs
+            </div>
+            {PANEL_TAB_CONFIG.map((item) => (
+              <TabBtn
+                key={item.id}
+                label={item.label}
+                description={item.description}
+                active={tab === item.id}
+                onClick={() => navigateTab(item.id)}
+              />
+            ))}
+          </nav>
+
+          {/* Sidebar footer */}
+          <div style={{ padding: "10px 10px 20px" }}>
+            <div style={{ height: 1, background: "rgba(21,18,15,0.08)", margin: "0 8px 12px" }} />
+            <button
+              onClick={() => setSidePanelExpanded((prev) => !prev)}
+              aria-label={sidePanelExpanded ? "Close utility menu" : "Open utility menu"}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 12,
+                padding: "10px 18px", borderRadius: 10, border: "none",
+                background: sidePanelExpanded ? "rgba(143,47,47,0.08)" : "transparent",
+                cursor: "pointer", transition: DS.transStd,
+              }}
+            >
+              <span style={{ display: "flex", flexDirection: "column", gap: 3.5, flexShrink: 0 }}>
+                <span style={{ width: 14, height: 1.5, borderRadius: 999, background: "rgba(21,18,15,0.40)", display: "block" }} />
+                <span style={{ width: 14, height: 1.5, borderRadius: 999, background: "rgba(21,18,15,0.40)", display: "block" }} />
+                <span style={{ width: 9, height: 1.5, borderRadius: 999, background: "rgba(21,18,15,0.40)", display: "block" }} />
+              </span>
+              <span style={{ fontSize: "0.72rem", fontFamily: APP_FONT_STACK, fontWeight: 500, color: "rgba(21,18,15,0.50)" }}>Quick Links &amp; Tools</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* ── Backdrop for utility drawer ── */}
+        <div
+          aria-hidden={!sidePanelExpanded}
+          onClick={() => setSidePanelExpanded(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            opacity: sidePanelExpanded ? 1 : 0,
+            pointerEvents: sidePanelExpanded ? "auto" : "none",
+            transition: "opacity 0.25s ease",
+            zIndex: 40,
+          }}
+        />
+
+        {/* ── Utility Drawer (slides over sidebar) ── */}
+        <aside
+          aria-hidden={!sidePanelExpanded}
+          style={{
+            position: "fixed",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: "min(340px, calc(100vw - 40px))",
+            background: `radial-gradient(circle at 92% -6%, rgba(184,148,63,0.14), transparent 38%), radial-gradient(circle at -8% 100%, rgba(143,47,47,0.07), transparent 34%), linear-gradient(180deg, #fdf8f0 0%, #f5ede0 100%)`,
+            border: `none`,
+            borderRight: `1px solid rgba(21,18,15,0.12)`,
+            boxShadow: "8px 0 40px rgba(21,18,15,0.12)",
+            padding: "24px 16px",
+            transform: sidePanelExpanded ? "translateX(0)" : "translateX(-100%)",
+            transition: `transform 0.32s ${DS.ease}`,
+            zIndex: 50,
+            display: "grid",
+            gridTemplateRows: "auto auto minmax(0,1fr) minmax(0,1.2fr)",
+            gap: 16,
+          }}
+        >
+          {/* Drawer header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <div>
+              <div style={{
+                fontSize: "0.58rem",
+                fontWeight: 700,
+                letterSpacing: "0.32em",
+                textTransform: "uppercase",
+                color: DS.wine,
+                fontFamily: APP_BRAND_STACK,
+                marginBottom: 8,
+              }}>
+                Utility Menu
+              </div>
+              <div style={{
+                fontFamily: APP_SERIF_STACK,
+                fontSize: "1.4rem",
+                fontWeight: 300,
+                color: "#15120f",
+                letterSpacing: "-0.01em",
+              }}>
+                Workspace Tools
               </div>
             </div>
+            <button
+              onClick={() => setSidePanelExpanded(false)}
+              style={{
+                border: "1px solid rgba(21,18,15,0.14)",
+                borderRadius: 10,
+                padding: "8px 12px",
+                background: "rgba(21,18,15,0.05)",
+                color: "rgba(21,18,15,0.60)",
+                cursor: "pointer",
+                fontFamily: APP_BRAND_STACK,
+                fontSize: "0.65rem",
+                fontWeight: 700,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                transition: DS.transColor,
+              }}
+            >
+              Close
+            </button>
+          </div>
 
-            <div style={{ display: "grid", gap: 14, alignContent: "start", overflowY: "auto", paddingRight: 2 }}>
-              <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
-                <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", margin: "0 4px" }}>
-                  Utility Views
-                </div>
-                {PANEL_TAB_CONFIG.map((item) => (
-                  <SideNavItem
-                    key={item.id}
-                    item={item}
-                    active={tab === item.id}
-                    expanded={true}
-                    badge={panelBadges[item.id]}
-                    onClick={() => {
-                      setTab(item.id);
-                      setSidePanelExpanded(false);
-                    }}
-                  />
-                ))}
-              </div>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase", margin: "0 4px" }}>
-                  Quick Links
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {quickLinks.map((link) => (
-                    <div key={link.id} style={{ borderRadius: 14, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(255,255,255,0.92)", padding: 10, display: "grid", gap: 6 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                        <div style={{ color: "#0F172A", fontSize: 13, fontWeight: 700 }}>{link.name}</div>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button onClick={() => openQuickLink(link.url)} style={{ border: "1px solid rgba(20,184,166,0.24)", borderRadius: 8, background: "rgba(236,253,245,0.96)", color: "#0F766E", fontSize: 11, fontWeight: 700, padding: "6px 8px", cursor: "pointer" }}>
-                            Open
-                          </button>
-                          {!link.isDefault && (
-                            <button onClick={() => removeQuickLink(link.id)} style={{ border: "1px solid rgba(248,113,113,0.24)", borderRadius: 8, background: "rgba(254,242,242,0.96)", color: "#B91C1C", fontSize: 11, fontWeight: 700, padding: "6px 8px", cursor: "pointer" }}>
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ color: "#475569", fontSize: 12, lineHeight: 1.45 }}>{link.description}</div>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => {
-                    setShowAddQuickLink((prev) => !prev);
-                    setQuickLinkError("");
-                  }}
-                  style={{ border: "1px solid rgba(20,184,166,0.26)", borderRadius: 10, background: "rgba(240,253,250,0.96)", color: "#0F766E", fontSize: 12, fontWeight: 700, padding: "9px 10px", cursor: "pointer" }}
-                >
-                  + Add Link
-                </button>
-                {showAddQuickLink && (
-                  <div style={{ borderRadius: 12, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(255,255,255,0.94)", padding: 10, display: "grid", gap: 8 }}>
-                    <input value={quickLinkName} onChange={(e) => setQuickLinkName(e.target.value)} placeholder="Name" style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid rgba(148,163,184,0.24)", outline: "none" }} />
-                    <input value={quickLinkUrl} onChange={(e) => setQuickLinkUrl(e.target.value)} placeholder="URL" style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid rgba(148,163,184,0.24)", outline: "none" }} />
-                    {quickLinkError && (
-                      <div style={{ color: "#B91C1C", fontSize: 11, fontWeight: 600 }}>{quickLinkError}</div>
-                    )}
-                    <button onClick={addQuickLink} style={{ border: "none", borderRadius: 8, background: "linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)", color: "#FFFFFF", fontSize: 12, fontWeight: 700, padding: "8px 10px", cursor: "pointer" }}>
-                      Save
-                    </button>
-                  </div>
-                )}
-              </div>
+          {/* Drawer info note */}
+          <div style={{
+            padding: "12px 14px",
+            borderRadius: 12,
+            background: "rgba(21,18,15,0.04)",
+            border: "1px solid rgba(21,18,15,0.08)",
+          }}>
+            <div style={{ fontSize: "0.8rem", color: "rgba(21,18,15,0.55)", lineHeight: 1.6, fontFamily: APP_FONT_STACK }}>
+              Monitoring, partner workflows, and quick-access portals — without crowding the main intake flow.
             </div>
-          </aside>
+          </div>
 
-          {/* Content Container */}
-          <div style={{ maxWidth: APP_MAX_WIDTH, margin: "0 auto", padding: "0 4px 12px" }}>
-            <TabPanel active={tab === "desk"}>
-              <TodaysDesk
-                tickets={tickets}
-                onOpenTicket={(ticketNo) => {
-                  setDashboardFocusTicketNo(ticketNo);
-                  setTab("log");
+          {/* Utility views */}
+          <div style={{ display: "grid", gap: 8, alignContent: "start", overflow: "hidden" }}>
+            <div style={{
+              fontSize: "0.58rem",
+              fontWeight: 700,
+              letterSpacing: "0.30em",
+              textTransform: "uppercase",
+              color: "rgba(21,18,15,0.38)",
+              fontFamily: APP_BRAND_STACK,
+              padding: "0 4px",
+              marginBottom: 4,
+            }}>
+              Utility Views
+            </div>
+            {PANEL_TAB_CONFIG.map((item) => (
+              <SideNavItem
+                key={item.id}
+                item={item}
+                active={tab === item.id}
+                expanded={true}
+                badge={panelBadges[item.id]}
+                onClick={() => {
+                  navigateTab(item.id);
                   setSidePanelExpanded(false);
                 }}
               />
-            </TabPanel>
+            ))}
+          </div>
+
+          {/* Quick links */}
+          <div style={{
+            borderRadius: 14,
+            border: "1px solid rgba(21,18,15,0.10)",
+            background: "rgba(255,255,255,0.55)",
+            padding: 12,
+            display: "grid",
+            gap: 10,
+            alignContent: "start",
+            overflow: "hidden",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{
+                fontSize: "0.58rem",
+                fontWeight: 700,
+                letterSpacing: "0.30em",
+                textTransform: "uppercase",
+                color: "rgba(21,18,15,0.40)",
+                fontFamily: APP_BRAND_STACK,
+              }}>
+                Quick Links
+              </div>
+              <button
+                onClick={() => {
+                  setShowAddQuickLink((prev) => !prev);
+                  setQuickLinkError("");
+                }}
+                style={{
+                  border: `1px solid rgba(211,166,90,0.28)`,
+                  borderRadius: 8,
+                  background: "rgba(211,166,90,0.08)",
+                  color: DS.gold,
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  fontFamily: APP_BRAND_STACK,
+                  padding: "5px 8px",
+                  cursor: "pointer",
+                  transition: DS.transColor,
+                }}
+              >
+                {showAddQuickLink ? "Cancel" : "Add"}
+              </button>
+            </div>
+            {showAddQuickLink && (
+              <div style={{ display: "grid", gap: 8 }}>
+                <input
+                  value={quickLinkName}
+                  onChange={(e) => setQuickLinkName(e.target.value)}
+                  placeholder="Link Name"
+                  style={{
+                    padding: "9px 10px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(21,18,15,0.14)",
+                    background: "rgba(255,255,255,0.80)",
+                    color: "#15120f",
+                    outline: "none",
+                    fontSize: "0.82rem",
+                    fontFamily: APP_FONT_STACK,
+                  }}
+                />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+                  <input
+                    value={quickLinkUrl}
+                    onChange={(e) => setQuickLinkUrl(e.target.value)}
+                    placeholder="example.com"
+                    style={{
+                      padding: "9px 10px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(21,18,15,0.14)",
+                      background: "rgba(255,255,255,0.80)",
+                      color: "#15120f",
+                      outline: "none",
+                      fontSize: "0.82rem",
+                      fontFamily: APP_FONT_STACK,
+                    }}
+                  />
+                  <button
+                    onClick={addQuickLink}
+                    style={{
+                      border: "1px solid rgba(143,47,47,0.35)",
+                      borderRadius: 8,
+                      background: "rgba(143,47,47,0.10)",
+                      color: DS.wine,
+                      fontWeight: 700,
+                      padding: "0 12px",
+                      cursor: "pointer",
+                      fontSize: "0.78rem",
+                      fontFamily: APP_BRAND_STACK,
+                      letterSpacing: "0.10em",
+                      textTransform: "uppercase",
+                      transition: DS.transColor,
+                    }}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            )}
+            {quickLinkError && (
+              <div style={{ fontSize: "0.75rem", color: "#8f1020", fontWeight: 600 }}>{quickLinkError}</div>
+            )}
+            <div style={{ display: "grid", gap: 7, maxHeight: 260, overflowY: "auto", paddingRight: 2 }}>
+              {quickLinks.map((link) => (
+                <div key={link.id} style={{
+                  borderRadius: 10,
+                  border: "1px solid rgba(21,18,15,0.09)",
+                  background: "rgba(255,255,255,0.65)",
+                  padding: "9px 10px",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 5 }}>
+                    <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#15120f", lineHeight: 1.3, fontFamily: APP_FONT_STACK }}>{link.name}</div>
+                    {!link.isDefault && (
+                      <button
+                        onClick={() => removeQuickLink(link.id)}
+                        style={{
+                          border: "none",
+                          borderRadius: 6,
+                          background: "rgba(214,5,43,0.08)",
+                          color: "#8f1020",
+                          fontSize: "0.65rem",
+                          fontWeight: 700,
+                          padding: "3px 6px",
+                          cursor: "pointer",
+                          fontFamily: APP_BRAND_STACK,
+                          letterSpacing: "0.10em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: "0.7rem", color: "rgba(21,18,15,0.48)", lineHeight: 1.45, marginBottom: 7 }}>{link.description}</div>
+                  <button
+                    onClick={() => openQuickLink(link.url)}
+                    style={{
+                      width: "100%",
+                      border: "1px solid rgba(143,47,47,0.28)",
+                      borderRadius: 7,
+                      background: "rgba(143,47,47,0.07)",
+                      color: DS.wine,
+                      fontSize: "0.65rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      fontFamily: APP_BRAND_STACK,
+                      padding: "5px 6px",
+                      cursor: "pointer",
+                      transition: DS.transColor,
+                    }}
+                  >
+                    Open
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* ── Main Content Area ── */}
+        <main style={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          background: "#fffaf2",
+          position: "relative",
+        }}>
+          {/* Subtle grid texture */}
+          <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.18, backgroundImage: "linear-gradient(90deg, rgba(21,18,15,0.04) 1px, transparent 1px), linear-gradient(rgba(21,18,15,0.04) 1px, transparent 1px)", backgroundSize: "72px 72px" }} />
+
+          {/* Top bar */}
+          <header style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            background: `rgba(255,250,242,0.92)`,
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderBottom: `1px solid rgba(21,18,15,0.10)`,
+            padding: "0 28px",
+            height: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}>
+            {/* Active view label */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                fontSize: "0.52rem",
+                fontWeight: 700,
+                letterSpacing: "0.30em",
+                textTransform: "uppercase",
+                color: "rgba(21,18,15,0.40)",
+                fontFamily: APP_BRAND_STACK,
+              }}>
+                View
+              </div>
+              <div style={{
+                fontFamily: APP_SERIF_STACK,
+                fontSize: "1.05rem",
+                fontWeight: 400,
+                color: "#15120f",
+                letterSpacing: "-0.01em",
+              }}>
+                {TAB_CONFIG.find((item) => item.id === tab)?.label}
+              </div>
+            </div>
+
+            {/* Stats strip + Walk-in CTA */}
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              {headerStats.map((stat) => (
+                <div key={stat.label} style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
+                    {stat.label}
+                  </div>
+                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: stat.accent || "#15120f", fontFamily: APP_MONO_STACK, letterSpacing: "-0.01em" }}>
+                    {stat.value}
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={() => setShowWalkIn(true)}
+                style={{
+                  border: "1px solid rgba(143,47,47,0.42)",
+                  borderRadius: 999,
+                  padding: "10px 18px",
+                  background: "rgba(143,47,47,0.11)",
+                  color: "#6b1f1f",
+                  fontFamily: APP_BRAND_STACK,
+                  fontWeight: 700,
+                  fontSize: "0.56rem",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.22s ease",
+                }}
+              >
+                + Walk-in
+              </button>
+            </div>
+          </header>
+
+          {/* Page title / hero area */}
+          <div style={{
+            padding: "28px 32px 22px",
+            borderBottom: `1px solid rgba(21,18,15,0.09)`,
+            backgroundImage: `radial-gradient(circle at 8% 8%, rgba(184,148,63,0.20), transparent 32%), radial-gradient(circle at 90% 90%, rgba(143,47,47,0.10), transparent 30%)`,
+            position: "relative",
+            zIndex: 1,
+          }}>
+            <div style={{
+              fontSize: "0.52rem",
+              fontWeight: 700,
+              letterSpacing: "0.32em",
+              textTransform: "uppercase",
+              color: DS.wine,
+              fontFamily: APP_BRAND_STACK,
+              marginBottom: 10,
+            }}>
+              CSC Centre Workspace
+            </div>
+            <h1 style={{
+              margin: 0,
+              fontFamily: APP_SERIF_STACK,
+              fontSize: "clamp(1.7rem, 3vw, 2.6rem)",
+              fontWeight: 300,
+              lineHeight: 0.96,
+              letterSpacing: "-0.02em",
+              color: "#15120f",
+            }}>
+              {TAB_CONFIG.find((item) => item.id === tab)?.label}
+              <em style={{ fontStyle: "italic", color: "rgba(21,18,15,0.40)", marginLeft: 10 }}>.</em>
+            </h1>
+            <p style={{
+              margin: "10px 0 0",
+              fontSize: "0.86rem",
+              lineHeight: 1.72,
+              color: "rgba(21,18,15,0.60)",
+              maxWidth: 520,
+              fontFamily: APP_FONT_STACK,
+              fontWeight: 400,
+            }}>
+              {TAB_CONFIG.find((item) => item.id === tab)?.description}
+            </p>
+          </div>
+
+          {/* Tab Content */}
+          <div className="csc-content-scroll" style={{
+            flex: 1,
+            padding: "24px 28px 48px",
+            overflowY: "auto",
+            position: "relative",
+            zIndex: 1,
+          }}>
             <TabPanel active={tab === "entry"}>
-              <TicketWorkspace services={services} onSaveTicket={saveTicket} />
+              <TicketWorkspace services={services} tickets={tickets} onSaveTicket={saveTicket} onNavigateTab={navigateTab} isActive={tab === "entry"} />
             </TabPanel>
             <TabPanel active={tab === "rates"}>
               <RateCard services={services} setServices={setServices} />
             </TabPanel>
             <TabPanel active={tab === "log"}>
-              <TicketDashboard
-                tickets={tickets}
-                onToggleTicketStatus={toggleTicketStatus}
-                onToggleTaskDone={toggleTaskDone}
-                onUpdateTicket={updateTicket}
-                focusTicketNo={dashboardFocusTicketNo}
-                onFocusHandled={() => setDashboardFocusTicketNo(null)}
-              />
+              <TicketDashboard tickets={tickets} onToggleTicketStatus={toggleTicketStatus} onToggleTaskDone={toggleTaskDone} onUpdateTicket={updateTicket} />
             </TabPanel>
             <TabPanel active={tab === "b2b"}>
               <B2BWorkspace />
             </TabPanel>
+            <TabPanel active={tab === "monthly"}>
+              <MonthlyOverview tickets={tickets} />
+            </TabPanel>
+            <TabPanel active={tab === "customers"}>
+              <CustomersWorkspace tickets={tickets} />
+            </TabPanel>
           </div>
-        </div>
+        </main>
+
       </div>
     </div>
   );

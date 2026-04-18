@@ -10,10 +10,9 @@
 Build a polished CSC billing and ticketing flow where each service entry is configurable by role/type, pricing is flexible, and payment tracking supports real-world partial settlement.
 
 ## Actors
-- `Guardian`
-- `Gatekeeper`
-- `Walk-in Partner`
-- `Incharge`
+- `Document Holder`
+- `Reference Contact` (optional)
+- `Operator`
 
 ## Key Assumptions
 - "Each entry needs to be customizable at each level" means role-wise configuration for fields, defaults, visibility, and allowed actions.
@@ -25,8 +24,8 @@ Build a polished CSC billing and ticketing flow where each service entry is conf
 ### <a id="req-001"></a>REQ-001: Beneficiary and Reference Context
 Each entry must capture who the document belongs to and who is representing that person.
 - Document holder (beneficiary) details are stored as the primary person
-- Reference person details are stored separately
-- Reference type tags covered: `Guardian / Parent`, `Gatekeeper / Agent`, `Walk-in Partner`, `Incharge / Office Rep`
+- Reference contact details are optional and stored separately when used
+- Reference naming must be flexible text entered by the operator instead of forced fixed tags
 - Reference context is informational metadata, not permission control
 
 Related tasks: [T-01](./TODO.md#t-01), [T-02](./TODO.md#t-02), [T-03](./TODO.md#t-03)
