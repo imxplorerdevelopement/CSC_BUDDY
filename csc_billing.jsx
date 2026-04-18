@@ -827,45 +827,44 @@ function getStoredQuickLinks() {
 }
 
 //  Tab Button — vertical sidebar nav item
-function TabBtn({ label, description, active, onClick }) {
+function TabBtn({ label, description, active, onClick, badge }) {
   return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      style={{
-        width: "100%",
-        padding: "11px 14px 11px 18px",
-        border: "none",
-        background: active ? "rgba(143,47,47,0.08)" : "transparent",
-        cursor: "pointer",
-        transition: DS.transStd,
-        display: "flex",
-        flexDirection: "column",
-        gap: 3,
-        textAlign: "left",
-        borderRadius: 12,
-        boxShadow: active ? "inset 3px 0 0 rgba(143,47,47,0.70)" : "inset 3px 0 0 transparent",
-        outline: "none",
-      }}
-    >
-      <span style={{
-        fontSize: "0.65rem",
-        fontWeight: 700,
-        letterSpacing: "0.16em",
-        textTransform: "uppercase",
-        fontFamily: APP_BRAND_STACK,
-        color: active ? "#15120f" : "rgba(21,18,15,0.55)",
-        transition: "color 0.18s ease",
-      }}>{label}</span>
-      <span style={{
-        fontSize: "0.74rem",
-        lineHeight: 1.45,
-        color: active ? "rgba(21,18,15,0.65)" : "rgba(21,18,15,0.38)",
-        fontFamily: APP_FONT_STACK,
-        fontWeight: 400,
-        transition: "color 0.18s ease",
-      }}>
-        {description}
+    <button onClick={onClick} aria-pressed={active} style={{
+      width: "100%", padding: "10px 12px 10px 14px", border: "none",
+      background: active ? "rgba(143,47,47,0.09)" : "transparent",
+      cursor: "pointer", transition: "all 0.18s ease",
+      display: "flex", alignItems: "center", gap: 10, textAlign: "left",
+      borderRadius: 10,
+      boxShadow: active ? "inset 3px 0 0 rgba(143,47,47,0.75)" : "inset 3px 0 0 rgba(21,18,15,0.07)",
+      outline: "none",
+    }}>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+          <span style={{
+            fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em",
+            textTransform: "uppercase", fontFamily: APP_BRAND_STACK,
+            color: active ? "#15120f" : "rgba(21,18,15,0.60)",
+            transition: "color 0.18s ease",
+          }}>{label}</span>
+          {badge && (
+            <span style={{
+              fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.10em",
+              fontFamily: APP_BRAND_STACK, textTransform: "uppercase",
+              background: active ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.07)",
+              color: active ? "#8f2f2f" : "rgba(21,18,15,0.45)",
+              borderRadius: 999, padding: "2px 6px",
+            }}>{badge}</span>
+          )}
+        </span>
+        <span style={{
+          fontSize: "0.76rem", lineHeight: 1.4, display: "block",
+          color: active ? "rgba(21,18,15,0.60)" : "rgba(21,18,15,0.40)",
+          fontFamily: APP_FONT_STACK, fontWeight: 400,
+          transition: "color 0.18s ease",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          {description}
+        </span>
       </span>
     </button>
   );
@@ -4643,22 +4642,43 @@ export default function CSCBilling() {
           zIndex: 20,
         }}>
           {/* Sidebar Header / Logo */}
-          <div style={{ padding: "26px 20px 18px" }}>
-            <div style={{
-              fontSize: "0.50rem", fontWeight: 700, letterSpacing: "0.38em",
-              textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 12,
-            }}>
-              Blue Sapphire Plaza
+          <div style={{ padding: "24px 20px 18px" }}>
+            {/* Icon mark + wordmark row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              {/* Icon mark: 2×2 dot grid */}
+              <div style={{
+                width: 32, height: 32, borderRadius: 9,
+                background: DS.wine,
+                display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4,
+                padding: 8, flexShrink: 0,
+              }}>
+                {[0,1,2,3].map((i) => (
+                  <div key={i} style={{ borderRadius: "50%", background: i < 2 ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)" }} />
+                ))}
+              </div>
+              {/* Wordmark */}
+              <div>
+                <div style={{
+                  fontFamily: APP_BRAND_STACK, fontWeight: 800,
+                  fontSize: "1.05rem", letterSpacing: "0.06em",
+                  color: "#15120f", lineHeight: 1.1,
+                  display: "flex", alignItems: "baseline", gap: 5,
+                }}>
+                  <span>CSC</span>
+                  <span style={{ fontWeight: 400, color: "rgba(21,18,15,0.55)", fontSize: "1.0rem", letterSpacing: "0.02em" }}>Buddy</span>
+                </div>
+                <div style={{
+                  fontSize: "0.60rem", fontWeight: 600, letterSpacing: "0.22em",
+                  textTransform: "uppercase", color: DS.wine,
+                  fontFamily: APP_BRAND_STACK, marginTop: 2,
+                }}>
+                  Blue Sapphire Plaza
+                </div>
+              </div>
             </div>
             <div style={{
-              fontFamily: APP_SERIF_STACK, fontSize: "2rem", fontWeight: 300,
-              lineHeight: 1.0, color: "#15120f", letterSpacing: "-0.02em",
-            }}>
-              CSC<br /><em style={{ fontStyle: "italic", color: "rgba(21,18,15,0.60)" }}>Buddy</em>
-            </div>
-            <div style={{
-              marginTop: 10, fontSize: "0.72rem", color: "rgba(21,18,15,0.40)",
-              fontFamily: APP_FONT_STACK, letterSpacing: "0.04em",
+              fontSize: "0.70rem", color: "rgba(21,18,15,0.38)",
+              fontFamily: APP_FONT_STACK, letterSpacing: "0.03em",
             }}>
               Operations Console
             </div>
@@ -4668,22 +4688,26 @@ export default function CSCBilling() {
           <div style={{ height: 1, background: "rgba(21,18,15,0.08)", margin: "0 20px" }} />
 
           {/* Date/Status block */}
-          <div style={{ padding: "16px 20px" }}>
-            <div style={{
-              fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.36em",
-              textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 6,
-            }}>
-              Today
-            </div>
-            <div style={{
-              fontFamily: APP_SERIF_STACK, fontSize: "1.15rem", fontWeight: 300,
-              color: "#15120f", letterSpacing: "-0.01em", lineHeight: 1.2,
-            }}>
-              {todayStr()}
-            </div>
-            <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#c8922a", display: "inline-block", boxShadow: "0 0 5px rgba(200,146,42,0.50)" }} />
-              <span style={{ fontSize: "0.62rem", color: "#c8922a", fontFamily: APP_MONO_STACK, letterSpacing: "0.10em" }}>Live</span>
+          <div style={{ padding: "12px 20px 14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{
+                  fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.18em",
+                  textTransform: "uppercase", color: "rgba(21,18,15,0.40)", fontFamily: APP_BRAND_STACK, marginBottom: 3,
+                }}>
+                  Today
+                </div>
+                <div style={{
+                  fontFamily: APP_FONT_STACK, fontSize: "0.90rem", fontWeight: 600,
+                  color: "#15120f", letterSpacing: "-0.01em", lineHeight: 1.2,
+                }}>
+                  {todayStr()}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(200,146,42,0.10)", border: "1px solid rgba(200,146,42,0.22)", borderRadius: 999, padding: "4px 9px" }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#c8922a", display: "inline-block", boxShadow: "0 0 4px rgba(200,146,42,0.60)" }} />
+                <span style={{ fontSize: "0.58rem", color: "#c8922a", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Live</span>
+              </div>
             </div>
           </div>
 
@@ -4698,8 +4722,8 @@ export default function CSCBilling() {
           }}>
             {/* Section label */}
             <div style={{
-              fontSize: "0.46rem", fontWeight: 700, letterSpacing: "0.38em",
-              textTransform: "uppercase", color: "rgba(21,18,15,0.35)",
+              fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.26em",
+              textTransform: "uppercase", color: "rgba(21,18,15,0.38)",
               fontFamily: APP_BRAND_STACK, padding: "0 8px", marginBottom: 8,
             }}>
               Workspaces
@@ -4741,8 +4765,8 @@ export default function CSCBilling() {
             {/* Section label */}
             <div style={{ margin: "14px 8px 8px", height: 1, background: "rgba(21,18,15,0.08)" }} />
             <div style={{
-              fontSize: "0.46rem", fontWeight: 700, letterSpacing: "0.38em",
-              textTransform: "uppercase", color: "rgba(21,18,15,0.35)",
+              fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.26em",
+              textTransform: "uppercase", color: "rgba(21,18,15,0.38)",
               fontFamily: APP_BRAND_STACK, padding: "0 8px", marginBottom: 8,
             }}>
               Tools &amp; Logs
@@ -4754,6 +4778,7 @@ export default function CSCBilling() {
                 description={item.description}
                 active={tab === item.id}
                 onClick={() => navigateTab(item.id)}
+                badge={panelBadges[item.id]}
               />
             ))}
           </nav>
@@ -5094,25 +5119,25 @@ export default function CSCBilling() {
             gap: 16,
           }}>
             {/* Active view label */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
-                fontSize: "0.52rem",
-                fontWeight: 700,
-                letterSpacing: "0.30em",
-                textTransform: "uppercase",
-                color: "rgba(21,18,15,0.40)",
+                width: 6, height: 6, borderRadius: "50%",
+                background: "#8f2f2f", opacity: 0.7, flexShrink: 0,
+              }} />
+              <div style={{
                 fontFamily: APP_BRAND_STACK,
-              }}>
-                View
-              </div>
-              <div style={{
-                fontFamily: APP_SERIF_STACK,
-                fontSize: "1.05rem",
-                fontWeight: 400,
+                fontSize: "0.80rem",
+                fontWeight: 700,
                 color: "#15120f",
-                letterSpacing: "-0.01em",
+                letterSpacing: "0.04em",
               }}>
                 {TAB_CONFIG.find((item) => item.id === tab)?.label}
+              </div>
+              <div style={{
+                fontSize: "0.68rem", color: "rgba(21,18,15,0.38)",
+                fontFamily: APP_FONT_STACK, fontWeight: 400,
+              }}>
+                {TAB_CONFIG.find((item) => item.id === tab)?.description}
               </div>
             </div>
 
@@ -5172,15 +5197,14 @@ export default function CSCBilling() {
             </div>
             <h1 style={{
               margin: 0,
-              fontFamily: APP_SERIF_STACK,
-              fontSize: "clamp(1.7rem, 3vw, 2.6rem)",
-              fontWeight: 300,
-              lineHeight: 0.96,
-              letterSpacing: "-0.02em",
+              fontFamily: APP_FONT_STACK,
+              fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)",
+              fontWeight: 800,
+              lineHeight: 1.0,
+              letterSpacing: "-0.03em",
               color: "#15120f",
             }}>
               {TAB_CONFIG.find((item) => item.id === tab)?.label}
-              <em style={{ fontStyle: "italic", color: "rgba(21,18,15,0.40)", marginLeft: 10 }}>.</em>
             </h1>
             <p style={{
               margin: "10px 0 0",
