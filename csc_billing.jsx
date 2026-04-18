@@ -151,6 +151,7 @@ const CATEGORY_DETAIL_SCHEMA_IDS = {
 };
 
 const PHONE_REGEX = /^[0-9]{10}$/;
+const DELETE_ACCESS_CODE = "241100";
 const MENU_OPTION_STYLE = { color: "#15120f", backgroundColor: "#fffaf2" };
 const MENU_OPTGROUP_STYLE = { color: "rgba(21,18,15,0.58)", backgroundColor: "#f8f1e4" };
 const BRAND_PRIMARY = DS.wine;
@@ -234,6 +235,21 @@ function normalizeExternalUrl(url) {
 
 function canUseBrowserHistory() {
   return typeof window !== "undefined" && typeof window.history !== "undefined";
+}
+
+function normalizePhoneValue(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 10);
+}
+
+function verifyDeleteAccess(actionLabel) {
+  if (typeof window === "undefined") return false;
+  const enteredCode = window.prompt(`Enter access code to ${actionLabel}:`);
+  if (enteredCode === null) return false;
+  if (String(enteredCode).trim() !== DELETE_ACCESS_CODE) {
+    window.alert("Access denied. Invalid code.");
+    return false;
+  }
+  return true;
 }
 
 function updateBrowserState(nextState, mode = "push") {
@@ -3565,7 +3581,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   );
 }
 
-function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUpdateTicket }) {
+function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUpdateTicket, onDeleteTicket }) {
   const [expandedTickets, setExpandedTickets] = useState({});
   const [viewTicketNo, setViewTicketNo] = useState(null);
   const [showRawJson, setShowRawJson] = useState(false);
@@ -3888,6 +3904,31 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     fontFamily: APP_FONT_STACK,
     outline: "none",
   };
+  const dangerActionStyle = {
+    ...listActionStyle,
+    border: `1px solid rgba(220, 38, 38, 0.36)`,
+    background: "rgba(220, 38, 38, 0.10)",
+    color: OPS.danger,
+  };
+  const handleDeleteTicket = (ticket) => {
+    if (typeof onDeleteTicket !== "function" || !ticket?.ticketNo) return;
+    const ticketNo = ticket.ticketNo;
+    const customerName = ticket.customerName || "Unknown customer";
+    const confirmed = typeof window !== "undefined"
+      ? window.confirm(`Delete ticket ${ticketNo} for ${customerName}? This cannot be undone.`)
+      : false;
+    if (!confirmed) return;
+    if (!verifyDeleteAccess(`delete ticket ${ticketNo}`)) return;
+    onDeleteTicket(ticketNo);
+    setViewTicketNo((prev) => (prev === ticketNo ? null : prev));
+    setEditTicketNo((prev) => (prev === ticketNo ? null : prev));
+    setExpandedTickets((prev) => {
+      if (!prev[ticketNo]) return prev;
+      const next = { ...prev };
+      delete next[ticketNo];
+      return next;
+    });
+  };
 
   if (true) {
     return (
@@ -3974,6 +4015,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                       <button onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); }} style={listActionStyle}>View</button>
                       <button onClick={() => startEdit(ticket)} style={listActionStyle}>Edit</button>
                       <button onClick={() => printTicketSlip(ticket)} style={listActionStyle}>Print</button>
+                      <button onClick={() => handleDeleteTicket(ticket)} style={dangerActionStyle}>Delete</button>
                       {ticket.status === "Open" ? (
                         <button onClick={() => onToggleTicketStatus(ticket.ticketNo, "Closed")} style={{ ...listActionStyle, border: `1px solid rgba(22,101,52,0.28)`, background: "rgba(22,101,52,0.12)", color: OPS.success }}>Close</button>
                       ) : (
@@ -3996,7 +4038,10 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                     <div style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_MONO_STACK }}>{viewingTicket.ticketNo}</div>
                     <div style={{ fontSize: "1rem", fontWeight: 700, color: OPS.text, fontFamily: APP_FONT_STACK }}>{viewingTicket.customerName}</div>
                   </div>
-                  <button onClick={() => setShowRawJson((prev) => !prev)} style={listActionStyle}>{showRawJson ? "Hide JSON" : "Show JSON"}</button>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <button onClick={() => setShowRawJson((prev) => !prev)} style={listActionStyle}>{showRawJson ? "Hide JSON" : "Show JSON"}</button>
+                    <button onClick={() => handleDeleteTicket(viewingTicket)} style={dangerActionStyle}>Delete Ticket</button>
+                  </div>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
@@ -4664,7 +4709,7 @@ function MonthlyOverview({ tickets }) {
 }
 
 // --- Customers ---
-function CustomersWorkspace({ tickets }) {
+function CustomersWorkspace({ tickets, onDeleteCustomer }) {
   const [search, setSearch] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
 
@@ -4672,7 +4717,7 @@ function CustomersWorkspace({ tickets }) {
 
   const customerMap = {};
   normalized.forEach((t) => {
-    const phone = (t.customerPhone || "").replace(/\D/g, "") || null;
+    const phone = normalizePhoneValue(t.customerPhone) || null;
     const name = t.customerName || "Unknown";
     const key = phone || `nophone_${name}`;
     if (!customerMap[key]) customerMap[key] = { name, phone: phone || "", tickets: [] };
@@ -4685,6 +4730,19 @@ function CustomersWorkspace({ tickets }) {
     return !q || c.name.toLowerCase().includes(q) || c.phone.includes(q);
   });
   const selected = selectedKey ? customers.find((c) => (c.phone || `nophone_${c.name}`) === selectedKey) : null;
+  const handleDeleteCustomer = (customer) => {
+    if (typeof onDeleteCustomer !== "function" || !customer) return;
+    const targetLabel = customer.phone
+      ? `${customer.name} (+91 ${customer.phone})`
+      : customer.name;
+    const confirmed = typeof window !== "undefined"
+      ? window.confirm(`Delete customer ${targetLabel} and all linked tickets? This cannot be undone.`)
+      : false;
+    if (!confirmed) return;
+    if (!verifyDeleteAccess(`delete customer ${customer.name}`)) return;
+    onDeleteCustomer({ name: customer.name, phone: customer.phone || "" });
+    setSelectedKey(null);
+  };
 
   const eb = { fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, display: "block", marginBottom: 5 };
   const card = { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 16, boxShadow: "0 4px 16px rgba(17,14,12,0.06)" };
@@ -4810,7 +4868,20 @@ function CustomersWorkspace({ tickets }) {
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => setSelectedKey(null)} style={{ border: "1px solid rgba(21,18,15,0.12)", borderRadius: 999, padding: "7px 14px", background: "rgba(255,255,255,0.70)", color: "rgba(21,18,15,0.55)", fontFamily: APP_BRAND_STACK, fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}>Close</button>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <button
+                        onClick={() => setSelectedKey(null)}
+                        style={{ border: "1px solid rgba(21,18,15,0.12)", borderRadius: 999, padding: "7px 14px", background: "rgba(255,255,255,0.70)", color: "rgba(21,18,15,0.55)", fontFamily: APP_BRAND_STACK, fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
+                      >
+                        Close
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCustomer(selected)}
+                        style={{ border: "1px solid rgba(220,38,38,0.28)", borderRadius: 999, padding: "7px 14px", background: "rgba(220,38,38,0.08)", color: "#b91c1c", fontFamily: APP_BRAND_STACK, fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
+                      >
+                        Delete Customer
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 14 }}>
                     {[
@@ -5026,6 +5097,21 @@ export default function CSCBilling() {
   };
 
   const saveTicket = (ticket) => setTickets((prev) => [...prev, withStructuredTicket(ticket)]);
+  const deleteTicket = (ticketNo) => {
+    setTickets((prev) => prev.filter((ticket) => ticket.ticketNo !== ticketNo));
+  };
+  const deleteCustomerTickets = ({ name, phone }) => {
+    const normalizedPhone = normalizePhoneValue(phone);
+    const normalizedName = String(name || "").trim().toLowerCase();
+    setTickets((prev) => prev.filter((ticket) => {
+      const ticketPhone = normalizePhoneValue(ticket.customerPhone);
+      if (normalizedPhone) {
+        return ticketPhone !== normalizedPhone;
+      }
+      const ticketName = String(ticket.customerName || "Unknown").trim().toLowerCase();
+      return Boolean(ticketPhone) || ticketName !== normalizedName;
+    }));
+  };
   const toggleTicketStatus = (ticketNo, status) => {
     setTickets((prev) => prev.map((t) => (
       t.ticketNo === ticketNo ? withStructuredTicket({ ...t, status, updatedAt: `${todayStr()} ${timeStr()}` }) : t
@@ -5939,7 +6025,13 @@ export default function CSCBilling() {
               <RateCard services={services} setServices={setServices} />
             </TabPanel>
             <TabPanel active={tab === "log"}>
-              <TicketDashboard tickets={tickets} onToggleTicketStatus={toggleTicketStatus} onToggleTaskDone={toggleTaskDone} onUpdateTicket={updateTicket} />
+              <TicketDashboard
+                tickets={tickets}
+                onToggleTicketStatus={toggleTicketStatus}
+                onToggleTaskDone={toggleTaskDone}
+                onUpdateTicket={updateTicket}
+                onDeleteTicket={deleteTicket}
+              />
             </TabPanel>
             <TabPanel active={tab === "b2b"}>
               <B2BWorkspace />
@@ -5948,7 +6040,7 @@ export default function CSCBilling() {
               <MonthlyOverview tickets={tickets} />
             </TabPanel>
             <TabPanel active={tab === "customers"}>
-              <CustomersWorkspace tickets={tickets} />
+              <CustomersWorkspace tickets={tickets} onDeleteCustomer={deleteCustomerTickets} />
             </TabPanel>
           </div>
         </main>
