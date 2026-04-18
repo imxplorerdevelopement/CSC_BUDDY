@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Black Hero Variation 2 - Dynamic</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="black_elevated_system.css">
+  <style>
+    .bh2 {
+      padding: clamp(0.95rem, 2.4vw, 1.6rem);
+      display: grid;
+      gap: 0.75rem;
+      overflow: hidden;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .bh2 .float-orb.gold { left: -120px; top: -140px; }
+    .bh2 .float-orb.red { right: -120px; bottom: -130px; animation-delay: 0.8s; }
+
+    .bh2-head {
+      position: relative;
+      z-index: 1;
+      border-bottom: 1px solid var(--blk-line-soft);
+      padding-bottom: 0.66rem;
+    }
+
+    .bh2-stage {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.32fr) minmax(0, 0.84fr);
+      gap: 0.62rem;
+      align-items: stretch;
+    }
+
+    .bh2-side {
+      padding: 0.72rem;
+      display: grid;
+      gap: 0.48rem;
+      align-content: start;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .bh2-side h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.08rem, 1.3vw, 1.32rem);
+      line-height: 1.04;
+      letter-spacing: -0.01em;
+      font-weight: 400;
+    }
+
+    .bh2-side p {
+      margin: 0;
+      font-size: 0.74rem;
+      line-height: 1.54;
+      color: var(--blk-fg-3);
+    }
+
+    .bh2-center {
+      padding: 0.9rem;
+      display: grid;
+      gap: 0.64rem;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+      background:
+        radial-gradient(circle at 50% 16%, rgba(184,148,63,0.2), transparent 46%),
+        linear-gradient(152deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
+      transition: transform .18s ease-out;
+      will-change: transform;
+    }
+
+    .bh2-center .dark-title {
+      font-size: clamp(2rem, 5.2vw, 4.8rem);
+      max-width: 12.5ch;
+    }
+
+    .dynamic-word {
+      display: inline-block;
+      min-width: 5.4ch;
+      color: rgba(201,168,76,0.98);
+      transition: opacity .35s ease, transform .35s var(--ease-emph);
+    }
+
+    .bh2-center .dark-btn-row {
+      justify-content: center;
+    }
+
+    .bh2-foot {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--blk-line-soft);
+      padding-top: 0.62rem;
+    }
+
+    .bh2-meter {
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      padding: 0.58rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .bh2-meter .bar {
+      height: 2px;
+      background: rgba(255,255,255,.13);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bh2-meter .bar span {
+      display: block;
+      height: 100%;
+      width: var(--w, 55%);
+      background: linear-gradient(90deg, rgba(184,148,63,.95), rgba(214,5,43,.82));
+      transition: width .45s var(--ease-emph);
+    }
+
+    @media (max-width: 1080px) {
+      .bh2-stage { grid-template-columns: 1fr; }
+      .bh2-center { order: -1; }
+      .bh2-side { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .bh2-side { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="dark-canvas">
+    <section class="dark-wrap dark-panel bh2">
+      <span class="float-orb gold"></span>
+      <span class="float-orb red"></span>
+
+      <header class="bh2-head dark-row reveal-up">
+        <span class="dark-kicker">Black Hero / Variation 02</span>
+        <span class="dark-meta">Dynamic Center Stage</span>
+      </header>
+
+      <section class="bh2-stage">
+        <aside class="dark-soft bh2-side reveal-up delay-1">
+          <h3>Human-Led Discovery</h3>
+          <p>Real consultation first. Productized templates never lead.</p>
+          <h3>Cross-Pillar Orchestration</h3>
+          <p>Leisure, logistics, and visa layers unified under one plan.</p>
+        </aside>
+
+        <article class="dark-soft bh2-center reveal-up delay-2" id="stage">
+          <h1 class="dark-title">Travel that feels <span class="dynamic-word" id="word">tailored</span>,<em>from brief to return.</em></h1>
+          <p class="dark-lead">A more kinetic hero with rotating semantic emphasis, responsive pointer depth, and live confidence indicators.</p>
+          <div class="dark-btn-row">
+            <a href="#" class="dark-btn dark-btn-primary">Talk To A Consultant
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="#" class="dark-btn dark-btn-secondary">View Services</a>
+          </div>
+
+          <div class="bh2-meter" id="meter" style="--w:62%;">
+            <div class="dark-row"><span class="dark-meta">Delivery Confidence</span><span class="dark-meta" id="meterVal">62%</span></div>
+            <div class="bar"><span></span></div>
+          </div>
+        </article>
+
+        <aside class="dark-soft bh2-side reveal-up delay-3">
+          <h3>Operational Assurance</h3>
+          <p>Route dependencies and fallback plans resolved before departure.</p>
+          <h3>Live Trip Layer</h3>
+          <p>Support remains active for disruptions and on-the-fly changes.</p>
+        </aside>
+      </section>
+
+      <footer class="bh2-foot reveal-up delay-3">
+        <div class="dark-stat-grid">
+          <div class="dark-stat"><strong>5</strong><span>Core Pillars</span></div>
+          <div class="dark-stat"><strong>90%</strong><span>Referral-Led</span></div>
+          <div class="dark-stat"><strong>2019</strong><span>Founded</span></div>
+          <div class="dark-stat"><strong>24/7</strong><span>Ops Layer</span></div>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const words = ['tailored', 'discreet', 'flawless', 'personal'];
+    const wordEl = document.getElementById('word');
+    let w = 0;
+
+    setInterval(() => {
+      wordEl.style.opacity = '0';
+      wordEl.style.transform = 'translateY(6px)';
+      setTimeout(() => {
+        w = (w + 1) % words.length;
+        wordEl.textContent = words[w];
+        wordEl.style.opacity = '1';
+        wordEl.style.transform = 'translateY(0)';
+      }, 180);
+    }, 1800);
+
+    const stage = document.getElementById('stage');
+    stage.addEventListener('mousemove', (e) => {
+      const r = stage.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      stage.style.transform = `translate(${x * 6}px, ${y * 6}px)`;
+    });
+    stage.addEventListener('mouseleave', () => {
+      stage.style.transform = 'translate(0,0)';
+    });
+
+    const meter = document.getElementById('meter');
+    const meterVal = document.getElementById('meterVal');
+    let val = 62;
+    setInterval(() => {
+      val = val >= 91 ? 61 : val + 5;
+      meter.style.setProperty('--w', `${val}%`);
+      meterVal.textContent = `${val}%`;
+    }, 2100);
+  </script>
+</body>
+</html>

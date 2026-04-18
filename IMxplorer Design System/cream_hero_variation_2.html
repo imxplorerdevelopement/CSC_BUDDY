@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Hero Variation 2 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .hero-v2 {
+      padding: clamp(1rem, 2.4vw, 1.8rem);
+      display: grid;
+      gap: 0.8rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-v2::before {
+      content: "";
+      position: absolute;
+      inset: -15% auto auto -10%;
+      width: 52%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(184, 148, 63, 0.18), transparent 70%);
+      filter: blur(2px);
+      pointer-events: none;
+    }
+
+    .hero-v2::after {
+      content: "";
+      position: absolute;
+      inset: auto -12% -26% auto;
+      width: 46%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(143, 47, 47, 0.14), transparent 72%);
+      pointer-events: none;
+    }
+
+    .hero-v2-head,
+    .hero-v2-main,
+    .hero-v2-foot {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-v2-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--line-soft);
+      padding-bottom: 0.72rem;
+    }
+
+    .hero-v2-main {
+      display: grid;
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.3fr) minmax(0, 0.85fr);
+      gap: 0.72rem;
+      align-items: stretch;
+    }
+
+    .hero-v2-side {
+      padding: 0.8rem;
+      display: grid;
+      gap: 0.48rem;
+      align-content: start;
+    }
+
+    .hero-v2-side h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 1.55vw, 1.46rem);
+      line-height: 1.04;
+      letter-spacing: -0.01em;
+      font-weight: 400;
+    }
+
+    .hero-v2-side p {
+      margin: 0;
+      font-size: 0.76rem;
+      line-height: 1.58;
+      color: var(--ink-3);
+    }
+
+    .hero-v2-center {
+      padding: clamp(0.9rem, 2vw, 1.2rem);
+      display: grid;
+      gap: 0.8rem;
+      align-content: center;
+      text-align: center;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(184, 148, 63, 0.14), transparent 48%),
+        linear-gradient(150deg, rgba(255, 255, 255, 0.82), rgba(246, 238, 223, 0.86));
+    }
+
+    .hero-v2-center .hero-title {
+      font-size: clamp(2.15rem, 5.2vw, 4.7rem);
+      max-width: 13ch;
+      margin: 0 auto;
+    }
+
+    .hero-v2-center .lead {
+      max-width: 46ch;
+      margin: 0 auto;
+    }
+
+    .hero-v2-center .action-row {
+      justify-content: center;
+    }
+
+    .hero-v2-foot {
+      border-top: 1px solid var(--line-soft);
+      padding-top: 0.7rem;
+    }
+
+    .hero-v2-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.58rem;
+    }
+
+    @media (max-width: 1080px) {
+      .hero-v2-main {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-v2-center {
+        order: -1;
+      }
+
+      .hero-v2-side {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .hero-v2-side,
+      .hero-v2-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-v2-center .hero-title {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel hero-v2">
+      <header class="hero-v2-head">
+        <span class="kicker">Cream Hero / Variation 02</span>
+        <span class="meta">Centered Runway Composition</span>
+      </header>
+
+      <section class="hero-v2-main">
+        <aside class="panel-soft hero-v2-side">
+          <h3>Precision Planning</h3>
+          <p>Travel objectives are translated into a high-clarity plan before execution starts.</p>
+          <h3>Discreet Handling</h3>
+          <p>Complexity is absorbed by the team so the client experience stays effortless.</p>
+        </aside>
+
+        <article class="panel-soft hero-v2-center">
+          <h1 class="hero-title">Your private travel desk,<em>with global reach.</em></h1>
+          <p class="lead">A bolder centered hero built for premium first impression. It keeps emotional storytelling front-and-center while reinforcing operational trust with surrounding content modules.</p>
+          <div class="action-row">
+            <a href="#" class="btn btn-primary">Talk To A Consultant
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="#" class="btn btn-secondary">View Services</a>
+          </div>
+        </article>
+
+        <aside class="panel-soft hero-v2-side">
+          <h3>One Accountable Team</h3>
+          <p>No fragmented vendors. No broken handoffs. One line of responsibility throughout.</p>
+          <h3>Live Operations Layer</h3>
+          <p>During travel, support remains active for adjustments, disruptions, and continuity.</p>
+        </aside>
+      </section>
+
+      <footer class="hero-v2-foot">
+        <div class="hero-v2-metrics">
+          <div class="stat-card"><strong>90%</strong><span>Referral-Led</span></div>
+          <div class="stat-card"><strong>24/7</strong><span>Ops Support</span></div>
+          <div class="stat-card"><strong>5</strong><span>Service Pillars</span></div>
+          <div class="stat-card"><strong>2019</strong><span>Brand Founded</span></div>
+        </div>
+      </footer>
+    </section>
+  </main>
+</body>
+</html>

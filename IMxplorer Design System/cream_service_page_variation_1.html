@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Service Page Variation 1 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .svc-v1 {
+      padding: clamp(0.95rem, 2.3vw, 1.6rem);
+      display: grid;
+      gap: 0.82rem;
+    }
+
+    .svc-v1-hero {
+      padding: clamp(1rem, 2.5vw, 1.6rem);
+      display: grid;
+      gap: 0.82rem;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(184, 148, 63, 0.22), transparent 34%),
+        radial-gradient(circle at 90% 88%, rgba(143, 47, 47, 0.12), transparent 34%),
+        linear-gradient(140deg, rgba(255, 255, 255, 0.82), rgba(246, 238, 223, 0.9));
+    }
+
+    .svc-v1-hero .hero-title {
+      max-width: 12ch;
+    }
+
+    .svc-v1-hero-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.8rem;
+      align-items: end;
+    }
+
+    .svc-v1-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.58rem;
+    }
+
+    .svc-v1-list {
+      display: grid;
+      gap: 0.66rem;
+    }
+
+    .svc-v1-cta {
+      padding: 0.92rem;
+      display: grid;
+      grid-template-columns: 1.15fr auto;
+      gap: 0.8rem;
+      align-items: center;
+      background: linear-gradient(142deg, rgba(255, 255, 255, 0.76), rgba(245, 237, 223, 0.92));
+    }
+
+    .svc-v1-cta h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.85rem, 3vw, 2.8rem);
+      line-height: 1.04;
+      letter-spacing: -0.014em;
+      font-weight: 300;
+    }
+
+    .svc-v1-cta h2 em { font-style: italic; color: var(--ink-4); }
+
+    .svc-v1-cta p {
+      margin: 0.28rem 0 0;
+      color: var(--ink-3);
+      font-size: 0.84rem;
+      line-height: 1.7;
+      max-width: 52ch;
+    }
+
+    @media (max-width: 980px) {
+      .svc-v1-hero-row,
+      .svc-v1-cta {
+        grid-template-columns: 1fr;
+      }
+
+      .svc-v1-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .svc-v1-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel svc-v1">
+      <header class="panel-soft svc-v1-hero">
+        <div class="meta-row">
+          <span class="kicker">Service Page / Variation 01</span>
+          <span class="meta">Flagship Pillar Deck</span>
+        </div>
+        <h1 class="hero-title">Five service pillars.<em>one travel operating system.</em></h1>
+        <div class="svc-v1-hero-row">
+          <p class="lead">Built for clarity and conversion: a premium hero, fast proof via stats, then a structured list of service pillars that reads like an executive overview.</p>
+          <a href="#" class="btn btn-primary">Start Planning
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </header>
+
+      <section class="svc-v1-stats">
+        <article class="stat-card"><strong>500+</strong><span>Trips Designed</span></article>
+        <article class="stat-card"><strong>32+</strong><span>Countries</span></article>
+        <article class="stat-card"><strong>98%</strong><span>Repeat Clients</span></article>
+        <article class="stat-card"><strong>5</strong><span>Service Pillars</span></article>
+      </section>
+
+      <div class="rule-title"><span>Service Architecture</span><i></i></div>
+
+      <section class="svc-v1-list service-list">
+        <article class="service-card" style="background:radial-gradient(circle at 90% 12%, rgba(200,146,42,0.18), transparent 42%), rgba(255,255,255,0.72);">
+          <span class="service-code" style="color:rgba(200,146,42,0.86);">01 / Leisure</span>
+          <div class="service-copy">
+            <h3>Holidays & <em>Leisure</em></h3>
+            <p>Custom domestic and international journeys with pacing, comfort, and route design tailored to the traveler.</p>
+            <div class="chip-row"><span class="chip">International</span><span class="chip">Honeymoon</span><span class="chip">Senior Travel</span></div>
+          </div>
+          <a href="#" class="icon-link">Explore</a>
+        </article>
+
+        <article class="service-card" style="background:radial-gradient(circle at 90% 12%, rgba(74,130,192,0.18), transparent 42%), rgba(255,255,255,0.72);">
+          <span class="service-code" style="color:rgba(74,130,192,0.88);">02 / Mobility</span>
+          <div class="service-copy">
+            <h3>Study <em>Abroad</em></h3>
+            <p>Pathway advisory, visa prep, and pre-departure logistics orchestrated as one accountable flow.</p>
+            <div class="chip-row"><span class="chip">Counselling</span><span class="chip">Visa</span><span class="chip">Departure</span></div>
+          </div>
+          <a href="#" class="icon-link">Explore</a>
+        </article>
+
+        <article class="service-card" style="background:radial-gradient(circle at 90% 12%, rgba(192,65,74,0.18), transparent 42%), rgba(255,255,255,0.72);">
+          <span class="service-code" style="color:rgba(192,65,74,0.88);">03 / Business</span>
+          <div class="service-copy">
+            <h3>Corporate & <em>MICE</em></h3>
+            <p>Conference and incentive movement systems built for business outcomes and operational precision.</p>
+            <div class="chip-row"><span class="chip">Offsites</span><span class="chip">Conferences</span><span class="chip">Group Ops</span></div>
+          </div>
+          <a href="#" class="icon-link">Explore</a>
+        </article>
+
+        <article class="service-card" style="background:radial-gradient(circle at 90% 12%, rgba(58,158,120,0.18), transparent 42%), rgba(255,255,255,0.72);">
+          <span class="service-code" style="color:rgba(58,158,120,0.88);">04 / Operations</span>
+          <div class="service-copy">
+            <h3>Travel & <em>Logistics</em></h3>
+            <p>Flights, insurance, cruise planning, and movement continuity designed to reduce friction and risk.</p>
+            <div class="chip-row"><span class="chip">Flights</span><span class="chip">Insurance</span><span class="chip">Cruise</span></div>
+          </div>
+          <a href="#" class="icon-link">Explore</a>
+        </article>
+
+        <article class="service-card" style="background:radial-gradient(circle at 90% 12%, rgba(139,111,192,0.18), transparent 42%), rgba(255,255,255,0.72);">
+          <span class="service-code" style="color:rgba(139,111,192,0.88);">05 / Compliance</span>
+          <div class="service-copy">
+            <h3>Visas & <em>Services</em></h3>
+            <p>Documentation-first tourist and business visa support, optimized for speed and submission confidence.</p>
+            <div class="chip-row"><span class="chip">Tourist</span><span class="chip">Business</span><span class="chip">Forex</span></div>
+          </div>
+          <a href="#" class="icon-link">Explore</a>
+        </article>
+      </section>
+
+      <section class="panel-soft svc-v1-cta">
+        <div>
+          <h2>Most clients use multiple pillars.<em> we design the combination.</em></h2>
+          <p>Tell us the outcome you care about. We build the right cross-pillar stack and keep one team accountable throughout execution.</p>
+        </div>
+        <a href="#" class="btn btn-primary">Talk To A Consultant</a>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

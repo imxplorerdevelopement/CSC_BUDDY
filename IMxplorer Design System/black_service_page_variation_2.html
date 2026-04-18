@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Black Service Page Variation 2 - Dynamic</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="black_elevated_system.css">
+  <style>
+    .bs2 {
+      padding: clamp(0.95rem, 2.3vw, 1.6rem);
+      display: grid;
+      gap: 0.76rem;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .bs2 .float-orb.gold { left: -120px; top: -140px; }
+    .bs2 .float-orb.red { right: -130px; bottom: -150px; animation-delay: .9s; }
+
+    .bs2 > * { position: relative; z-index: 1; }
+
+    .bs2-hero {
+      padding: 0.94rem;
+      display: grid;
+      gap: 0.58rem;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(184,148,63,0.16), transparent 34%),
+        linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+    }
+
+    .bs2-hero .dark-title {
+      font-size: clamp(2rem, 4.8vw, 4.1rem);
+      max-width: 12.8ch;
+    }
+
+    .bs2-main {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0.68rem;
+    }
+
+    .bs2-nav {
+      padding: 0.75rem;
+      display: grid;
+      gap: 0.42rem;
+      align-content: start;
+      background: rgba(255,255,255,0.07);
+    }
+
+    .bs2-nav button {
+      width: 100%;
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      color: var(--blk-fg-3);
+      padding: 0.52rem 0.62rem;
+      text-align: left;
+      font-family: var(--font-brand);
+      font-size: 0.45rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: .25s ease;
+    }
+
+    .bs2-nav button:hover {
+      background: rgba(255,255,255,0.12);
+      color: var(--blk-fg-1);
+    }
+
+    .bs2-nav button.active {
+      border-color: rgba(184,148,63,0.42);
+      background: rgba(184,148,63,0.18);
+      color: rgba(201,168,76,0.96);
+      transform: translateX(2px);
+    }
+
+    .bs2-display {
+      padding: 0.9rem;
+      display: grid;
+      gap: 0.58rem;
+      min-height: 430px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .bs2-code {
+      font-family: var(--font-brand);
+      font-size: 0.45rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--blk-fg-4);
+    }
+
+    .bs2-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.9rem, 3.3vw, 3rem);
+      line-height: 0.98;
+      letter-spacing: -0.014em;
+      font-weight: 300;
+      color: var(--blk-fg-1);
+      transition: opacity .25s ease, transform .25s var(--ease-emph);
+    }
+
+    .bs2-title em { font-style: italic; color: var(--blk-fg-4); }
+
+    .bs2-desc {
+      margin: 0;
+      font-size: 0.86rem;
+      line-height: 1.72;
+      color: var(--blk-fg-2);
+      max-width: 56ch;
+      transition: opacity .25s ease, transform .25s var(--ease-emph);
+    }
+
+    .bs2-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+
+    .bs2-item {
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      padding: 0.52rem;
+      transform: translateY(8px);
+      opacity: 0;
+      animation: itemIn .48s var(--ease-emph) forwards;
+    }
+
+    .bs2-item b {
+      display: block;
+      font-family: var(--font-brand);
+      font-size: 0.43rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blk-fg-3);
+      margin-bottom: 0.18rem;
+    }
+
+    .bs2-item p {
+      margin: 0;
+      font-size: 0.73rem;
+      line-height: 1.52;
+      color: var(--blk-fg-3);
+    }
+
+    .scenario {
+      border-top: 1px solid var(--blk-line-soft);
+      padding-top: 0.56rem;
+      display: grid;
+      gap: 0.42rem;
+    }
+
+    .scenario .label {
+      font-family: var(--font-brand);
+      font-size: 0.43rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blk-fg-4);
+    }
+
+    .scenario-row {
+      display: flex;
+      gap: 0.38rem;
+      flex-wrap: wrap;
+    }
+
+    .scenario button {
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      color: var(--blk-fg-3);
+      padding: 0.42rem 0.58rem;
+      font-family: var(--font-brand);
+      font-size: 0.42rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: .24s ease;
+    }
+
+    .scenario button.active,
+    .scenario button:hover {
+      background: rgba(214,5,43,0.16);
+      border-color: rgba(214,5,43,0.35);
+      color: rgba(252,249,248,.95);
+    }
+
+    .scenario-result {
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 10px;
+      padding: 0.52rem;
+      background: rgba(255,255,255,0.06);
+      font-size: 0.74rem;
+      line-height: 1.54;
+      color: var(--blk-fg-3);
+    }
+
+    .bs2-actions {
+      border-top: 1px solid var(--blk-line-soft);
+      padding-top: 0.56rem;
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    @keyframes itemIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1020px) {
+      .bs2-main { grid-template-columns: 1fr; }
+      .bs2-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="dark-canvas">
+    <section class="dark-wrap dark-panel bs2">
+      <span class="float-orb gold"></span>
+      <span class="float-orb red"></span>
+
+      <header class="dark-soft bs2-hero reveal-up">
+        <div class="dark-row">
+          <span class="dark-kicker">Black Service / Variation 02</span>
+          <span class="dark-meta">Interactive Command Center</span>
+        </div>
+        <h1 class="dark-title">Switch service pillars and traveler modes,<em>watch recommendations adapt.</em></h1>
+        <p class="dark-lead">This is a more dynamic diagnostic-style experience for high-intent visitors who compare options before contacting.</p>
+      </header>
+
+      <section class="bs2-main">
+        <nav class="dark-soft bs2-nav" aria-label="Service pillars">
+          <button class="active" data-pill="holidays">Holidays & Leisure</button>
+          <button data-pill="study">Study Abroad</button>
+          <button data-pill="corporate">Corporate & MICE</button>
+          <button data-pill="logistics">Travel & Logistics</button>
+          <button data-pill="visas">Visas & Services</button>
+        </nav>
+
+        <article class="dark-soft bs2-display">
+          <span class="bs2-code" id="bs2-code">01 / Leisure</span>
+          <h2 class="bs2-title" id="bs2-title">Holidays & <em>Leisure</em></h2>
+          <p class="bs2-desc" id="bs2-desc">Custom domestic and international itineraries designed around pace, comfort, and destination personality.</p>
+          <div class="bs2-grid" id="bs2-grid"></div>
+
+          <section class="scenario">
+            <span class="label">Traveler Mode</span>
+            <div class="scenario-row" id="modes">
+              <button class="active" data-mode="family">Family</button>
+              <button data-mode="student">Student</button>
+              <button data-mode="corporate">Corporate</button>
+              <button data-mode="hni">HNI</button>
+            </div>
+            <div class="scenario-result" id="scenarioResult">Recommended blend: Holidays & Leisure + Travel & Logistics + Visas & Services.</div>
+          </section>
+
+          <div class="bs2-actions">
+            <a href="#" class="dark-btn dark-btn-primary">Enquire For This Pillar</a>
+            <a href="#" class="dark-btn dark-btn-secondary">Talk To A Consultant</a>
+          </div>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const data = {
+      holidays: {
+        code: '01 / Leisure',
+        title: 'Holidays & <em>Leisure</em>',
+        desc: 'Custom domestic and international itineraries designed around pace, comfort, and destination personality.',
+        items: [
+          ['International', 'Multi-country journeys with coherent routing.'],
+          ['Honeymoon', 'Privacy-forward romantic itinerary architecture.'],
+          ['Senior Travel', 'Pace-adjusted plans with accessibility in mind.']
+        ]
+      },
+      study: {
+        code: '02 / Mobility',
+        title: 'Study <em>Abroad</em>',
+        desc: 'Structured student mobility support from pathway planning to visa and departure readiness.',
+        items: [
+          ['Pathway', 'Institution fit mapped against profile and budget.'],
+          ['Visa', 'Documentation and interview readiness support.'],
+          ['Departure', 'Travel and accommodation onboarding coordination.']
+        ]
+      },
+      corporate: {
+        code: '03 / Business',
+        title: 'Corporate & <em>MICE</em>',
+        desc: 'Event and group movement systems built for high-stakes business execution.',
+        items: [
+          ['Conferences', 'Delegate movement and schedule control.'],
+          ['Incentives', 'Performance-led travel programs.'],
+          ['Group Ops', 'Contingency-backed coordination layers.']
+        ]
+      },
+      logistics: {
+        code: '04 / Operations',
+        title: 'Travel & <em>Logistics</em>',
+        desc: 'Flight, insurance, and transit continuity engineered for low-friction execution.',
+        items: [
+          ['Flights', 'Fare strategy and ticketing support.'],
+          ['Insurance', 'Coverage design by itinerary risk.'],
+          ['Cruise', 'Route and cabin mapping support.']
+        ]
+      },
+      visas: {
+        code: '05 / Compliance',
+        title: 'Visas & <em>Services</em>',
+        desc: 'Documentation-heavy processes redesigned for better timeline confidence.',
+        items: [
+          ['Tourist', 'Checklist-led process guidance.'],
+          ['Business', 'Timeline-sensitive visa support.'],
+          ['Essentials', 'Forex and pre-departure services.']
+        ]
+      }
+    };
+
+    const scenarios = {
+      family: 'Recommended blend: Holidays & Leisure + Travel & Logistics + Visas & Services.',
+      student: 'Recommended blend: Study Abroad + Visas & Services + Travel & Logistics.',
+      corporate: 'Recommended blend: Corporate & MICE + Travel & Logistics + Visas & Services.',
+      hni: 'Recommended blend: Holidays & Leisure + Corporate & MICE + Travel & Logistics.'
+    };
+
+    const buttons = [...document.querySelectorAll('.bs2-nav button[data-pill]')];
+    const modeButtons = [...document.querySelectorAll('#modes button[data-mode]')];
+    const code = document.getElementById('bs2-code');
+    const title = document.getElementById('bs2-title');
+    const desc = document.getElementById('bs2-desc');
+    const grid = document.getElementById('bs2-grid');
+    const scenarioResult = document.getElementById('scenarioResult');
+
+    function renderPillar(key) {
+      const item = data[key];
+      if (!item) return;
+
+      title.style.opacity = '0';
+      title.style.transform = 'translateY(6px)';
+      desc.style.opacity = '0';
+      desc.style.transform = 'translateY(6px)';
+
+      setTimeout(() => {
+        code.textContent = item.code;
+        title.innerHTML = item.title;
+        desc.textContent = item.desc;
+        grid.innerHTML = item.items
+          .map(([k, d], i) => `<article class="bs2-item" style="animation-delay:${i * 90}ms"><b>${k}</b><p>${d}</p></article>`)
+          .join('');
+
+        title.style.opacity = '1';
+        title.style.transform = 'translateY(0)';
+        desc.style.opacity = '1';
+        desc.style.transform = 'translateY(0)';
+      }, 150);
+
+      buttons.forEach((b) => b.classList.toggle('active', b.dataset.pill === key));
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => renderPillar(button.dataset.pill));
+    });
+
+    modeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        modeButtons.forEach((b) => b.classList.toggle('active', b === button));
+        scenarioResult.textContent = scenarios[button.dataset.mode];
+      });
+    });
+
+    renderPillar('holidays');
+  </script>
+</body>
+</html>

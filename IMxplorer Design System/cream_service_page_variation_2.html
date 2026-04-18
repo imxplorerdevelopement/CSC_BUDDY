@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Service Page Variation 2 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .svc-v2-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0.8rem;
+    }
+
+    .svc-v2-side {
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+      padding: 0.9rem;
+      display: grid;
+      gap: 0.72rem;
+      max-height: calc(100vh - 2rem);
+      overflow: auto;
+      background: linear-gradient(154deg, rgba(255,255,255,0.8), rgba(245,237,223,0.9));
+    }
+
+    .svc-v2-side h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.82rem, 2.8vw, 3rem);
+      line-height: 0.95;
+      letter-spacing: -0.015em;
+      font-weight: 300;
+    }
+
+    .svc-v2-side h1 em { display: block; font-style: italic; color: var(--ink-4); }
+
+    .svc-v2-side p {
+      margin: 0;
+      font-size: 0.83rem;
+      line-height: 1.7;
+      color: var(--ink-3);
+    }
+
+    .svc-v2-nav {
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .svc-v2-nav a {
+      text-decoration: none;
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      padding: 0.5rem 0.62rem;
+      font-family: var(--font-brand);
+      font-size: 0.46rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      background: rgba(255,255,255,0.64);
+      transition: 0.25s ease;
+    }
+
+    .svc-v2-nav a:hover {
+      background: rgba(21,18,15,0.08);
+      color: var(--ink-1);
+    }
+
+    .svc-v2-main {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .svc-v2-hero {
+      padding: 0.95rem;
+      display: grid;
+      gap: 0.56rem;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(184,148,63,0.2), transparent 34%),
+        linear-gradient(142deg, rgba(255,255,255,0.8), rgba(246,238,223,0.9));
+    }
+
+    .svc-v2-hero .hero-title {
+      font-size: clamp(1.95rem, 4.2vw, 3.8rem);
+      max-width: 13ch;
+    }
+
+    .svc-v2-matrix {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.68);
+      overflow: auto;
+    }
+
+    .svc-v2-matrix table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    .svc-v2-matrix th,
+    .svc-v2-matrix td {
+      border-bottom: 1px solid var(--line-soft);
+      padding: 0.55rem 0.58rem;
+      text-align: left;
+    }
+
+    .svc-v2-matrix tr:last-child td { border-bottom: 0; }
+
+    .svc-v2-matrix th {
+      font-family: var(--font-brand);
+      font-size: 0.44rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+      background: rgba(255,255,255,0.8);
+    }
+
+    .svc-v2-matrix td {
+      font-size: 0.74rem;
+      color: var(--ink-2);
+      line-height: 1.5;
+    }
+
+    .svc-v2-matrix td:first-child {
+      font-family: var(--font-display);
+      font-size: clamp(1rem, 1.5vw, 1.3rem);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      color: var(--ink-1);
+    }
+
+    .svc-v2-stack {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    @media (max-width: 1080px) {
+      .svc-v2-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .svc-v2-side {
+        position: relative;
+        top: auto;
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel" style="padding:0.9rem;">
+      <div class="svc-v2-layout">
+        <aside class="panel-soft svc-v2-side">
+          <span class="kicker">Service Page / Variation 02</span>
+          <h1>Decision clarity,<em>before commitment.</em></h1>
+          <p>A strategy-first page pattern for high-intent clients. It leads with capabilities and coverage before diving into each service pillar.</p>
+          <nav class="svc-v2-nav">
+            <a href="#sv2-1">Holidays & Leisure</a>
+            <a href="#sv2-2">Study Abroad</a>
+            <a href="#sv2-3">Corporate & MICE</a>
+            <a href="#sv2-4">Travel & Logistics</a>
+            <a href="#sv2-5">Visas & Services</a>
+          </nav>
+          <a href="#" class="btn btn-primary">Enquire Now
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </aside>
+
+        <section class="svc-v2-main">
+          <header class="panel-soft svc-v2-hero">
+            <h1 class="hero-title">One partner across planning,<em>documents, and execution.</em></h1>
+            <p class="lead">Built for travelers and teams who need confidence under complexity. This layout balances executive readability with premium editorial tone.</p>
+          </header>
+
+          <section class="svc-v2-matrix">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pillar</th>
+                  <th>Best For</th>
+                  <th>Design Layer</th>
+                  <th>Documentation</th>
+                  <th>Execution</th>
+                  <th>Support</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Holidays & Leisure</td><td>Families, couples, leisure groups</td><td>High</td><td>Moderate</td><td>High</td><td>High</td></tr>
+                <tr><td>Study Abroad</td><td>Students and parents</td><td>High</td><td>High</td><td>High</td><td>Moderate</td></tr>
+                <tr><td>Corporate & MICE</td><td>Business movement and events</td><td>High</td><td>Low</td><td>High</td><td>High</td></tr>
+                <tr><td>Travel & Logistics</td><td>Flight and transit operations</td><td>Moderate</td><td>Low</td><td>High</td><td>High</td></tr>
+                <tr><td>Visas & Services</td><td>Time-sensitive documentation</td><td>Low</td><td>High</td><td>High</td><td>Moderate</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="svc-v2-stack service-list">
+            <article class="service-card" id="sv2-1" style="background:radial-gradient(circle at 90% 12%, rgba(200,146,42,0.16), transparent 42%), rgba(255,255,255,0.72);"><span class="service-code" style="color:rgba(200,146,42,0.86);">01</span><div class="service-copy"><h3>Holidays & <em>Leisure</em></h3><p>Bespoke vacations designed around your pace, with strong itinerary coherence from departure to return.</p></div><a href="#" class="icon-link">Open</a></article>
+            <article class="service-card" id="sv2-2" style="background:radial-gradient(circle at 90% 12%, rgba(74,130,192,0.16), transparent 42%), rgba(255,255,255,0.72);"><span class="service-code" style="color:rgba(74,130,192,0.86);">02</span><div class="service-copy"><h3>Study <em>Abroad</em></h3><p>University pathway advisory, visa support, and pre-departure logistics managed as one integrated sequence.</p></div><a href="#" class="icon-link">Open</a></article>
+            <article class="service-card" id="sv2-3" style="background:radial-gradient(circle at 90% 12%, rgba(192,65,74,0.16), transparent 42%), rgba(255,255,255,0.72);"><span class="service-code" style="color:rgba(192,65,74,0.86);">03</span><div class="service-copy"><h3>Corporate & <em>MICE</em></h3><p>Outcome-focused group travel and event movement with robust on-ground operations.</p></div><a href="#" class="icon-link">Open</a></article>
+            <article class="service-card" id="sv2-4" style="background:radial-gradient(circle at 90% 12%, rgba(58,158,120,0.16), transparent 42%), rgba(255,255,255,0.72);"><span class="service-code" style="color:rgba(58,158,120,0.86);">04</span><div class="service-copy"><h3>Travel & <em>Logistics</em></h3><p>Flight, insurance, and transport layers that keep travel plans resilient and smooth.</p></div><a href="#" class="icon-link">Open</a></article>
+            <article class="service-card" id="sv2-5" style="background:radial-gradient(circle at 90% 12%, rgba(139,111,192,0.16), transparent 42%), rgba(255,255,255,0.72);"><span class="service-code" style="color:rgba(139,111,192,0.86);">05</span><div class="service-copy"><h3>Visas & <em>Services</em></h3><p>Documentation-heavy processes streamlined for stronger accuracy and timeline confidence.</p></div><a href="#" class="icon-link">Open</a></article>
+          </section>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Hero Variation 5 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .hero-v5 {
+      padding: clamp(1rem, 2.4vw, 1.7rem);
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .hero-v5-main {
+      padding: clamp(1rem, 2.4vw, 1.6rem);
+      display: grid;
+      gap: 1rem;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(184, 148, 63, 0.18), transparent 36%),
+        radial-gradient(circle at 88% 88%, rgba(143, 47, 47, 0.1), transparent 34%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(246, 238, 223, 0.88));
+    }
+
+    .hero-v5-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 0.8rem;
+      align-items: start;
+    }
+
+    .hero-v5-left .hero-title {
+      font-size: clamp(2.15rem, 5.4vw, 4.8rem);
+      max-width: 11.4ch;
+    }
+
+    .hero-v5-right {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .hero-v5-note {
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 0.66rem 0.7rem;
+      display: grid;
+      gap: 0.16rem;
+    }
+
+    .hero-v5-note span {
+      font-family: var(--font-brand);
+      font-size: 0.44rem;
+      letter-spacing: 0.21em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+    }
+
+    .hero-v5-note p {
+      margin: 0;
+      font-size: 0.76rem;
+      line-height: 1.56;
+      color: var(--ink-3);
+    }
+
+    .hero-v5-foot {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .hero-v5-pill {
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.74);
+      padding: 0.5rem 0.6rem;
+      text-align: center;
+      font-family: var(--font-brand);
+      font-size: 0.43rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    @media (max-width: 1020px) {
+      .hero-v5-head {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-v5-foot {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero-v5-foot {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel hero-v5">
+      <article class="panel-soft hero-v5-main">
+        <div class="meta-row">
+          <span class="kicker">Cream Hero / Variation 05</span>
+          <span class="meta">Minimal Premium Narrative</span>
+        </div>
+
+        <div class="hero-v5-head">
+          <div class="hero-v5-left">
+            <h1 class="hero-title">Your world, your rhythm,<em>our execution layer.</em></h1>
+            <p class="lead">A cleaner, quieter hero that prioritizes trust, readability, and premium restraint. Best suited for top-of-funnel landing pages where confidence should be immediate.</p>
+            <div class="action-row" style="margin-top:0.8rem;">
+              <a href="#" class="btn btn-primary">Talk To A Consultant
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+              <a href="#" class="btn btn-secondary">Plan Your Journey</a>
+            </div>
+          </div>
+
+          <aside class="hero-v5-right">
+            <article class="hero-v5-note"><span>No Templates</span><p>Every itinerary begins with a human brief, never a static package.</p></article>
+            <article class="hero-v5-note"><span>One Team</span><p>Planning, documentation, and operations coordinated under one accountable lead.</p></article>
+            <article class="hero-v5-note"><span>Live Support</span><p>Operational response remains active while you travel.</p></article>
+          </aside>
+        </div>
+
+        <div class="hero-v5-foot">
+          <span class="hero-v5-pill">Luxury Leisure</span>
+          <span class="hero-v5-pill">Study Mobility</span>
+          <span class="hero-v5-pill">Corporate MICE</span>
+          <span class="hero-v5-pill">Travel Logistics</span>
+          <span class="hero-v5-pill">Visa Services</span>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

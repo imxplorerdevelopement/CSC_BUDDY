@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+body{margin:0;background:var(--imx-dark);padding:24px;overflow:hidden;color:var(--imx-light);font-family:var(--font-body)}
+.row{display:flex;flex-direction:column;gap:12px}
+.input,.btn,.badge{border-radius:0}
+.label{display:block;margin-bottom:6px;font-family:var(--font-brand);font-size:0.56rem;font-weight:700;letter-spacing:0.26em;color:rgba(211,166,90,0.85);text-transform:uppercase}
+.input{width:100%;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);padding:12px 14px;color:rgba(252,249,248,0.92);font-family:var(--font-sans);font-size:0.9rem;outline:none;box-sizing:border-box}
+.input:focus{border-color:rgba(214,5,43,0.6);background:rgba(255,255,255,0.05)}
+.btns{display:flex;gap:10px;margin-top:6px}
+.btn{flex:0 0 auto;padding:10px 18px;border:1px solid rgba(214,5,43,0.5);background:rgba(214,5,43,0.14);color:rgba(252,249,248,0.95);font-family:var(--font-brand);font-size:0.58rem;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;cursor:pointer}
+.btn.ghost{border-color:rgba(255,255,255,0.22);background:transparent;color:rgba(252,249,248,0.75)}
+.badge{display:inline-flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);padding:5px 14px 5px 10px;color:rgba(255,255,255,0.65);font-family:var(--font-brand);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;backdrop-filter:blur(12px);margin-bottom:8px}
+.badge .d{display:block;width:16px;height:1px;background:var(--imx-red)}
+</style></head><body>
+<div class="row">
+  <div class="badge"><span class="d"></span>Our Services — The Five Pillars</div>
+  <div>
+    <span class="label">Full Name</span>
+    <input class="input" value="Priya Rao">
+  </div>
+  <div>
+    <span class="label">Preferred Destinations</span>
+    <input class="input" placeholder="e.g. Norway, Japan, Maldives…">
+  </div>
+  <div class="btns">
+    <button class="btn">Submit Enquiry</button>
+    <button class="btn ghost">Back</button>
+  </div>
+</div>
+</body></html>

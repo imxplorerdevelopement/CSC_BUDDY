@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Hero Variation 3 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .hero-v3 {
+      padding: clamp(1rem, 2.4vw, 1.7rem);
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .hero-v3-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
+      gap: 0.76rem;
+    }
+
+    .hero-v3-left {
+      padding: clamp(0.95rem, 2.2vw, 1.4rem);
+      display: grid;
+      gap: 0.8rem;
+      align-content: start;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(246, 238, 223, 0.88));
+    }
+
+    .hero-v3-left .hero-title {
+      font-size: clamp(2rem, 4.8vw, 4.2rem);
+      max-width: 12.8ch;
+    }
+
+    .hero-v3-right {
+      padding: 0.8rem;
+      display: grid;
+      gap: 0.55rem;
+      align-content: start;
+      background:
+        radial-gradient(circle at 92% 14%, rgba(184, 148, 63, 0.16), transparent 45%),
+        linear-gradient(146deg, rgba(255, 255, 255, 0.75), rgba(244, 236, 222, 0.9));
+    }
+
+    .signal-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 0.62rem 0.68rem;
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .signal-card .k {
+      font-family: var(--font-brand);
+      font-size: 0.44rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(143, 47, 47, 0.82);
+    }
+
+    .signal-card h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 1.45vw, 1.4rem);
+      line-height: 1.04;
+      letter-spacing: -0.01em;
+      font-weight: 400;
+    }
+
+    .signal-card p {
+      margin: 0;
+      font-size: 0.74rem;
+      line-height: 1.56;
+      color: var(--ink-3);
+    }
+
+    .hero-v3-track {
+      border: 1px dashed rgba(21, 18, 15, 0.2);
+      border-radius: 12px;
+      padding: 0.6rem;
+      display: grid;
+      gap: 0.42rem;
+      background: rgba(255, 255, 255, 0.64);
+    }
+
+    .track-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.74);
+      padding: 0.5rem 0.58rem;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.5rem;
+      align-items: start;
+    }
+
+    .track-item .n {
+      font-family: var(--font-brand);
+      font-size: 0.43rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+      margin-top: 0.16rem;
+      white-space: nowrap;
+    }
+
+    .track-item p {
+      margin: 0;
+      font-size: 0.74rem;
+      line-height: 1.54;
+      color: var(--ink-3);
+    }
+
+    @media (max-width: 980px) {
+      .hero-v3-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel hero-v3">
+      <div class="hero-v3-grid">
+        <article class="panel-soft hero-v3-left">
+          <div class="meta-row">
+            <span class="kicker">Cream Hero / Variation 03</span>
+            <span class="meta">Signal Board Layout</span>
+          </div>
+          <h1 class="hero-title">High-touch planning,<em>low-noise execution.</em></h1>
+          <p class="lead">This version is deliberately controlled and compact: tighter scale, clearer vertical rhythm, and stronger placement logic. It avoids oversized headline dominance while still feeling premium.</p>
+          <div class="action-row">
+            <a href="#" class="btn btn-primary">Start Planning
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="#" class="btn btn-secondary">View Service Pillars</a>
+          </div>
+          <div class="grid-3">
+            <div class="stat-card"><strong>500+</strong><span>Journeys</span></div>
+            <div class="stat-card"><strong>5</strong><span>Pillars</span></div>
+            <div class="stat-card"><strong>1</strong><span>Accountable Team</span></div>
+          </div>
+        </article>
+
+        <aside class="panel-soft hero-v3-right">
+          <div class="rule-title"><span>Execution Signals</span><i></i></div>
+          <article class="signal-card"><span class="k">Risk Control</span><h3>Contingency-Ready Routing</h3><p>Plans include fallback logic for weather, schedule changes, and transit dependencies.</p></article>
+          <article class="signal-card"><span class="k">Service Continuity</span><h3>One Communication Thread</h3><p>You never chase multiple vendors. One team coordinates every moving part.</p></article>
+          <article class="signal-card"><span class="k">Client Experience</span><h3>Quietly Premium Delivery</h3><p>The backend is rigorous so the front-end travel experience feels effortless.</p></article>
+
+          <div class="hero-v3-track">
+            <div class="track-item"><span class="n">01</span><p>Discovery and intent capture</p></div>
+            <div class="track-item"><span class="n">02</span><p>Itinerary and documentation architecture</p></div>
+            <div class="track-item"><span class="n">03</span><p>Live on-trip operations layer</p></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

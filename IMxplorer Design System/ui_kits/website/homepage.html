@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IMxplorer · Website UI Kit</title>
+<meta name="viewport" content="width=1440">
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--imx-bg);color:var(--imx-cream);font-family:var(--font-sans);font-size:14px}
+  body{overflow-x:hidden}
+  img{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+
+  /* ═══ KIT SHELL ═══ */
+  .kit-header{position:sticky;top:0;z-index:50;background:rgba(10,10,10,0.82);backdrop-filter:blur(20px);border-bottom:1px solid var(--hairline-soft);padding:14px 32px;display:flex;align-items:center;justify-content:space-between}
+  .kit-header .title{font-family:var(--font-brand);font-weight:700;letter-spacing:0.22em;font-size:0.82rem;text-transform:uppercase;color:#fff}
+  .kit-header .meta{font-family:var(--font-brand);font-size:0.56rem;letter-spacing:0.3em;color:rgba(255,255,255,0.4);text-transform:uppercase}
+  .frame{max-width:1440px;margin:0 auto;padding:0}
+  .section-label{max-width:1440px;margin:48px auto 16px;padding:0 32px;display:flex;align-items:center;gap:16px}
+  .section-label .ln{flex:1;height:1px;background:rgba(255,255,255,0.08)}
+  .section-label .num{font-family:var(--font-brand);font-size:0.56rem;letter-spacing:0.36em;color:var(--imx-gold);text-transform:uppercase;font-weight:700}
+  .section-label .nm{font-family:var(--font-serif);font-weight:300;font-style:italic;font-size:1.3rem;color:rgba(255,255,255,0.85)}
+
+  /* ═══ NAV ═══ */
+  .nav-wrap{position:relative;padding:16px 32px}
+  .nav{max-width:960px;margin:0 auto;padding:6px 6px 6px 24px;border:1px solid rgba(255,255,255,0.1);border-radius:999px;background:rgba(10,10,10,0.4);backdrop-filter:blur(24px) saturate(140%);box-shadow:0 8px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .nav .logo{font-family:var(--font-brand);font-weight:700;letter-spacing:0.22em;font-size:0.92rem;color:#fff}
+  .nav .links{display:flex;gap:26px;font-family:var(--font-brand);font-size:0.58rem;font-weight:500;letter-spacing:0.2em;color:rgba(252,249,248,0.75);text-transform:uppercase}
+  .nav .links a{transition:color .3s}
+  .nav .links a:hover{color:var(--imx-red)}
+  .nav .cta{padding:10px 22px;border:1px solid rgba(184,148,63,0.5);background:rgba(184,148,63,0.12);border-radius:999px;font-family:var(--font-brand);font-size:0.6rem;font-weight:700;letter-spacing:0.25em;color:var(--imx-gold-deep);text-transform:uppercase;cursor:pointer}
+
+  /* ═══ HERO ═══ */
+  .hero{position:relative;min-height:760px;overflow:hidden;display:flex;align-items:flex-end;padding:0 48px 100px}
+  .hero::before{content:'';position:absolute;inset:0;background:
+    radial-gradient(ellipse 65% 55% at 78% 12%,rgba(184,148,63,0.24),transparent 58%),
+    radial-gradient(ellipse 55% 45% at 8% 92%,rgba(143,47,47,0.22),transparent 52%),
+    linear-gradient(160deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.2) 48%,rgba(0,0,0,0.82) 100%),
+    linear-gradient(140deg,#2a1d12 0%,#1e1510 38%,#12100d 72%,#0a0a0a 100%)}
+  .hero::after{content:'';position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(to bottom,transparent,var(--imx-bg))}
+  .hero-inner{position:relative;z-index:2;width:100%;max-width:1280px;margin:0 auto}
+  .hero-top{position:absolute;top:-680px;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--font-brand);font-size:0.54rem;letter-spacing:0.36em;color:rgba(255,255,255,0.5);text-transform:uppercase}
+  .hero .eyebrow{font-family:var(--font-brand);font-size:0.6rem;font-weight:700;letter-spacing:0.46em;color:var(--imx-gold);text-transform:uppercase;margin-bottom:24px;display:flex;align-items:center;gap:14px}
+  .hero .eyebrow::before{content:'';display:block;width:36px;height:1px;background:var(--imx-gold);opacity:0.6}
+  .hero h1{font-family:var(--font-serif);font-weight:300;font-size:clamp(4rem,9vw,9.2rem);line-height:0.92;letter-spacing:-0.022em;margin:0;color:#fff;max-width:16ch;text-wrap:balance}
+  .hero h1 em{font-style:italic;color:rgba(246,242,233,0.52)}
+  .hero .divider{height:1px;width:200px;background:linear-gradient(90deg,rgba(184,148,63,0.9),transparent);margin-top:36px}
+  .hero .subline{font-family:var(--font-serif);font-style:italic;font-weight:300;font-size:1.8rem;color:rgba(252,249,248,0.72);margin-top:28px;letter-spacing:-0.005em}
+  .hero .fineprint{font-family:var(--font-sans);font-size:0.84rem;font-weight:300;line-height:1.78;color:rgba(255,255,255,0.42);max-width:46ch;margin-top:22px}
+  .hero .ctas{display:flex;gap:18px;margin-top:38px;align-items:center}
+  .btn-primary{display:inline-flex;align-items:center;gap:14px;border:1px solid rgba(255,255,255,0.4);padding:15px 30px;font-family:var(--font-brand);font-size:0.66rem;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:#fff;cursor:pointer}
+  .btn-primary .ln{display:block;height:1px;width:24px;background:rgba(255,255,255,0.7)}
+  .btn-ghost{font-family:var(--font-brand);font-size:0.6rem;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:rgba(201,168,76,0.85);display:inline-flex;align-items:center;gap:12px}
+  .btn-ghost::after{content:'';width:36px;height:1px;background:currentColor}
+  .hero .scroll-hint{position:absolute;right:0;bottom:-40px;font-family:var(--font-brand);font-size:0.5rem;letter-spacing:0.4em;color:rgba(255,255,255,0.35);text-transform:uppercase;writing-mode:vertical-rl;transform:rotate(180deg)}
+
+  /* ═══ WE CARE ═══ */
+  .we-care{position:relative;padding:180px 48px;text-align:center;background:var(--imx-bg);overflow:hidden}
+  .we-care::after{content:'';position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(to bottom,transparent,var(--imx-cream))}
+  .we-care .eb{font-family:var(--font-brand);font-size:0.58rem;letter-spacing:0.44em;color:var(--imx-red-bright);text-transform:uppercase;font-weight:700;margin-bottom:40px}
+  .we-care h2{font-family:var(--font-serif);font-weight:300;font-size:clamp(6rem,14vw,13rem);line-height:0.88;letter-spacing:-0.025em;margin:0;color:#fff}
+  .we-care h2 .dot{color:var(--imx-red-bright)}
+  .we-care .caption{font-family:var(--font-serif);font-style:italic;font-weight:300;font-size:1.5rem;color:rgba(255,255,255,0.5);margin-top:42px}
+
+  /* ═══ PHILOSOPHY ═══ */
+  .philo{position:relative;background:var(--imx-cream);color:var(--imx-ink);padding:140px 48px}
+  .philo-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:4fr 8fr;gap:64px;align-items:start}
+  .philo .eb{font-family:var(--font-brand);font-size:0.58rem;letter-spacing:0.4em;color:var(--imx-red);text-transform:uppercase;font-weight:700;margin-bottom:26px}
+  .philo h2{font-family:var(--font-serif);font-weight:300;font-size:3.2rem;line-height:1;letter-spacing:-0.015em;margin:0 0 18px;color:var(--imx-ink)}
+  .philo h2 em{font-style:italic;color:var(--imx-red)}
+  .philo .lede{font-family:var(--font-serif);font-weight:400;font-size:1.8rem;line-height:1.38;color:rgba(10,10,10,0.85);letter-spacing:-0.01em;margin:0 0 36px;text-wrap:pretty}
+  .philo .body{font-family:var(--font-sans);font-size:1rem;line-height:1.78;font-weight:300;color:rgba(10,10,10,0.62);max-width:62ch;margin:0 0 26px}
+  .philo .close{font-family:var(--font-serif);font-style:italic;font-weight:400;font-size:1.6rem;color:var(--imx-red);margin:40px 0 0;padding-top:28px;border-top:1px solid rgba(10,10,10,0.1);max-width:32ch}
+
+  /* ═══ SERVICES 5-PILLAR ═══ */
+  .services{position:relative;background:#080809;padding:120px 48px;overflow:hidden}
+  .services::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 45% at 85% 20%,rgba(184,148,63,0.12),transparent 58%)}
+  .services-inner{position:relative;z-index:1;max-width:1280px;margin:0 auto}
+  .services .head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:56px;padding-bottom:30px;border-bottom:1px solid rgba(255,255,255,0.08)}
+  .services .eb{font-family:var(--font-brand);font-size:0.58rem;letter-spacing:0.4em;color:var(--imx-gold);text-transform:uppercase;font-weight:700;margin-bottom:18px}
+  .services h2{font-family:var(--font-serif);font-weight:300;font-size:4rem;line-height:0.98;letter-spacing:-0.02em;margin:0;color:#fff;max-width:18ch}
+  .services h2 em{font-style:italic;color:rgba(246,242,233,0.45)}
+  .services .count{font-family:var(--font-serif);font-weight:300;font-size:6rem;line-height:0.9;color:rgba(184,148,63,0.22);letter-spacing:-0.02em}
+  .services .count .cur{color:rgba(184,148,63,0.95)}
+
+  .pillar-card{position:relative;border-radius:20px;overflow:hidden;background:#0a0a0a;min-height:440px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+  .pillar-card .bg{position:absolute;inset:0;background:linear-gradient(135deg,#2c1c12,#180f0a 60%,#0d0b08)}
+  .pillar-card .bg::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,rgba(8,8,9,0.97),rgba(8,8,9,0.85) 38%,rgba(8,8,9,0.62) 68%,rgba(8,8,9,0.78))}
+  .pillar-card .topline{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent-warn),transparent 65%)}
+  .pillar-card .inner{position:relative;z-index:2;padding:44px 52px;display:grid;grid-template-columns:7fr 10fr;gap:44px;height:100%}
+  .pillar-card .code{font-family:var(--font-brand);font-size:0.56rem;letter-spacing:0.4em;color:rgba(200,146,42,0.85);text-transform:uppercase;font-weight:700;margin-bottom:14px}
+  .pillar-card h3{font-family:var(--font-serif);font-weight:300;font-size:3.2rem;line-height:1;letter-spacing:-0.018em;margin:0 0 14px;color:#fff}
+  .pillar-card h3 em{font-style:italic;color:rgba(246,242,233,0.4)}
+  .pillar-card .tag{font-family:var(--font-sans);font-size:0.78rem;font-weight:500;letter-spacing:0.08em;color:rgba(200,146,42,0.8);margin-bottom:20px;text-transform:uppercase}
+  .pillar-card p{font-family:var(--font-sans);font-size:0.88rem;line-height:1.72;font-weight:300;color:rgba(255,255,255,0.52);margin:0 0 30px;max-width:34ch}
+  .pillar-card .enq{display:inline-flex;align-items:center;gap:12px;padding:11px 22px;border:1px solid rgba(200,146,42,0.4);background:rgba(200,146,42,0.08);border-radius:999px;color:rgba(200,146,42,0.95);font-family:var(--font-brand);font-size:0.58rem;letter-spacing:0.26em;text-transform:uppercase;font-weight:700}
+  .pillar-card .enq svg{width:12px;height:12px}
+  .pillar-card .grid-sub{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start}
+  .pillar-card .sub{border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px 20px;background:rgba(255,255,255,0.02)}
+  .pillar-card .sub .t{font-family:var(--font-sans);font-size:0.84rem;font-weight:600;color:rgba(255,255,255,0.92);letter-spacing:-0.005em;margin-bottom:6px}
+  .pillar-card .sub .d{font-family:var(--font-sans);font-size:0.72rem;line-height:1.65;color:rgba(255,255,255,0.42);font-weight:300}
+
+  .pillar-nav{display:flex;margin-top:26px;border-top:1px solid rgba(255,255,255,0.08)}
+  .pillar-nav .it{flex:1;padding:20px 22px;border-right:1px solid rgba(255,255,255,0.06);cursor:pointer;opacity:0.5;transition:opacity .3s}
+  .pillar-nav .it:last-child{border-right:0}
+  .pillar-nav .it.on{opacity:1;background:rgba(200,146,42,0.05);border-top:1px solid var(--accent-warn);margin-top:-1px}
+  .pillar-nav .nn{font-family:var(--font-brand);font-size:0.52rem;letter-spacing:0.34em;color:rgba(255,255,255,0.4);text-transform:uppercase;font-weight:700;margin-bottom:6px}
+  .pillar-nav .it.on .nn{color:var(--accent-warn)}
+  .pillar-nav .nl{font-family:var(--font-serif);font-weight:400;font-size:1.2rem;letter-spacing:-0.01em;color:rgba(255,255,255,0.65)}
+  .pillar-nav .it.on .nl{color:#fff}
+
+  /* ═══ JOURNEY ═══ */
+  .journey{position:relative;background:var(--imx-bg);padding:140px 48px}
+  .journey-inner{max-width:1280px;margin:0 auto}
+  .journey .head{text-align:center;margin-bottom:80px}
+  .journey .eb{font-family:var(--font-brand);font-size:0.58rem;letter-spacing:0.44em;color:var(--imx-red-bright);text-transform:uppercase;font-weight:700;margin-bottom:22px}
+  .journey h2{font-family:var(--font-serif);font-weight:300;font-size:4rem;line-height:1;letter-spacing:-0.018em;margin:0;color:#fff;max-width:14ch;margin-inline:auto}
+  .journey h2 em{font-style:italic;color:rgba(255,255,255,0.5)}
+  .road{position:relative;padding:40px 0 0}
+  .road svg{width:100%;height:auto;overflow:visible}
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:-120px;position:relative;z-index:2;background:rgba(255,255,255,0.05)}
+  .step{position:relative;padding:32px 26px;background:rgba(10,10,10,0.65);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.06)}
+  .step.lit{box-shadow:0 0 0 1px rgba(214,5,43,0.08),0 8px 32px rgba(214,5,43,0.18),inset 0 1px 0 rgba(255,255,255,0.06)}
+  .step .nm{font-family:var(--font-brand);font-size:0.52rem;letter-spacing:0.4em;color:rgba(214,5,43,0.9);text-transform:uppercase;font-weight:700;margin-bottom:14px}
+  .step h4{font-family:var(--font-serif);font-weight:400;font-size:1.5rem;line-height:1.08;letter-spacing:-0.01em;margin:0 0 10px;color:#fff}
+  .step p{font-family:var(--font-sans);font-size:0.78rem;line-height:1.7;font-weight:300;color:rgba(255,255,255,0.52);margin:0}
+
+  /* ═══ HNI ═══ */
+  .hni{position:relative;background:var(--imx-bg-soft);padding:140px 48px;overflow:hidden}
+  .hni::before{content:'';position:absolute;inset:0;background:
+    radial-gradient(ellipse 60% 50% at 95% 10%,rgba(184,148,63,0.18),transparent 55%),
+    radial-gradient(ellipse 35% 40% at 5% 95%,rgba(184,148,63,0.08),transparent 55%)}
+  .hni-inner{position:relative;z-index:1;max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr 1.2fr;gap:88px;align-items:center}
+  .hni .eb{font-family:var(--font-brand);font-size:0.58rem;letter-spacing:0.44em;color:var(--imx-gold);text-transform:uppercase;font-weight:700;margin-bottom:28px;display:flex;align-items:center;gap:14px}
+  .hni .eb::before{content:'';width:32px;height:1px;background:var(--imx-gold);opacity:0.6}
+  .hni h2{font-family:var(--font-serif);font-weight:300;font-size:4.2rem;line-height:0.98;letter-spacing:-0.02em;margin:0;color:#fff}
+  .hni h2 em{font-style:italic;color:var(--imx-gold)}
+  .hni .lede{font-family:var(--font-serif);font-style:italic;font-weight:300;font-size:1.45rem;line-height:1.5;color:rgba(255,255,255,0.62);margin:28px 0 32px;max-width:36ch}
+  .hni ul{list-style:none;padding:0;margin:0 0 38px;display:grid;gap:14px}
+  .hni li{display:flex;align-items:flex-start;gap:14px;font-family:var(--font-sans);font-size:0.92rem;font-weight:300;line-height:1.6;color:rgba(255,255,255,0.75)}
+  .hni li .chk{flex:0 0 22px;width:22px;height:22px;border-radius:999px;background:rgba(184,148,63,0.15);border:1px solid rgba(184,148,63,0.4);display:flex;align-items:center;justify-content:center;margin-top:3px}
+  .hni .cta-pill{display:inline-flex;align-items:center;gap:14px;padding:15px 30px;border:1px solid rgba(184,148,63,0.55);background:rgba(184,148,63,0.1);border-radius:999px;color:var(--imx-gold);font-family:var(--font-brand);font-size:0.62rem;font-weight:700;letter-spacing:0.28em;text-transform:uppercase}
+
+  .hni .visual{position:relative;border-radius:20px;overflow:hidden;min-height:560px;background:linear-gradient(135deg,#2a1a0f,#160f0a 60%,#0a0808);border:1px solid rgba(184,148,63,0.15);box-shadow:0 30px 80px rgba(0,0,0,0.6)}
+  .hni .visual::after{content:'';position:absolute;inset:0;background:
+    radial-gradient(ellipse 60% 50% at 30% 30%,rgba(184,148,63,0.14),transparent 60%),
+    linear-gradient(135deg,rgba(0,0,0,0.2),rgba(0,0,0,0.5))}
+  .hni .meta{position:absolute;inset:0;z-index:2;padding:40px;display:flex;flex-direction:column;justify-content:space-between}
+  .hni .meta .chip{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border:1px solid rgba(184,148,63,0.3);background:rgba(255,255,255,0.05);border-radius:999px;font-family:var(--font-brand);font-size:0.52rem;letter-spacing:0.3em;text-transform:uppercase;color:rgba(184,148,63,0.85);backdrop-filter:blur(10px);font-weight:700}
+  .hni .meta .chip .dot{width:6px;height:6px;border-radius:999px;background:var(--imx-gold);box-shadow:0 0 8px rgba(184,148,63,0.7)}
+  .hni .meta .stat{font-family:var(--font-serif);font-weight:300;font-size:8rem;line-height:0.9;letter-spacing:-0.02em;color:rgba(184,148,63,0.85)}
+  .hni .meta .stat-lbl{font-family:var(--font-brand);font-size:0.55rem;letter-spacing:0.4em;color:rgba(255,255,255,0.5);text-transform:uppercase;font-weight:700;margin-top:8px}
+
+  /* ═══ TRUSTED BY ═══ */
+  .trusted{background:var(--imx-cream-soft);color:var(--imx-ink);padding:80px 0;overflow:hidden;position:relative}
+  .trusted .head{text-align:center;padding:0 48px;margin-bottom:48px}
+  .trusted .eb{font-family:var(--font-brand);font-size:0.56rem;letter-spacing:0.44em;color:var(--imx-red);text-transform:uppercase;font-weight:700;margin-bottom:16px}
+  .trusted .quote{font-family:var(--font-serif);font-style:italic;font-weight:300;font-size:2.4rem;color:var(--imx-ink);line-height:1.2;margin:0 auto;max-width:22ch}
+  .trusted .track{display:flex;gap:1px;background:rgba(10,10,10,0.1);overflow:hidden}
+  .trusted .tile{flex:0 0 240px;height:130px;background:var(--imx-cream-soft);display:flex;align-items:center;justify-content:center;padding:20px}
+  .brandmark{font-family:var(--font-brand);font-weight:700;font-size:1.05rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(10,10,10,0.8)}
+  .brandmark.serif{font-family:var(--font-serif);font-style:italic;font-weight:400;font-size:1.4rem;letter-spacing:0}
+  .brandmark.sans{font-family:var(--font-sans);font-weight:700;font-size:1.3rem;letter-spacing:-0.01em;text-transform:none}
+
+  /* ═══ FOOTER ═══ */
+  .foot{background:var(--imx-bg);padding:90px 48px 40px;border-top:1px solid rgba(255,255,255,0.06)}
+  .foot-inner{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.4fr;gap:56px}
+  .foot .logo{font-family:var(--font-brand);font-weight:700;letter-spacing:0.2em;font-size:1.5rem;color:#fff;margin-bottom:14px}
+  .foot .tag{font-family:var(--font-serif);font-style:italic;font-weight:300;font-size:1.1rem;color:rgba(255,255,255,0.55);line-height:1.5;margin-bottom:20px;max-width:30ch}
+  .foot .iata{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-brand);font-size:0.56rem;letter-spacing:0.3em;color:rgba(184,148,63,0.9);text-transform:uppercase;font-weight:700}
+  .foot .iata .d{width:6px;height:6px;border-radius:999px;background:rgba(184,148,63,0.95);box-shadow:0 0 8px rgba(184,148,63,0.6)}
+  .foot h5{font-family:var(--font-brand);font-size:0.56rem;letter-spacing:0.32em;color:rgba(255,255,255,0.4);text-transform:uppercase;font-weight:700;margin:0 0 22px}
+  .foot ul{list-style:none;padding:0;margin:0;display:grid;gap:14px}
+  .foot ul a{font-family:var(--font-serif);font-weight:400;font-size:1rem;color:rgba(255,255,255,0.78);transition:color .3s,transform .3s;display:inline-block}
+  .foot ul a:hover{color:var(--imx-gold);transform:translateX(2px)}
+  .foot .socials{display:flex;gap:10px;margin-top:18px}
+  .foot .soc{width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.7)}
+  .foot .soc:hover{color:var(--imx-gold);border-color:rgba(184,148,63,0.5)}
+  .copy{max-width:1400px;margin:60px auto 0;padding-top:30px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;font-family:var(--font-sans);font-size:0.74rem;color:rgba(255,255,255,0.4)}
+
+  /* ═══ WA button ═══ */
+  .wa{position:fixed;bottom:28px;right:28px;width:54px;height:54px;border-radius:999px;background:var(--accent-wa);color:#0a0a0a;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,0.35);z-index:99}
+</style>
+</head>
+<body>
+
+<header class="kit-header">
+  <div class="title">IMXPLORER · WEBSITE UI KIT</div>
+  <div class="meta">HOMEPAGE SEQUENCE · 1440W</div>
+</header>
+
+<!-- ── 01 NAV ── -->
+<div class="section-label"><span class="num">01</span><span class="nm">Navigation — scrolled pill</span><span class="ln"></span></div>
+<div class="frame">
+  <div class="nav-wrap">
+    <nav class="nav">
+      <div class="logo">IMXPLORER</div>
+      <div class="links">
+        <a>Philosophy</a><a>Journey</a><a>About</a><a>Services</a><a>Destinations</a><a>Blogs</a><a>LUXE</a>
+      </div>
+      <div class="cta">Enquire</div>
+    </nav>
+  </div>
+</div>
+
+<!-- ── 02 HERO ── -->
+<div class="section-label"><span class="num">02</span><span class="nm">Hero — <em>The Art of Custom Travel</em></span><span class="ln"></span></div>
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-top">
+      <span>IMXPLORER · EST. 2019</span>
+      <span>Greater Noida · India</span>
+    </div>
+    <div class="eyebrow">What We Design</div>
+    <h1>The Art of<br><em>Custom Travel.</em></h1>
+    <div class="divider"></div>
+    <div class="subline">Your freedom to explore the world.</div>
+    <div class="fineprint">No algorithms. No ready-made packages. 100% customised travel from first call to safe return.</div>
+    <div class="ctas">
+      <button class="btn-primary">Plan Your Journey <span class="ln"></span></button>
+      <a class="btn-ghost">Talk to a Consultant</a>
+    </div>
+    <div class="scroll-hint">Scroll · Philosophy</div>
+  </div>
+</section>
+
+<!-- ── 03 WE CARE ── -->
+<div class="section-label"><span class="num">03</span><span class="nm">Scroll-lit manifesto</span><span class="ln"></span></div>
+<section class="we-care">
+  <div class="eb">Our Differentiator</div>
+  <h2>We Care<span class="dot">.</span></h2>
+  <div class="caption">Three words we stake everything on.</div>
+</section>
+
+<!-- ── 04 PHILOSOPHY ── -->
+<div class="section-label" style="background:var(--imx-cream);color:var(--imx-ink);padding-top:24px;padding-bottom:0">
+  <span class="num" style="color:var(--imx-red)">04</span>
+  <span class="nm" style="color:rgba(10,10,10,0.7)">Philosophy — cream on ink</span>
+  <span class="ln" style="background:rgba(10,10,10,0.1)"></span>
+</div>
+<section class="philo">
+  <div class="philo-inner">
+    <div>
+      <div class="eb">Philosophy</div>
+      <h2>We are not a tech platform.</h2>
+      <h2><em>We are a people business.</em></h2>
+    </div>
+    <div>
+      <p class="lede">One-on-one consultation. Flawless execution. The relationship is the product — every other deliverable flows from it.</p>
+      <p class="body">Ninety percent of our travellers come back. They come back because someone picked up the phone at 3 a.m. in Oslo. Because a missed connection in Dubai was already rebooked before they landed. Because the honeymoon suite had the right flowers, not just any flowers.</p>
+      <p class="body">Rate parity is a myth. Loyalty programs are a distraction. The only thing that compounds is trust — and trust is built one journey at a time.</p>
+      <div class="close">"The care is the luxury."</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 05 SERVICES ── -->
+<div class="section-label"><span class="num">05</span><span class="nm">Five Pillars — active card</span><span class="ln"></span></div>
+<section class="services">
+  <div class="services-inner">
+    <div class="head">
+      <div>
+        <div class="eb">Our Services — The Five Pillars</div>
+        <h2>Every kind of journey.<br><em>One team behind it.</em></h2>
+      </div>
+      <div class="count"><span class="cur">01</span>/05</div>
+    </div>
+    <div class="pillar-card">
+      <div class="bg"></div>
+      <div class="topline"></div>
+      <div class="inner">
+        <div>
+          <div class="code">PILLAR 01</div>
+          <h3>Holidays &amp;<br><em>Leisure Travel</em></h3>
+          <div class="tag">Every kind of getaway, crafted.</div>
+          <p>From sprawling international itineraries to weekend escapes — built around your pace, not a brochure.</p>
+          <div class="enq">Enquire
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="grid-sub">
+          <div class="sub"><div class="t">International Holidays</div><div class="d">Fully-managed overseas travel with 24/7 on-trip concierge.</div></div>
+          <div class="sub"><div class="t">Honeymoon</div><div class="d">Private villas, discreet surprises, flawless thresholds.</div></div>
+          <div class="sub"><div class="t">Golf Tourism</div><div class="d">Tee-times at world-ranked courses with full club access.</div></div>
+          <div class="sub"><div class="t">Senior Travel</div><div class="d">Pace-adjusted itineraries with accessibility-first stays.</div></div>
+          <div class="sub"><div class="t">Cruises</div><div class="d">From Norwegian fjords to the Greek isles, suite-first.</div></div>
+          <div class="sub"><div class="t">Weekend Escapes</div><div class="d">Within-48-hours getaways, domestic and near-abroad.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pillar-nav">
+      <div class="it on"><div class="nn">01 · Active</div><div class="nl">Holidays &amp; Leisure</div></div>
+      <div class="it"><div class="nn">02</div><div class="nl">Study Abroad</div></div>
+      <div class="it"><div class="nn">03</div><div class="nl">Corporate &amp; MICE</div></div>
+      <div class="it"><div class="nn">04</div><div class="nl">Travel &amp; Logistics</div></div>
+      <div class="it"><div class="nn">05</div><div class="nl">Visa &amp; Services</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 06 JOURNEY ── -->
+<div class="section-label"><span class="num">06</span><span class="nm">The Journey — seven steps on a road</span><span class="ln"></span></div>
+<section class="journey">
+  <div class="journey-inner">
+    <div class="head">
+      <div class="eb">The Journey</div>
+      <h2>From first call to <em>safe return.</em></h2>
+    </div>
+    <div class="road">
+      <svg viewBox="0 0 1200 180" fill="none" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="rd" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#d6052b" stop-opacity="0.85"/>
+            <stop offset="1" stop-color="#d3a65a" stop-opacity="0.85"/>
+          </linearGradient>
+        </defs>
+        <path d="M20 140 C 200 40, 400 160, 600 90 S 1000 30, 1180 120" stroke="url(#rd)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <path d="M20 140 C 200 40, 400 160, 600 90 S 1000 30, 1180 120" stroke="rgba(214,5,43,0.25)" stroke-width="0.6" fill="none"/>
+        <circle cx="620" cy="92" r="5" fill="#d6052b"/>
+        <circle cx="620" cy="92" r="14" fill="#d6052b" opacity="0.22"/>
+      </svg>
+    </div>
+    <div class="steps">
+      <div class="step lit">
+        <div class="nm">Step 01</div>
+        <h4>You Reach Out</h4>
+        <p>A call, a message, a referral. That's all it takes.</p>
+      </div>
+      <div class="step lit">
+        <div class="nm">Step 02</div>
+        <h4>We Listen</h4>
+        <p>Dates, pace, standards, and the unstated — written down.</p>
+      </div>
+      <div class="step">
+        <div class="nm">Step 03</div>
+        <h4>We Design</h4>
+        <p>A proposal you'd show a close friend, not a form letter.</p>
+      </div>
+      <div class="step">
+        <div class="nm">Step 07</div>
+        <h4>Safe Return</h4>
+        <p>Our job ends when you are home. That is why 90% come back.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 07 HNI ── -->
+<div class="section-label"><span class="num">07</span><span class="nm">Concierge &amp; HNI — LUXE entry</span><span class="ln"></span></div>
+<section class="hni">
+  <div class="hni-inner">
+    <div>
+      <div class="eb">Concierge &amp; HNI</div>
+      <h2>Suites They Don't<br><em>List Online.</em></h2>
+      <div class="lede">Quietly. Every document handled. Every threshold rehearsed. Discretion is the minimum.</div>
+      <ul>
+        <li><span class="chk"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="rgba(184,148,63,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Off-market villa &amp; suite access across 40+ destinations</li>
+        <li><span class="chk"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="rgba(184,148,63,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Private aviation, on-ground protection, medical standby</li>
+        <li><span class="chk"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="rgba(184,148,63,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Visas, documentation, and chaperoned family travel</li>
+        <li><span class="chk"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="rgba(184,148,63,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>One consultant. One WhatsApp thread. Every hour.</li>
+      </ul>
+      <a class="cta-pill">Enquire Privately
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <div class="visual">
+      <div class="meta">
+        <div class="chip"><span class="dot"></span>LUXE · Invitation only</div>
+        <div>
+          <div class="stat">90<span style="font-size:0.5em;color:rgba(184,148,63,0.6)">%</span></div>
+          <div class="stat-lbl">Return to us</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 08 TRUSTED BY ── -->
+<div class="section-label" style="background:var(--imx-cream-soft);color:var(--imx-ink);padding-top:24px;padding-bottom:0">
+  <span class="num" style="color:var(--imx-red)">08</span>
+  <span class="nm" style="color:rgba(10,10,10,0.7)">Trusted By — wordmark-as-type</span>
+  <span class="ln" style="background:rgba(10,10,10,0.1)"></span>
+</div>
+<section class="trusted">
+  <div class="head">
+    <div class="eb">Trusted By</div>
+    <div class="quote">"Trust is the only currency that matters."</div>
+  </div>
+  <div class="track">
+    <div class="tile"><span class="brandmark">BMW Group</span></div>
+    <div class="tile"><span class="brandmark sans">Samsung</span></div>
+    <div class="tile"><span class="brandmark">Amway</span></div>
+    <div class="tile"><span class="brandmark serif">Ryan International</span></div>
+    <div class="tile"><span class="brandmark">SBI Card</span></div>
+    <div class="tile"><span class="brandmark serif">Golden Grande</span></div>
+  </div>
+</section>
+
+<!-- ── 09 FOOTER ── -->
+<div class="section-label"><span class="num">09</span><span class="nm">Footer</span><span class="ln"></span></div>
+<footer class="foot">
+  <div class="foot-inner">
+    <div>
+      <div class="logo">IMXPLORER</div>
+      <div class="tag">The care is the luxury. One consultant, one WhatsApp thread, every hour.</div>
+      <div class="iata"><span class="d"></span>IATA Accredited</div>
+      <div class="socials">
+        <a class="soc"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.85.07 1.17.05 1.8.25 2.22.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.05.41 2.22.06 1.25.07 1.62.07 4.8s0 3.55-.07 4.8c-.05 1.17-.25 1.8-.41 2.22-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.05.36-2.22.41-1.25.06-1.62.07-4.85.07s-3.6 0-4.85-.07c-1.17-.05-1.8-.25-2.22-.41-.56-.22-.96-.48-1.38-.9-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.05-.41-2.22-.06-1.25-.07-1.62-.07-4.8s0-3.55.07-4.8c.05-1.17.25-1.8.41-2.22.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.05-.36 2.22-.41C8.4 2.2 8.8 2.2 12 2.2zM12 0C8.74 0 8.33 0 7.05.07 5.78.13 4.9.34 4.14.63c-.79.31-1.46.72-2.13 1.39C1.35 2.68.93 3.36.63 4.14.34 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s0 3.67.07 4.95c.06 1.27.27 2.15.56 2.91.31.79.72 1.46 1.39 2.13.67.67 1.34 1.08 2.13 1.39.76.29 1.64.5 2.91.56C8.33 24 8.74 24 12 24s3.67 0 4.95-.07c1.27-.06 2.15-.27 2.91-.56.79-.31 1.46-.72 2.13-1.39.67-.67 1.08-1.34 1.39-2.13.29-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s0-3.67-.07-4.95c-.06-1.27-.27-2.15-.56-2.91-.31-.79-.72-1.46-1.39-2.13C21.32 1.35 20.64.93 19.86.63 19.1.34 18.22.13 16.95.07 15.67 0 15.26 0 12 0zm0 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zm0 10.16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.41-10.41a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88z"/></svg></a>
+        <a class="soc"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14zM8.34 18.34V9.66H5.66v8.68h2.68zM7 8.51a1.55 1.55 0 1 0 0-3.1 1.55 1.55 0 0 0 0 3.1zm11.34 9.83v-4.76c0-2.55-1.36-3.74-3.18-3.74a2.74 2.74 0 0 0-2.49 1.37h-.04V9.66h-2.68v8.68h2.68v-4.29c0-1.13.21-2.22 1.61-2.22 1.38 0 1.4 1.29 1.4 2.3v4.21h2.7z"/></svg></a>
+      </div>
+    </div>
+    <div>
+      <h5>Explore</h5>
+      <ul><li><a>Philosophy</a></li><li><a>Journey</a></li><li><a>About Us</a></li><li><a>LUXE</a></li><li><a>Blogs</a></li></ul>
+    </div>
+    <div>
+      <h5>Services</h5>
+      <ul><li><a>Holidays</a></li><li><a>Study Abroad</a></li><li><a>Corporate · MICE</a></li><li><a>Logistics</a></li><li><a>Visas</a></li></ul>
+    </div>
+    <div>
+      <h5>Destinations</h5>
+      <ul><li><a>India</a></li><li><a>Dubai</a></li><li><a>Norway</a></li><li><a>Japan</a></li><li><a>Australia</a></li></ul>
+    </div>
+    <div>
+      <h5>Reach Us</h5>
+      <ul>
+        <li><a>+91 98110 99951</a></li>
+        <li><a>hello@imxplorer.com</a></li>
+        <li><a>Greater Noida, India</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="copy">
+    <span>© 2025 IMxplorer. All journeys reserved.</span>
+    <span>Privacy · Terms · Cookies · Refund</span>
+  </div>
+</footer>
+
+<!-- WA button -->
+<div class="wa">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487 1.92.828 2.673.9 3.633.756.585-.088 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+</div>
+
+</body>
+</html>

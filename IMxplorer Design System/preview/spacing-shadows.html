@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+body{margin:0;background:var(--imx-dark);padding:26px;overflow:hidden;color:var(--imx-light);font-family:var(--font-body)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.item{display:flex;flex-direction:column;gap:10px}
+.shape{background:#14171e;border:1px solid rgba(255,255,255,0.1);border-radius:20px;height:78px}
+.card{box-shadow:0 20px 60px rgba(0,0,0,0.50)}
+.nav{box-shadow:0 8px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.03);background:rgba(10,10,10,0.45);backdrop-filter:blur(24px);border-radius:999px;height:50px}
+.glow{box-shadow:0 0 0 1px rgba(214,5,43,0.06),0 8px 32px rgba(214,5,43,0.18),inset 0 1px 0 rgba(255,255,255,0.06);background:rgba(10,10,10,0.55)}
+.n{font-family:var(--font-brand);font-size:0.54rem;letter-spacing:0.22em;color:rgba(255,255,255,0.55);text-transform:uppercase;font-weight:700}
+.v{font-family:var(--font-brand);font-size:0.56rem;color:rgba(255,255,255,0.35);line-height:1.5}
+</style></head><body>
+<div class="grid">
+  <div class="item"><div class="shape card"></div><div class="n">shadow-card</div><div class="v">0 20 60 · ink 50%</div></div>
+  <div class="item"><div class="shape nav"></div><div class="n">shadow-nav</div><div class="v">0 8 40 · ink 55%<br>+ inner hairline</div></div>
+  <div class="item"><div class="shape glow"></div><div class="n">shadow-glow-red</div><div class="v">red 8% · 8 32<br>+ inset top-light</div></div>
+</div>
+</body></html>

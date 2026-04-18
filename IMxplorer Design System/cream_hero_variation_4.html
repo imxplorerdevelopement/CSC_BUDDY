@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Hero Variation 4 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .hero-v4 {
+      padding: clamp(1rem, 2.4vw, 1.7rem);
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .hero-v4-top {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 0.75rem;
+    }
+
+    .hero-v4-story {
+      padding: clamp(1rem, 2.4vw, 1.5rem);
+      display: grid;
+      gap: 0.85rem;
+      background:
+        radial-gradient(circle at 10% 8%, rgba(184, 148, 63, 0.2), transparent 34%),
+        linear-gradient(148deg, rgba(255, 255, 255, 0.82), rgba(247, 239, 224, 0.9));
+    }
+
+    .hero-v4-story .hero-title {
+      max-width: 11.8ch;
+    }
+
+    .hero-v4-stack {
+      display: grid;
+      gap: 0.56rem;
+    }
+
+    .hero-v4-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 0.7rem;
+      display: grid;
+      gap: 0.2rem;
+      min-height: 122px;
+    }
+
+    .hero-v4-card .k {
+      font-family: var(--font-brand);
+      font-size: 0.43rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(143, 47, 47, 0.8);
+    }
+
+    .hero-v4-card h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.14rem, 1.46vw, 1.42rem);
+      line-height: 1.04;
+      letter-spacing: -0.01em;
+      font-weight: 400;
+    }
+
+    .hero-v4-card p {
+      margin: 0;
+      font-size: 0.74rem;
+      line-height: 1.55;
+      color: var(--ink-3);
+    }
+
+    .hero-v4-bottom {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .hero-v4-tile {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.74rem;
+      background:
+        linear-gradient(150deg, rgba(255, 255, 255, 0.74), rgba(247, 239, 224, 0.9));
+      display: grid;
+      gap: 0.3rem;
+    }
+
+    .hero-v4-tile strong {
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 1.8vw, 1.65rem);
+      line-height: 1;
+      letter-spacing: -0.013em;
+      font-weight: 400;
+    }
+
+    .hero-v4-tile p {
+      margin: 0;
+      font-size: 0.74rem;
+      line-height: 1.56;
+      color: var(--ink-3);
+    }
+
+    @media (max-width: 1020px) {
+      .hero-v4-top,
+      .hero-v4-bottom {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel hero-v4">
+      <div class="hero-v4-top">
+        <article class="panel-soft hero-v4-story">
+          <div class="meta-row">
+            <span class="kicker">Cream Hero / Variation 04</span>
+            <span class="meta">Magazine Grid Composition</span>
+          </div>
+          <h1 class="hero-title">Every itinerary is authored,<em>never assembled.</em></h1>
+          <p class="lead">A more editorial grid that feels designed rather than generated. This format performs well when brand perception matters as much as conversion.</p>
+          <div class="action-row">
+            <a href="#" class="btn btn-primary">Plan A Bespoke Trip
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="#" class="btn btn-secondary">Enquire</a>
+          </div>
+          <div class="marquee">
+            <div class="marquee-track">
+              <span>One-On-One Consultation</span>
+              <span>Flawless Execution</span>
+              <span>The Care Is The Luxury</span>
+              <span>One-On-One Consultation</span>
+              <span>Flawless Execution</span>
+              <span>The Care Is The Luxury</span>
+            </div>
+          </div>
+        </article>
+
+        <aside class="panel-soft hero-v4-stack">
+          <article class="hero-v4-card"><span class="k">Pace</span><h3>Designed Around Your Rhythm</h3><p>From slow luxury retreats to dense multi-country routing.</p></article>
+          <article class="hero-v4-card"><span class="k">Precision</span><h3>Operationally Sound Plans</h3><p>Dependencies are mapped before execution starts.</p></article>
+          <article class="hero-v4-card"><span class="k">Continuity</span><h3>Same Team, End To End</h3><p>No fragmented handoffs across service layers.</p></article>
+        </aside>
+      </div>
+
+      <section class="hero-v4-bottom">
+        <article class="hero-v4-tile"><strong>Leisure</strong><p>International and domestic journeys built with depth, comfort, and personal context.</p></article>
+        <article class="hero-v4-tile"><strong>Corporate</strong><p>MICE and movement operations managed with business-level rigor.</p></article>
+        <article class="hero-v4-tile"><strong>Visa + Logistics</strong><p>Documentation and operations integrated into one cohesive system.</p></article>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

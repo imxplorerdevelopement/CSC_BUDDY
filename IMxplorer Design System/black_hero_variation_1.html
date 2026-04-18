@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Black Hero Variation 1 - Dynamic</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="black_elevated_system.css">
+  <style>
+    .bh1 {
+      padding: clamp(0.95rem, 2.4vw, 1.6rem);
+      display: grid;
+      gap: 0.75rem;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .bh1 .float-orb.gold { top: -120px; left: -80px; }
+    .bh1 .float-orb.red { right: -100px; bottom: -140px; animation-delay: 1.1s; }
+
+    .bh1-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+      gap: 0.72rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .bh1-left,
+    .bh1-right {
+      padding: 0.92rem;
+      display: grid;
+      gap: 0.72rem;
+      align-content: start;
+    }
+
+    .bh1-left {
+      background:
+        radial-gradient(circle at 8% 8%, rgba(184, 148, 63, 0.14), transparent 36%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    }
+
+    .bh1-left .dark-title {
+      max-width: 11.6ch;
+    }
+
+    .bh1-headline span {
+      display: block;
+    }
+
+    .metric-line {
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.62rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .metric-progress {
+      height: 2px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      border-radius: 999px;
+      position: relative;
+    }
+
+    .metric-progress::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform-origin: left center;
+      transform: scaleX(var(--p, .5));
+      background: linear-gradient(90deg, rgba(184,148,63,.9), rgba(214,5,43,.8));
+      transition: transform .55s var(--ease-emph);
+    }
+
+    .bh1-right {
+      background:
+        radial-gradient(circle at 84% 12%, rgba(214, 5, 43, 0.16), transparent 38%),
+        linear-gradient(152deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+    }
+
+    .step-stack {
+      display: grid;
+      gap: 0.48rem;
+    }
+
+    .journey-step {
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.56rem 0.62rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.5rem;
+      align-items: start;
+      transition: transform .3s var(--ease-emph), border-color .3s ease, background .3s ease;
+    }
+
+    .journey-step.active {
+      border-color: rgba(184,148,63,.4);
+      background: rgba(184,148,63,.12);
+      transform: translateX(2px);
+    }
+
+    .journey-step .n {
+      font-family: var(--font-brand);
+      font-size: 0.42rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(214, 5, 43, 0.88);
+      margin-top: 0.16rem;
+      white-space: nowrap;
+    }
+
+    .journey-step h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.08rem, 1.3vw, 1.3rem);
+      line-height: 1.04;
+      letter-spacing: -0.01em;
+      font-weight: 400;
+      color: var(--blk-fg-1);
+    }
+
+    .journey-step p {
+      margin: 0.14rem 0 0;
+      font-size: 0.73rem;
+      line-height: 1.52;
+      color: var(--blk-fg-3);
+    }
+
+    .journey-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 0.38rem;
+      background: rgba(255,255,255,.2);
+      transition: background .3s ease, box-shadow .3s ease;
+    }
+
+    .journey-step.active .journey-dot {
+      background: rgba(201,168,76,.96);
+      box-shadow: 0 0 0 6px rgba(201,168,76,.18);
+    }
+
+    .bh1-footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--blk-line-soft);
+      padding-top: 0.62rem;
+    }
+
+    .ticker {
+      overflow: hidden;
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .ticker-track {
+      display: inline-flex;
+      gap: 1rem;
+      min-width: max-content;
+      padding: 0.54rem 0.84rem;
+      animation: tickerSlide 17s linear infinite;
+    }
+
+    .ticker-track span {
+      font-family: var(--font-brand);
+      font-size: 0.45rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blk-fg-4);
+      white-space: nowrap;
+    }
+
+    @keyframes tickerSlide {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    @media (max-width: 980px) {
+      .bh1-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="dark-canvas">
+    <section class="dark-wrap dark-panel bh1">
+      <span class="float-orb gold"></span>
+      <span class="float-orb red"></span>
+
+      <div class="bh1-grid">
+        <article class="dark-soft bh1-left">
+          <div class="dark-row reveal-up">
+            <span class="dark-kicker">Black Hero / Variation 01</span>
+            <span class="dark-meta">Dynamic Split Command Deck</span>
+          </div>
+
+          <h1 class="dark-title bh1-headline">
+            <span class="reveal-up delay-1">Luxury outcomes,</span>
+            <span class="reveal-up delay-2"><em>operated with precision.</em></span>
+          </h1>
+
+          <p class="dark-lead reveal-up delay-2">A stronger cinematic split hero with animated journey intelligence on the right and dynamic trust signaling on the left.</p>
+
+          <div class="dark-btn-row reveal-up delay-3">
+            <a href="#" class="dark-btn dark-btn-primary">Plan Your Journey
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="#" class="dark-btn dark-btn-secondary">Enquire Privately</a>
+          </div>
+
+          <div class="dark-stat-grid reveal-up delay-3">
+            <div class="dark-stat"><strong data-count="500">0</strong><span>Trips</span></div>
+            <div class="dark-stat"><strong data-count="32">0</strong><span>Countries</span></div>
+            <div class="dark-stat"><strong data-count="98">0</strong><span>Repeat %</span></div>
+            <div class="dark-stat"><strong data-count="24">0</strong><span>Support Hrs</span></div>
+          </div>
+
+          <div class="metric-line reveal-up delay-3" id="healthLine" style="--p:.76;">
+            <div class="dark-row"><span class="dark-meta">Operational Confidence</span><span class="dark-meta" id="healthValue">76%</span></div>
+            <div class="metric-progress"></div>
+          </div>
+        </article>
+
+        <aside class="dark-soft bh1-right reveal-up delay-1">
+          <div class="dark-rule"><span>Journey Engine</span><i></i></div>
+          <section class="step-stack" id="stepStack">
+            <article class="journey-step active">
+              <span class="n">01 Brief</span>
+              <div><h3>Capture Intent</h3><p>Pace, objectives, and constraints mapped with full clarity.</p></div>
+              <span class="journey-dot"></span>
+            </article>
+            <article class="journey-step">
+              <span class="n">02 Design</span>
+              <div><h3>Architect Precisely</h3><p>Routes, stays, and documents sequenced into one coherent flow.</p></div>
+              <span class="journey-dot"></span>
+            </article>
+            <article class="journey-step">
+              <span class="n">03 Execute</span>
+              <div><h3>Operate Quietly</h3><p>On-trip support and intervention remain active throughout travel.</p></div>
+              <span class="journey-dot"></span>
+            </article>
+            <article class="journey-step">
+              <span class="n">04 Return</span>
+              <div><h3>Refine Continuity</h3><p>Post-trip intelligence informs your next itinerary.</p></div>
+              <span class="journey-dot"></span>
+            </article>
+          </section>
+        </aside>
+      </div>
+
+      <footer class="bh1-footer reveal-up delay-3">
+        <div class="ticker">
+          <div class="ticker-track">
+            <span>No Fixed Packages</span>
+            <span>One Accountable Team</span>
+            <span>Flawless Execution</span>
+            <span>The Care Is The Luxury</span>
+            <span>No Fixed Packages</span>
+            <span>One Accountable Team</span>
+            <span>Flawless Execution</span>
+            <span>The Care Is The Luxury</span>
+          </div>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const steps = [...document.querySelectorAll('#stepStack .journey-step')];
+    let stepIndex = 0;
+
+    setInterval(() => {
+      steps.forEach((step, i) => step.classList.toggle('active', i === stepIndex));
+      stepIndex = (stepIndex + 1) % steps.length;
+    }, 2400);
+
+    const counters = [...document.querySelectorAll('[data-count]')];
+    counters.forEach((el) => {
+      const target = Number(el.getAttribute('data-count'));
+      const start = performance.now();
+      const duration = 1200;
+      function tick(t) {
+        const p = Math.min((t - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toString();
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+
+    const line = document.getElementById('healthLine');
+    const value = document.getElementById('healthValue');
+    let score = 76;
+    setInterval(() => {
+      score = score >= 92 ? 74 : score + 3;
+      line.style.setProperty('--p', String(score / 100));
+      value.textContent = `${score}%`;
+    }, 2200);
+  </script>
+</body>
+</html>

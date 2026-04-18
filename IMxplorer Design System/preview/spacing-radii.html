@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+body{margin:0;background:var(--imx-dark);padding:24px;overflow:hidden;color:var(--imx-light);font-family:var(--font-body)}
+.row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.item{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.shape{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);width:100%;height:70px}
+.r-md{border-radius:14px}.r-lg{border-radius:20px}.r-xl{border-radius:24px}.r-pill{border-radius:999px;height:40px;width:130px}
+.n{font-family:var(--font-brand);font-size:0.54rem;letter-spacing:0.22em;color:rgba(255,255,255,0.55);text-transform:uppercase;font-weight:700}
+.v{font-family:var(--font-brand);font-size:0.6rem;color:rgba(255,255,255,0.4)}
+h3{font-family:var(--font-brand);font-size:0.58rem;letter-spacing:0.3em;color:var(--imx-gold);margin:0 0 14px;text-transform:uppercase;font-weight:700}
+</style></head><body>
+<h3>Corner Radii</h3>
+<div class="row">
+  <div class="item"><div class="shape r-md"></div><div class="n">md</div><div class="v">14px</div></div>
+  <div class="item"><div class="shape r-lg"></div><div class="n">lg · primary</div><div class="v">20px</div></div>
+  <div class="item"><div class="shape r-xl"></div><div class="n">xl</div><div class="v">24px</div></div>
+  <div class="item"><div class="shape r-pill"></div><div class="n">pill · CTAs</div><div class="v">999px</div></div>
+</div>
+</body></html>

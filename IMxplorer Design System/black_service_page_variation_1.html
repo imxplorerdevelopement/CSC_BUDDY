@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Black Service Page Variation 1 - Dynamic</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="black_elevated_system.css">
+  <style>
+    .bs1 {
+      padding: clamp(0.95rem, 2.3vw, 1.6rem);
+      display: grid;
+      gap: 0.76rem;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .bs1 .float-orb.gold { top: -140px; left: -100px; }
+    .bs1 .float-orb.red { right: -110px; bottom: -160px; animation-delay: 1.4s; }
+
+    .bs1-hero,
+    .bs1-core,
+    .bs1-cta {
+      position: relative;
+      z-index: 1;
+    }
+
+    .bs1-hero {
+      padding: 0.95rem;
+      display: grid;
+      gap: 0.62rem;
+      background:
+        radial-gradient(circle at 12% 12%, rgba(184, 148, 63, 0.2), transparent 34%),
+        radial-gradient(circle at 88% 86%, rgba(214, 5, 43, 0.16), transparent 34%),
+        linear-gradient(152deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    }
+
+    .bs1-hero .dark-title {
+      max-width: 12ch;
+      font-size: clamp(2rem, 5vw, 4.4rem);
+    }
+
+    .bs1-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.72rem;
+      align-items: end;
+    }
+
+    .bs1-core {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 0.68rem;
+    }
+
+    .timeline {
+      padding: 0.76rem;
+      display: grid;
+      gap: 0.42rem;
+      align-content: start;
+      background: rgba(255,255,255,0.07);
+    }
+
+    .timeline button {
+      width: 100%;
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      color: var(--blk-fg-3);
+      text-align: left;
+      padding: 0.55rem 0.62rem;
+      cursor: pointer;
+      transition: .26s ease;
+      display: grid;
+      gap: 0.12rem;
+    }
+
+    .timeline button strong {
+      font-family: var(--font-display);
+      font-size: clamp(1.05rem, 1.2vw, 1.24rem);
+      line-height: 1.02;
+      letter-spacing: -0.008em;
+      font-weight: 400;
+      color: var(--blk-fg-1);
+    }
+
+    .timeline button span {
+      font-family: var(--font-brand);
+      font-size: 0.42rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blk-fg-4);
+    }
+
+    .timeline button.active {
+      border-color: rgba(184,148,63,.38);
+      background: rgba(184,148,63,.16);
+      transform: translateX(2px);
+    }
+
+    .timeline-progress {
+      margin-top: 0.24rem;
+      height: 2px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .timeline-progress span {
+      position: absolute;
+      inset: 0;
+      transform-origin: left center;
+      transform: scaleX(var(--progress, 0));
+      background: linear-gradient(90deg, rgba(184,148,63,.95), rgba(214,5,43,.84));
+      transition: transform .4s linear;
+    }
+
+    .pillar-display {
+      padding: 0.88rem;
+      display: grid;
+      gap: 0.56rem;
+      min-height: 430px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .pillar-code {
+      font-family: var(--font-brand);
+      font-size: 0.44rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--blk-fg-4);
+    }
+
+    .pillar-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.9rem, 3.3vw, 3rem);
+      line-height: 0.98;
+      letter-spacing: -0.014em;
+      font-weight: 300;
+      color: var(--blk-fg-1);
+    }
+
+    .pillar-title em { font-style: italic; color: var(--blk-fg-4); }
+
+    .pillar-desc {
+      margin: 0;
+      font-size: 0.86rem;
+      line-height: 1.72;
+      color: var(--blk-fg-2);
+      max-width: 56ch;
+    }
+
+    .pillar-features {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.44rem;
+    }
+
+    .feature {
+      border: 1px solid var(--blk-line-soft);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      padding: 0.52rem;
+      transform: translateY(8px);
+      opacity: 0;
+      animation: featureIn .55s var(--ease-emph) forwards;
+    }
+
+    .feature b {
+      display: block;
+      font-family: var(--font-brand);
+      font-size: 0.42rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blk-fg-4);
+      margin-bottom: 0.18rem;
+    }
+
+    .feature p {
+      margin: 0;
+      font-size: 0.73rem;
+      line-height: 1.52;
+      color: var(--blk-fg-3);
+    }
+
+    .bs1-cta {
+      padding: 0.88rem;
+      display: grid;
+      grid-template-columns: 1.2fr auto;
+      gap: 0.7rem;
+      align-items: center;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    }
+
+    .bs1-cta h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 3vw, 2.7rem);
+      line-height: 1.04;
+      letter-spacing: -0.014em;
+      font-weight: 300;
+      color: var(--blk-fg-1);
+    }
+
+    .bs1-cta h2 em { font-style: italic; color: var(--blk-fg-4); }
+
+    .bs1-cta p {
+      margin: 0.28rem 0 0;
+      max-width: 52ch;
+      font-size: 0.83rem;
+      line-height: 1.7;
+      color: var(--blk-fg-3);
+    }
+
+    @keyframes featureIn {
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 1080px) {
+      .bs1-core { grid-template-columns: 1fr; }
+      .pillar-features { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 980px) {
+      .bs1-row,
+      .bs1-cta { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="dark-canvas">
+    <section class="dark-wrap dark-panel bs1">
+      <span class="float-orb gold"></span>
+      <span class="float-orb red"></span>
+
+      <header class="dark-soft bs1-hero reveal-up">
+        <div class="dark-row">
+          <span class="dark-kicker">Black Service / Variation 01</span>
+          <span class="dark-meta">Auto-Cycling Pillar Timeline</span>
+        </div>
+        <h1 class="dark-title">Five pillars, one travel engine,<em>live on the same page.</em></h1>
+        <div class="bs1-row">
+          <p class="dark-lead">Dynamic showcase mode: each pillar auto-rotates with a visible timeline, and users can override any time by clicking directly.</p>
+          <a href="#" class="dark-btn dark-btn-primary">Start Planning
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </header>
+
+      <section class="bs1-core">
+        <nav class="dark-soft timeline" id="timelineNav">
+          <button class="active" data-pill="holidays"><strong>Holidays & Leisure</strong><span>01 / Leisure</span></button>
+          <button data-pill="study"><strong>Study Abroad</strong><span>02 / Mobility</span></button>
+          <button data-pill="corporate"><strong>Corporate & MICE</strong><span>03 / Business</span></button>
+          <button data-pill="logistics"><strong>Travel & Logistics</strong><span>04 / Operations</span></button>
+          <button data-pill="visas"><strong>Visas & Services</strong><span>05 / Compliance</span></button>
+          <div class="timeline-progress" id="timelineProgress" style="--progress:0;"><span></span></div>
+        </nav>
+
+        <article class="dark-soft pillar-display" id="pillarDisplay">
+          <span class="pillar-code" id="pCode">01 / Leisure</span>
+          <h2 class="pillar-title" id="pTitle">Holidays & <em>Leisure</em></h2>
+          <p class="pillar-desc" id="pDesc">Custom domestic and international itineraries designed around pace, comfort, and destination personality.</p>
+          <div class="pillar-features" id="pFeatures"></div>
+          <div class="dark-btn-row">
+            <a href="#" class="dark-btn dark-btn-primary">Enquire For This Pillar</a>
+            <a href="#" class="dark-btn dark-btn-secondary">Talk To A Consultant</a>
+          </div>
+        </article>
+      </section>
+
+      <footer class="dark-soft bs1-cta reveal-up delay-2">
+        <div>
+          <h2>Most clients need multiple pillars.<em> we design the crossover.</em></h2>
+          <p>Tell us the outcome. We orchestrate the exact pillar combination and keep ownership from first call to safe return.</p>
+        </div>
+        <a href="#" class="dark-btn dark-btn-primary">Book A Strategy Call</a>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const data = {
+      holidays: {
+        code: '01 / Leisure',
+        title: 'Holidays & <em>Leisure</em>',
+        desc: 'Custom domestic and international itineraries designed around pace, comfort, and destination personality.',
+        features: [
+          ['International', 'Multi-country journeys with coherent routing and support.'],
+          ['Honeymoon', 'Privacy-forward romantic travel architecture.'],
+          ['Senior Travel', 'Pace-adjusted plans with accessibility in mind.']
+        ]
+      },
+      study: {
+        code: '02 / Mobility',
+        title: 'Study <em>Abroad</em>',
+        desc: 'Structured student mobility support from pathway planning to visa and departure readiness.',
+        features: [
+          ['Pathway', 'Institution fit mapped against profile and budget.'],
+          ['Visa', 'Documentation and interview readiness support.'],
+          ['Departure', 'Travel and accommodation onboarding coordination.']
+        ]
+      },
+      corporate: {
+        code: '03 / Business',
+        title: 'Corporate & <em>MICE</em>',
+        desc: 'Event and group movement systems built for high-stakes business execution.',
+        features: [
+          ['Conferences', 'Delegate movement and schedule control.'],
+          ['Incentives', 'Performance-led travel programs.'],
+          ['Group Ops', 'Contingency-backed coordination layers.']
+        ]
+      },
+      logistics: {
+        code: '04 / Operations',
+        title: 'Travel & <em>Logistics</em>',
+        desc: 'Flight, insurance, and transit continuity engineered for low-friction execution.',
+        features: [
+          ['Flights', 'Fare strategy and ticketing support.'],
+          ['Insurance', 'Coverage design by itinerary risk.'],
+          ['Cruise', 'Route and cabin mapping support.']
+        ]
+      },
+      visas: {
+        code: '05 / Compliance',
+        title: 'Visas & <em>Services</em>',
+        desc: 'Documentation-heavy processes redesigned for better timeline confidence.',
+        features: [
+          ['Tourist', 'Checklist-led process guidance.'],
+          ['Business', 'Timeline-sensitive visa support.'],
+          ['Essentials', 'Forex and pre-departure services.']
+        ]
+      }
+    };
+
+    const order = Object.keys(data);
+    const buttons = [...document.querySelectorAll('#timelineNav button[data-pill]')];
+    const pCode = document.getElementById('pCode');
+    const pTitle = document.getElementById('pTitle');
+    const pDesc = document.getElementById('pDesc');
+    const pFeatures = document.getElementById('pFeatures');
+    const bar = document.getElementById('timelineProgress');
+
+    let idx = 0;
+    let elapsed = 0;
+    const cycleMs = 3200;
+
+    function render(key) {
+      const item = data[key];
+      pCode.textContent = item.code;
+      pTitle.innerHTML = item.title;
+      pDesc.textContent = item.desc;
+      pFeatures.innerHTML = item.features
+        .map(([k, d], i) => `<article class="feature" style="animation-delay:${i * 90}ms"><b>${k}</b><p>${d}</p></article>`)
+        .join('');
+      buttons.forEach((b) => b.classList.toggle('active', b.dataset.pill === key));
+    }
+
+    function tick() {
+      elapsed += 100;
+      const p = Math.min(elapsed / cycleMs, 1);
+      bar.style.setProperty('--progress', p.toString());
+      if (elapsed >= cycleMs) {
+        elapsed = 0;
+        idx = (idx + 1) % order.length;
+        render(order[idx]);
+      }
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        idx = order.indexOf(button.dataset.pill);
+        elapsed = 0;
+        render(order[idx]);
+      });
+    });
+
+    render(order[idx]);
+    setInterval(tick, 100);
+  </script>
+</body>
+</html>

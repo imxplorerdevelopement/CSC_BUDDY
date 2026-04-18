@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Service Page Variation 3 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .svc-v3 {
+      padding: clamp(0.95rem, 2.3vw, 1.6rem);
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .svc-v3-hero {
+      padding: 1rem;
+      display: grid;
+      gap: 0.6rem;
+      background: linear-gradient(146deg, rgba(255,255,255,0.8), rgba(246,238,223,0.9));
+    }
+
+    .svc-v3-hero .hero-title {
+      max-width: 12.6ch;
+      font-size: clamp(2rem, 4.6vw, 4rem);
+    }
+
+    .svc-v3-hero-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .svc-v3-accordions {
+      display: grid;
+      gap: 0.62rem;
+    }
+
+    .svc-v3-accordions details {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.72);
+      overflow: hidden;
+      transition: box-shadow .3s ease;
+    }
+
+    .svc-v3-accordions details[open] {
+      box-shadow: var(--shadow-md);
+    }
+
+    .svc-v3-accordions summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.86rem 0.92rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.7rem;
+      align-items: center;
+    }
+
+    .svc-v3-accordions summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .svc-v3-accordions .code {
+      font-family: var(--font-brand);
+      font-size: 0.45rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(var(--rgb), 0.86);
+      white-space: nowrap;
+    }
+
+    .svc-v3-accordions .title {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 2.4vw, 2.3rem);
+      line-height: 1;
+      letter-spacing: -0.012em;
+      color: var(--ink-1);
+      font-weight: 300;
+    }
+
+    .svc-v3-accordions .mark {
+      width: 11px;
+      height: 11px;
+      border-right: 1.5px solid var(--ink-4);
+      border-bottom: 1.5px solid var(--ink-4);
+      transform: rotate(45deg);
+      transition: transform .28s var(--ease-emph);
+    }
+
+    .svc-v3-accordions details[open] .mark {
+      transform: rotate(-135deg) translate(-1px, -1px);
+    }
+
+    .svc-v3-body {
+      border-top: 1px solid var(--line-soft);
+      padding: 0.85rem 0.92rem;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 0.8rem;
+      background: radial-gradient(circle at 88% 14%, rgba(var(--rgb),0.15), transparent 45%), rgba(255,255,255,0.64);
+    }
+
+    .svc-v3-body p {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.72;
+      color: var(--ink-2);
+      max-width: 48ch;
+    }
+
+    .svc-v3-list {
+      display: grid;
+      gap: 0.42rem;
+    }
+
+    .svc-v3-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.74);
+      padding: 0.5rem 0.56rem;
+      font-size: 0.73rem;
+      line-height: 1.54;
+      color: var(--ink-3);
+    }
+
+    .svc-v3-item b {
+      display: block;
+      font-family: var(--font-brand);
+      font-size: 0.43rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.16rem;
+      color: rgba(var(--rgb), 0.84);
+    }
+
+    @media (max-width: 980px) {
+      .svc-v3-hero-row,
+      .svc-v3-body {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel svc-v3">
+      <header class="panel-soft svc-v3-hero">
+        <div class="meta-row">
+          <span class="kicker">Service Page / Variation 03</span>
+          <span class="meta">Premium Accordion Narrative</span>
+        </div>
+        <h1 class="hero-title">Explore each pillar in depth,<em>without visual clutter.</em></h1>
+        <div class="svc-v3-hero-row">
+          <p class="lead">This format gives you long-form service depth while preserving scanability. Ideal when you need richer service copy on a premium layout.</p>
+          <a href="#" class="btn btn-primary">Book Consultation</a>
+        </div>
+      </header>
+
+      <section class="svc-v3-accordions">
+        <details open style="--rgb:200,146,42;"><summary><span class="code">01 / Leisure</span><span class="title">Holidays & Leisure</span><span class="mark"></span></summary><div class="svc-v3-body"><p>Custom leisure itineraries spanning domestic escapes and international circuits, built around your lifestyle and pace preferences.</p><div class="svc-v3-list"><div class="svc-v3-item"><b>International</b>Cross-border vacations with cohesive routing and support.</div><div class="svc-v3-item"><b>Honeymoon</b>Privacy-first planning with premium stay curation.</div><div class="svc-v3-item"><b>Senior Travel</b>Accessibility-aware pacing and risk-conscious design.</div></div></div></details>
+        <details style="--rgb:74,130,192;"><summary><span class="code">02 / Mobility</span><span class="title">Study Abroad</span><span class="mark"></span></summary><div class="svc-v3-body"><p>End-to-end student mobility advisory with institution matching, visa preparation, and departure logistics support.</p><div class="svc-v3-list"><div class="svc-v3-item"><b>Counselling</b>University shortlist aligned with goals and budget.</div><div class="svc-v3-item"><b>Visa</b>Document flow and interview readiness support.</div><div class="svc-v3-item"><b>Departure</b>Travel, stay, and orientation coordination.</div></div></div></details>
+        <details style="--rgb:192,65,74;"><summary><span class="code">03 / Business</span><span class="title">Corporate & MICE</span><span class="mark"></span></summary><div class="svc-v3-body"><p>Conference and incentive movement frameworks optimized for business outcomes and operational reliability.</p><div class="svc-v3-list"><div class="svc-v3-item"><b>Events</b>Planning and movement architecture for conferences.</div><div class="svc-v3-item"><b>Offsites</b>Execution-focused programs for team performance.</div><div class="svc-v3-item"><b>Groups</b>Large delegation handling with contingency layers.</div></div></div></details>
+        <details style="--rgb:58,158,120;"><summary><span class="code">04 / Operations</span><span class="title">Travel & Logistics</span><span class="mark"></span></summary><div class="svc-v3-body"><p>Flight, insurance, cruise, and transfer management with a strong continuity mindset across itinerary transitions.</p><div class="svc-v3-list"><div class="svc-v3-item"><b>Flights</b>Fare strategy and ticketing control.</div><div class="svc-v3-item"><b>Insurance</b>Coverage matching to destination risk profile.</div><div class="svc-v3-item"><b>Cruise</b>Cabin and route planning with shore alignment.</div></div></div></details>
+        <details style="--rgb:139,111,192;"><summary><span class="code">05 / Compliance</span><span class="title">Visas & Services</span><span class="mark"></span></summary><div class="svc-v3-body"><p>Tourist and business visa workflows designed to reduce delays and improve documentation confidence.</p><div class="svc-v3-list"><div class="svc-v3-item"><b>Tourist</b>Checklist-led support for leisure travelers.</div><div class="svc-v3-item"><b>Business</b>Timeline-conscious support for working professionals.</div><div class="svc-v3-item"><b>Essentials</b>Forex and pre-travel service assistance.</div></div></div></details>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

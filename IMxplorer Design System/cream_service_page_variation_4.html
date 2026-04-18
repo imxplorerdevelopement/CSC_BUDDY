@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Service Page Variation 4 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .svc-v4 {
+      padding: clamp(0.95rem, 2.3vw, 1.6rem);
+      display: grid;
+      gap: 0.78rem;
+    }
+
+    .svc-v4-hero {
+      padding: 1rem;
+      display: grid;
+      gap: 0.56rem;
+      background: linear-gradient(145deg, rgba(255,255,255,0.82), rgba(246,238,223,0.9));
+    }
+
+    .svc-v4-hero .hero-title {
+      font-size: clamp(2rem, 4.6vw, 4rem);
+      max-width: 12.8ch;
+    }
+
+    .svc-v4-top {
+      display: grid;
+      grid-template-columns: minmax(0, 300px) 1fr;
+      gap: 0.72rem;
+    }
+
+    .svc-v4-tabs {
+      display: grid;
+      gap: 0.42rem;
+      align-content: start;
+    }
+
+    .svc-v4-tab {
+      width: 100%;
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.66);
+      padding: 0.55rem 0.65rem;
+      text-align: left;
+      font-family: var(--font-brand);
+      font-size: 0.46rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      cursor: pointer;
+      transition: .24s ease;
+    }
+
+    .svc-v4-tab:hover {
+      background: rgba(21,18,15,0.07);
+      color: var(--ink-1);
+    }
+
+    .svc-v4-tab.active {
+      border-color: rgba(143,47,47,0.28);
+      color: var(--wine);
+      background: rgba(143,47,47,0.08);
+    }
+
+    .svc-v4-display {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.74);
+      padding: 0.95rem;
+      display: grid;
+      gap: 0.56rem;
+      min-height: 360px;
+    }
+
+    .svc-v4-code {
+      font-family: var(--font-brand);
+      font-size: 0.44rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+    }
+
+    .svc-v4-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.9rem, 3.4vw, 3rem);
+      line-height: 0.98;
+      letter-spacing: -0.014em;
+      font-weight: 300;
+      color: var(--ink-1);
+    }
+
+    .svc-v4-title em { font-style: italic; color: var(--ink-4); }
+
+    .svc-v4-desc {
+      margin: 0;
+      font-size: 0.88rem;
+      line-height: 1.74;
+      color: var(--ink-2);
+      max-width: 56ch;
+    }
+
+    .svc-v4-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.48rem;
+    }
+
+    .svc-v4-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 11px;
+      background: rgba(255,255,255,0.72);
+      padding: 0.56rem;
+    }
+
+    .svc-v4-item b {
+      display: block;
+      font-family: var(--font-brand);
+      font-size: 0.43rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+      margin-bottom: 0.2rem;
+    }
+
+    .svc-v4-item p {
+      margin: 0;
+      font-size: 0.73rem;
+      line-height: 1.54;
+      color: var(--ink-3);
+    }
+
+    .svc-v4-cta {
+      border-top: 1px solid var(--line-soft);
+      padding-top: 0.56rem;
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 980px) {
+      .svc-v4-top {
+        grid-template-columns: 1fr;
+      }
+
+      .svc-v4-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel svc-v4">
+      <header class="panel-soft svc-v4-hero">
+        <div class="meta-row">
+          <span class="kicker">Service Page / Variation 04</span>
+          <span class="meta">Interactive Tab Experience</span>
+        </div>
+        <h1 class="hero-title">Switch pillars instantly,<em>without losing context.</em></h1>
+        <p class="lead">A dynamic service explorer for users who want focused detail quickly. This variation adds purposeful interaction while staying on-brand.</p>
+      </header>
+
+      <section class="svc-v4-top">
+        <nav class="panel-soft svc-v4-tabs" aria-label="Service pillars">
+          <button class="svc-v4-tab active" data-pill="holidays">Holidays & Leisure</button>
+          <button class="svc-v4-tab" data-pill="study">Study Abroad</button>
+          <button class="svc-v4-tab" data-pill="corporate">Corporate & MICE</button>
+          <button class="svc-v4-tab" data-pill="logistics">Travel & Logistics</button>
+          <button class="svc-v4-tab" data-pill="visas">Visas & Services</button>
+        </nav>
+
+        <article class="panel-soft svc-v4-display" id="svc-v4-display">
+          <span class="svc-v4-code" id="svc-code">01 / Leisure</span>
+          <h2 class="svc-v4-title" id="svc-title">Holidays & <em>Leisure</em></h2>
+          <p class="svc-v4-desc" id="svc-desc">Custom domestic and international itineraries designed around your pace, comfort, and destination style.</p>
+          <div class="svc-v4-grid" id="svc-grid"></div>
+          <div class="svc-v4-cta">
+            <a href="#" class="btn btn-primary">Enquire For This Pillar</a>
+            <a href="#" class="btn btn-secondary">Talk To A Consultant</a>
+          </div>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const data = {
+      holidays: {
+        code: "01 / Leisure",
+        title: "Holidays & <em>Leisure</em>",
+        desc: "Custom domestic and international itineraries designed around your pace, comfort, and destination style.",
+        items: [
+          ["International", "Cross-border vacations with coordinated flights and stays."],
+          ["Honeymoon", "Privacy-forward, experience-rich romantic itineraries."],
+          ["Senior Travel", "Accessibility-aware routing and tempo planning."]
+        ]
+      },
+      study: {
+        code: "02 / Mobility",
+        title: "Study <em>Abroad</em>",
+        desc: "Structured support from pathway planning to visa readiness and departure logistics.",
+        items: [
+          ["Pathway", "Institution mapping against profile and budget."],
+          ["Visa", "Documentation and interview preparation support."],
+          ["Departure", "Flights, accommodation, and orientation readiness."]
+        ]
+      },
+      corporate: {
+        code: "03 / Business",
+        title: "Corporate & <em>MICE</em>",
+        desc: "Group movement and event travel systems built for operational precision and business outcomes.",
+        items: [
+          ["Conferences", "Delegate movement and venue-linked logistics."],
+          ["Incentives", "Reward-led travel programs for top performers."],
+          ["Group Ops", "Contingency-backed handling for large delegations."]
+        ]
+      },
+      logistics: {
+        code: "04 / Operations",
+        title: "Travel & <em>Logistics</em>",
+        desc: "Execution layer for flights, insurance, cruises, and transit continuity across itineraries.",
+        items: [
+          ["Flights", "Fare strategy and ticketing support."],
+          ["Insurance", "Coverage planning by itinerary profile."],
+          ["Cruise", "Route and cabin strategy plus shore alignment."]
+        ]
+      },
+      visas: {
+        code: "05 / Compliance",
+        title: "Visas & <em>Services</em>",
+        desc: "Documentation-centric support for tourist and business visa processes with reduced delay risk.",
+        items: [
+          ["Tourist", "Checklist-led process support."],
+          ["Business", "Timeline-aware business visa handling."],
+          ["Essentials", "Forex and pre-departure services."]
+        ]
+      }
+    };
+
+    const tabs = [...document.querySelectorAll('.svc-v4-tab')];
+    const code = document.getElementById('svc-code');
+    const title = document.getElementById('svc-title');
+    const desc = document.getElementById('svc-desc');
+    const grid = document.getElementById('svc-grid');
+
+    function render(key) {
+      const item = data[key];
+      if (!item) return;
+      code.textContent = item.code;
+      title.innerHTML = item.title;
+      desc.textContent = item.desc;
+      grid.innerHTML = item.items.map(([k, d]) => `<article class="svc-v4-item"><b>${k}</b><p>${d}</p></article>`).join('');
+      tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.pill === key));
+    }
+
+    tabs.forEach((tab) => tab.addEventListener('click', () => render(tab.dataset.pill)));
+    render('holidays');
+  </script>
+</body>
+</html>

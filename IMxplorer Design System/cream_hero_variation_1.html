@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cream Hero Variation 1 - Elevated</title>
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="cream_elevated_system.css">
+  <style>
+    .hero-v1 {
+      padding: clamp(1rem, 2.4vw, 1.8rem);
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .hero-v1-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 0.8rem;
+      align-items: stretch;
+    }
+
+    .hero-v1-left,
+    .hero-v1-right {
+      padding: clamp(1rem, 2.3vw, 1.6rem);
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+    }
+
+    .hero-v1-left {
+      background:
+        radial-gradient(circle at 8% 8%, rgba(184, 148, 63, 0.18), transparent 34%),
+        linear-gradient(132deg, rgba(255, 255, 255, 0.8), rgba(248, 241, 228, 0.9));
+    }
+
+    .hero-v1-right {
+      background:
+        radial-gradient(circle at 85% 14%, rgba(143, 47, 47, 0.12), transparent 36%),
+        linear-gradient(142deg, rgba(255, 255, 255, 0.72), rgba(244, 236, 222, 0.9));
+    }
+
+    .hero-v1-left .hero-title {
+      max-width: 11.2ch;
+    }
+
+    .journey-board {
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 0.8rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .journey-row {
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.74);
+      padding: 0.56rem 0.62rem;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.55rem;
+      align-items: start;
+      transition: transform 0.26s var(--ease-emph), border-color 0.26s ease;
+    }
+
+    .journey-row:hover {
+      transform: translateX(2px);
+      border-color: rgba(143, 47, 47, 0.26);
+    }
+
+    .journey-row .num {
+      font-family: var(--font-brand);
+      font-size: 0.45rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(143, 47, 47, 0.82);
+      margin-top: 0.18rem;
+      white-space: nowrap;
+    }
+
+    .journey-row h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.16rem, 1.5vw, 1.46rem);
+      line-height: 1.03;
+      letter-spacing: -0.011em;
+      font-weight: 400;
+    }
+
+    .journey-row p {
+      margin: 0.16rem 0 0;
+      font-size: 0.76rem;
+      line-height: 1.58;
+      color: var(--ink-3);
+    }
+
+    .hero-v1-tags {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 980px) {
+      .hero-v1-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-canvas">
+    <section class="page-wrap panel hero-v1">
+      <div class="hero-v1-grid">
+        <article class="panel-soft hero-v1-left">
+          <div class="meta-row">
+            <span class="kicker">Cream Hero / Variation 01</span>
+            <span class="meta">Editorial Split System</span>
+          </div>
+          <h1 class="hero-title">Travel architecture for people,<em>not platforms.</em></h1>
+          <p class="lead">A sharper split-composition hero with clear hierarchy: story on the left, operational confidence on the right. The visual intent is premium, calm, and authoritative.</p>
+          <div class="action-row">
+            <a href="#" class="btn btn-primary">Plan Your Journey
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="#" class="btn btn-secondary">Enquire Privately</a>
+          </div>
+          <div class="grid-3">
+            <div class="stat-card"><strong>500+</strong><span>Trips Designed</span></div>
+            <div class="stat-card"><strong>32+</strong><span>Countries</span></div>
+            <div class="stat-card"><strong>98%</strong><span>Repeat Rate</span></div>
+          </div>
+        </article>
+
+        <aside class="panel-soft hero-v1-right">
+          <div class="rule-title"><span>Journey Blueprint</span><i></i></div>
+          <section class="journey-board">
+            <article class="journey-row">
+              <span class="num">01 Brief</span>
+              <div>
+                <h3>Listen Deeply</h3>
+                <p>Purpose, budget, pace, and constraints mapped before any suggestion is made.</p>
+              </div>
+            </article>
+            <article class="journey-row">
+              <span class="num">02 Design</span>
+              <div>
+                <h3>Compose Intelligently</h3>
+                <p>Routes, stays, visas, and logistics sequenced into one coherent plan.</p>
+              </div>
+            </article>
+            <article class="journey-row">
+              <span class="num">03 Execute</span>
+              <div>
+                <h3>Operate Quietly</h3>
+                <p>Live support and operational ownership throughout the trip.</p>
+              </div>
+            </article>
+            <article class="journey-row">
+              <span class="num">04 Return</span>
+              <div>
+                <h3>Close With Care</h3>
+                <p>Feedback and refinement become inputs for your next departure.</p>
+              </div>
+            </article>
+          </section>
+          <div class="hero-v1-tags">
+            <span class="pill">No Fixed Packages</span>
+            <span class="pill">One Team</span>
+            <span class="pill">End-to-End Accountability</span>
+          </div>
+        </aside>
+      </div>
+
+      <div class="marquee">
+        <div class="marquee-track">
+          <span>Human-Led Consultation</span>
+          <span>Quiet Luxury Execution</span>
+          <span>Cross-Pillar Expertise</span>
+          <span>From First Call To Safe Return</span>
+          <span>Human-Led Consultation</span>
+          <span>Quiet Luxury Execution</span>
+          <span>Cross-Pillar Expertise</span>
+          <span>From First Call To Safe Return</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
