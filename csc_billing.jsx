@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import { dbLoad, dbSave } from "./supabase.js";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { dbLoad, dbSave, supabase } from "./supabase.js";
 import { DS } from "./design-tokens.js";
 
 const INITIAL_SERVICES = [
@@ -178,6 +178,24 @@ const APP_FONT_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
 const APP_SERIF_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
 const APP_BRAND_STACK = "'League Spartan', 'Manrope', sans-serif";
 const APP_MONO_STACK = "'JetBrains Mono', 'Cascadia Code', Consolas, monospace";
+const OPS = {
+  bg: "#f8fafc",
+  shell: "#ffffff",
+  surface: "#ffffff",
+  surfaceMuted: "#f1f5f9",
+  border: "rgba(15,23,42,0.12)",
+  borderSoft: "rgba(15,23,42,0.08)",
+  text: "#0f172a",
+  textMuted: "#475569",
+  primary: "#2563eb",
+  primarySoft: "rgba(37,99,235,0.12)",
+  primaryBorder: "rgba(37,99,235,0.32)",
+  success: "#166534",
+  warning: "#a16207",
+  danger: "#b91c1c",
+  shadowSoft: "0 1px 2px rgba(15,23,42,0.08)",
+  shadowElevated: "0 10px 24px rgba(15,23,42,0.10)",
+};
 const APP_MAX_WIDTH = 1240;
 const STORAGE_KEYS = {
   activeTab: "csc-buddy.active-tab",
@@ -459,6 +477,13 @@ function timeStr() {
   return new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 
+function formatSyncTime(dateValue) {
+  if (!dateValue) return "";
+  const parsed = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+}
+
 function toStructuredTicket(ticket) {
   const services = Array.isArray(ticket.items) ? ticket.items.map((it) => ({ ...it })) : [];
   const docItems = Array.isArray(ticket.documents) ? ticket.documents.map((doc) => ({ ...doc })) : [];
@@ -715,33 +740,43 @@ function readStoredJSON(key, fallbackValue) {
 }
 
 function writeStoredJSON(key, value) {
-  if (!canUseStorage()) return;
+  if (!canUseStorage()) return false;
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
     // Ignore quota or browser storage errors and continue with in-memory state.
+    return false;
   }
 }
 
 function removeStoredValue(key) {
-  if (!canUseStorage()) return;
+  if (!canUseStorage()) return false;
   try {
     window.localStorage.removeItem(key);
+    return true;
   } catch {
     // Ignore storage cleanup failures.
+    return false;
   }
 }
 
-function useDebouncedStoredJSON(key, value, delay = 180, enabled = true) {
+function useDebouncedStoredJSON(key, value, delay = 180, enabled = true, callbacks = null) {
   const timeoutRef = useRef(null);
 
   useEffect(() => {
     if (!enabled) return undefined;
+    callbacks?.onSchedule?.();
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     timeoutRef.current = setTimeout(() => {
-      writeStoredJSON(key, value);
+      const saved = writeStoredJSON(key, value);
+      if (saved) {
+        callbacks?.onSaved?.();
+      } else {
+        callbacks?.onError?.();
+      }
       timeoutRef.current = null;
     }, delay);
     return () => {
@@ -750,7 +785,7 @@ function useDebouncedStoredJSON(key, value, delay = 180, enabled = true) {
         timeoutRef.current = null;
       }
     };
-  }, [key, value, delay, enabled]);
+  }, [key, value, delay, enabled, callbacks]);
 }
 
 function hydrateServices(storedServices) {
@@ -831,34 +866,34 @@ function TabBtn({ label, description, active, onClick, badge }) {
   return (
     <button onClick={onClick} aria-pressed={active} style={{
       width: "100%", padding: "10px 12px 10px 14px", border: "none",
-      background: active ? "rgba(143,47,47,0.09)" : "transparent",
+      background: active ? OPS.primarySoft : "transparent",
       cursor: "pointer", transition: "all 0.18s ease",
       display: "flex", alignItems: "center", gap: 10, textAlign: "left",
       borderRadius: 10,
-      boxShadow: active ? "inset 3px 0 0 rgba(143,47,47,0.75)" : "inset 3px 0 0 rgba(21,18,15,0.07)",
+      boxShadow: active ? `inset 3px 0 0 ${OPS.primary}` : `inset 3px 0 0 ${OPS.borderSoft}`,
       outline: "none",
     }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
           <span style={{
-            fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em",
-            textTransform: "uppercase", fontFamily: APP_BRAND_STACK,
-            color: active ? "#15120f" : "rgba(21,18,15,0.60)",
+            fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.02em",
+            fontFamily: APP_FONT_STACK,
+            color: active ? OPS.text : OPS.textMuted,
             transition: "color 0.18s ease",
           }}>{label}</span>
           {badge && (
             <span style={{
-              fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.10em",
-              fontFamily: APP_BRAND_STACK, textTransform: "uppercase",
-              background: active ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.07)",
-              color: active ? "#8f2f2f" : "rgba(21,18,15,0.45)",
+              fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.08em",
+              fontFamily: APP_FONT_STACK, textTransform: "uppercase",
+              background: active ? OPS.primarySoft : OPS.surfaceMuted,
+              color: active ? OPS.primary : OPS.textMuted,
               borderRadius: 999, padding: "2px 6px",
             }}>{badge}</span>
           )}
         </span>
         <span style={{
           fontSize: "0.76rem", lineHeight: 1.4, display: "block",
-          color: active ? "rgba(21,18,15,0.60)" : "rgba(21,18,15,0.40)",
+          color: active ? OPS.textMuted : "rgba(71,85,105,0.85)",
           fontFamily: APP_FONT_STACK, fontWeight: 400,
           transition: "color 0.18s ease",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
@@ -894,9 +929,9 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
         gap: 12,
         padding: expanded ? "12px 14px" : "12px 10px",
         borderRadius: 12,
-        border: active ? "1px solid rgba(143,47,47,0.22)" : "1px solid rgba(21,18,15,0.07)",
-        background: active ? "rgba(143,47,47,0.08)" : "rgba(255,255,255,0.45)",
-        color: active ? "#15120f" : "rgba(21,18,15,0.65)",
+        border: active ? `1px solid ${OPS.primaryBorder}` : `1px solid ${OPS.borderSoft}`,
+        background: active ? OPS.primarySoft : OPS.surface,
+        color: active ? OPS.text : OPS.textMuted,
         cursor: "pointer",
         transition: DS.transStd,
         fontFamily: APP_FONT_STACK,
@@ -909,22 +944,22 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
           borderRadius: 10,
           display: "grid",
           placeItems: "center",
-          background: active ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.06)",
-          color: active ? DS.wine : "rgba(21,18,15,0.45)",
+          background: active ? OPS.primarySoft : OPS.surfaceMuted,
+          color: active ? OPS.primary : OPS.textMuted,
           fontSize: 11,
           fontWeight: 800,
           flexShrink: 0,
-          fontFamily: APP_BRAND_STACK,
+          fontFamily: APP_FONT_STACK,
           letterSpacing: "0.06em",
         }}>
           {item.shortLabel}
         </div>
         {expanded && (
           <div style={{ minWidth: 0, textAlign: "left" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#15120f" : "rgba(21,18,15,0.70)", fontFamily: APP_FONT_STACK }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: active ? OPS.text : OPS.textMuted, fontFamily: APP_FONT_STACK }}>
               {item.label}
             </div>
-            <div style={{ fontSize: 11, color: "rgba(21,18,15,0.42)", lineHeight: 1.4, fontFamily: APP_FONT_STACK }}>
+            <div style={{ fontSize: 11, color: "rgba(71,85,105,0.86)", lineHeight: 1.4, fontFamily: APP_FONT_STACK }}>
               {item.description}
             </div>
           </div>
@@ -934,12 +969,12 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
         <div style={{
           borderRadius: 999,
           padding: "4px 8px",
-          background: active ? "rgba(143,47,47,0.12)" : "rgba(21,18,15,0.07)",
-          color: active ? DS.wine : "rgba(21,18,15,0.45)",
+          background: active ? OPS.primarySoft : OPS.surfaceMuted,
+          color: active ? OPS.primary : OPS.textMuted,
           fontSize: 11,
           fontWeight: 700,
           flexShrink: 0,
-          fontFamily: APP_BRAND_STACK,
+          fontFamily: APP_FONT_STACK,
           letterSpacing: "0.05em",
         }}>
           {badge}
@@ -952,6 +987,8 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
 //  RATE CARD TAB
 function RateCard({ services, setServices }) {
   const [editingId, setEditingId] = useState(null);
+  const [selectedServiceId, setSelectedServiceId] = useState(() => services[0]?.id || "");
+  const [search, setSearch] = useState("");
   const [addingCustom, setAddingCustom] = useState(false);
   const [customName, setCustomName] = useState("");
   const [customCat, setCustomCat] = useState("Typing & Print");
@@ -995,6 +1032,15 @@ function RateCard({ services, setServices }) {
   };
 
   const unpriced = services.filter((s) => s.price === 0).length;
+  const priced = services.length - unpriced;
+  const filteredServices = services
+    .filter((service) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return service.name.toLowerCase().includes(q) || service.category.toLowerCase().includes(q);
+    })
+    .sort((a, b) => `${a.category}:${a.name}`.localeCompare(`${b.category}:${b.name}`));
+  const selectedService = services.find((service) => service.id === selectedServiceId) || null;
   const quantityModeSummary = Object.keys(QUANTITY_MODE_CONFIG).map((modeId) => ({
     id: modeId,
     label: QUANTITY_MODE_CONFIG[modeId].label,
@@ -1007,6 +1053,16 @@ function RateCard({ services, setServices }) {
     ));
   }, [customCat]);
 
+  useEffect(() => {
+    if (!selectedServiceId && services[0]?.id) {
+      setSelectedServiceId(services[0].id);
+      return;
+    }
+    if (selectedServiceId && !services.some((service) => service.id === selectedServiceId)) {
+      setSelectedServiceId(services[0]?.id || "");
+    }
+  }, [services, selectedServiceId]);
+
   // Cream ink helpers
   const rcInput = {
     padding: "9px 12px", borderRadius: 10, border: "1px solid rgba(21,18,15,0.13)",
@@ -1017,6 +1073,175 @@ function RateCard({ services, setServices }) {
     fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.28em",
     textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 4,
   };
+  const listByCategory = CATEGORIES.map((category) => ({
+    category,
+    services: filteredServices.filter((service) => service.category === category),
+  })).filter((group) => group.services.length > 0);
+  const splitCardStyle = {
+    background: OPS.surface,
+    border: `1px solid ${OPS.borderSoft}`,
+    borderRadius: 14,
+    boxShadow: OPS.shadowSoft,
+  };
+  const splitInput = {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: `1px solid ${OPS.border}`,
+    background: OPS.surface,
+    color: OPS.text,
+    outline: "none",
+    fontSize: "0.86rem",
+    fontFamily: APP_FONT_STACK,
+  };
+
+  if (true) {
+    return (
+      <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+        <div style={{ ...splitCardStyle, padding: "14px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.84rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>Total: <strong style={{ color: OPS.text }}>{services.length}</strong></span>
+            <span style={{ fontSize: "0.84rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>Priced: <strong style={{ color: OPS.success }}>{priced}</strong></span>
+            <span style={{ fontSize: "0.84rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>Unpriced: <strong style={{ color: unpriced > 0 ? OPS.danger : OPS.success }}>{unpriced}</strong></span>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search services" style={{ ...splitInput, width: 220 }} />
+            <button
+              onClick={() => setAddingCustom((prev) => !prev)}
+              style={{ border: `1px solid ${OPS.primaryBorder}`, borderRadius: 10, padding: "10px 12px", background: OPS.primarySoft, color: OPS.primary, fontWeight: 600, fontFamily: APP_FONT_STACK, cursor: "pointer" }}
+            >
+              {addingCustom ? "Close" : "Add Service"}
+            </button>
+          </div>
+        </div>
+
+        {addingCustom && (
+          <div style={{ ...splitCardStyle, padding: 16, marginBottom: 12, display: "grid", gap: 10 }}>
+            <div style={{ fontSize: "0.92rem", color: OPS.text, fontWeight: 600, fontFamily: APP_FONT_STACK }}>Create Custom Service</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+              <input placeholder="Service name" value={customName} onChange={(e) => setCustomName(e.target.value)} style={splitInput} />
+              <input placeholder="Unit (e.g. per page)" value={customUnit} onChange={(e) => setCustomUnit(e.target.value)} style={splitInput} />
+              <input type="number" placeholder="Base rate (Rs.)" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} style={splitInput} />
+              <select value={customCat} onChange={(e) => setCustomCat(e.target.value)} style={splitInput}>
+                {CATEGORIES.map((category) => <option key={`custom_cat_${category}`} value={category} style={MENU_OPTION_STYLE}>{category}</option>)}
+              </select>
+              <select value={customQuantityMode} onChange={(e) => setCustomQuantityMode(e.target.value)} style={splitInput}>
+                {Object.entries(QUANTITY_MODE_CONFIG).map(([modeId, config]) => (
+                  <option key={`custom_mode_${modeId}`} value={modeId} style={MENU_OPTION_STYLE}>{config.label}</option>
+                ))}
+              </select>
+              <select value={customDetailSchemaId} onChange={(e) => setCustomDetailSchemaId(e.target.value)} style={splitInput}>
+                {Object.values(SERVICE_DETAIL_LIBRARY).map((schema) => (
+                  <option key={`custom_schema_${schema.id}`} value={schema.id} style={MENU_OPTION_STYLE}>{schema.title}</option>
+                ))}
+              </select>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.84rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
+              <input type="checkbox" checked={customVariable} onChange={(e) => setCustomVariable(e.target.checked)} />
+              Allow custom amount at ticket desk
+            </label>
+            <button
+              onClick={addCustom}
+              style={{ border: `1px solid ${OPS.primaryBorder}`, borderRadius: 10, padding: "10px 12px", background: OPS.primary, color: "#ffffff", fontWeight: 600, fontFamily: APP_FONT_STACK, cursor: "pointer", width: "fit-content" }}
+            >
+              Save Service
+            </button>
+          </div>
+        )}
+
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 360px) minmax(0, 1fr)", gap: 12, alignItems: "start" }}>
+          <div style={{ ...splitCardStyle, padding: 12, maxHeight: "68vh", overflowY: "auto" }}>
+            {listByCategory.length === 0 ? (
+              <div style={{ padding: 14, color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>No services match this search.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                {listByCategory.map((group) => (
+                  <div key={`group_${group.category}`} style={{ display: "grid", gap: 6 }}>
+                    <div style={{ fontSize: "0.78rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>{group.category}</div>
+                    {group.services.map((service) => {
+                      const active = selectedServiceId === service.id;
+                      return (
+                        <button
+                          key={service.id}
+                          onClick={() => setSelectedServiceId(service.id)}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            padding: "10px 12px",
+                            borderRadius: 10,
+                            border: active ? `1px solid ${OPS.primaryBorder}` : `1px solid ${OPS.borderSoft}`,
+                            background: active ? OPS.primarySoft : OPS.surface,
+                            color: OPS.text,
+                            cursor: "pointer",
+                            display: "grid",
+                            gap: 2,
+                            fontFamily: APP_FONT_STACK,
+                          }}
+                        >
+                          <span style={{ fontSize: "0.86rem", fontWeight: 600 }}>{service.name}</span>
+                          <span style={{ fontSize: "0.76rem", color: OPS.textMuted }}>Rs. {service.price || 0} · {service.unit}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ ...splitCardStyle, padding: 16 }}>
+            {!selectedService ? (
+              <div style={{ color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontSize: "0.86rem" }}>Select a service from the left list to edit details.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: "1rem", fontWeight: 700, color: OPS.text, fontFamily: APP_FONT_STACK }}>{selectedService.name}</div>
+                  <div style={{ fontSize: "0.8rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{selectedService.id}</div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: "0.78rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>Category</span>
+                    <select value={selectedService.category} onChange={(e) => updateService(selectedService.id, { category: e.target.value })} style={splitInput}>
+                      {CATEGORIES.map((category) => <option key={`edit_cat_${category}`} value={category} style={MENU_OPTION_STYLE}>{category}</option>)}
+                    </select>
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: "0.78rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>Unit</span>
+                    <input value={selectedService.unit || ""} onChange={(e) => updateService(selectedService.id, { unit: e.target.value })} style={splitInput} />
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: "0.78rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>Base Rate (Rs.)</span>
+                    <input type="number" min="0" value={selectedService.price ?? 0} onChange={(e) => updateService(selectedService.id, { price: Math.max(0, Number(e.target.value) || 0) })} style={splitInput} />
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: "0.78rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>Quantity Rule</span>
+                    <select value={selectedService.quantityMode} onChange={(e) => updateService(selectedService.id, { quantityMode: e.target.value })} style={splitInput}>
+                      {Object.entries(QUANTITY_MODE_CONFIG).map(([modeId, config]) => (
+                        <option key={`edit_mode_${modeId}`} value={modeId} style={MENU_OPTION_STYLE}>{config.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: "0.78rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>Detail Template</span>
+                    <select value={selectedService.detailSchemaId} onChange={(e) => updateService(selectedService.id, { detailSchemaId: e.target.value })} style={splitInput}>
+                      {Object.values(SERVICE_DETAIL_LIBRARY).map((schema) => (
+                        <option key={`edit_schema_${schema.id}`} value={schema.id} style={MENU_OPTION_STYLE}>{schema.title}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 24, fontSize: "0.84rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
+                    <input type="checkbox" checked={Boolean(selectedService.variable)} onChange={(e) => updateService(selectedService.id, { variable: e.target.checked })} />
+                    Allow custom amount
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
@@ -1760,6 +1985,14 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const [subStep, setSubStep] = useState(1);
   const [saved, setSaved] = useState(null);
   const [error, setError] = useState("");
+  const [intakeFieldErrors, setIntakeFieldErrors] = useState({});
+  const [draftStorageState, setDraftStorageState] = useState("idle");
+  const [draftSavedAt, setDraftSavedAt] = useState(null);
+  const [undoAction, setUndoAction] = useState(null);
+  const undoTimeoutRef = useRef(null);
+  const customerNameInputRef = useRef(null);
+  const customerPhoneInputRef = useRef(null);
+  const referenceNameInputRef = useRef(null);
   const selectedServiceConfig = services.find((service) => service.id === selectedService) || null;
   const selectedQuantityConfig = selectedServiceConfig ? getQuantityModeConfig(selectedServiceConfig.quantityMode) : null;
   const selectedDetailSchema = selectedServiceConfig ? getServiceDetailSchema(selectedServiceConfig) : null;
@@ -1869,6 +2102,18 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     letterSpacing: "0.18em",
     textTransform: "uppercase",
   };
+  const draftStatusLabel = draftStorageState === "saving"
+    ? "Saving locally"
+    : draftStorageState === "saved"
+      ? "Saved locally"
+      : draftStorageState === "error"
+        ? "Local save failed"
+        : "Draft idle";
+  const draftStatusAccent = draftStorageState === "error"
+    ? "#8f1020"
+    : draftStorageState === "saving"
+      ? "#7b5d2c"
+      : "rgba(21,18,15,0.55)";
   const workspaceMetrics = [
     {
       label: "Current step",
@@ -1894,8 +2139,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const flowNavItems = [
     {
       id: "home",
-      label: "Home",
-      helper: "Return to intake details",
+      label: "Intake (Home)",
+      helper: "Capture holder and reference details",
       active: step === 1,
       action: () => {
         if (step === 1) return;
@@ -1904,8 +2149,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     },
     {
       id: "second",
-      label: "Second",
-      helper: "Open service and payment builder",
+      label: "Ticket Builder (Second)",
+      helper: "Add services, documents, and payment",
       active: step === 2,
       action: () => {
         if (step === 2) return;
@@ -1957,11 +2202,21 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     ticketMeta,
   };
 
-  useDebouncedStoredJSON(STORAGE_KEYS.ticketDraft, draftPayload, 180, !saved);
+  const draftStorageCallbacks = useMemo(() => ({
+    onSchedule: () => setDraftStorageState("saving"),
+    onSaved: () => {
+      setDraftStorageState("saved");
+      setDraftSavedAt(new Date());
+    },
+    onError: () => setDraftStorageState("error"),
+  }), []);
+
+  useDebouncedStoredJSON(STORAGE_KEYS.ticketDraft, draftPayload, 180, !saved, draftStorageCallbacks);
 
   useEffect(() => {
     if (saved) {
       removeStoredValue(STORAGE_KEYS.ticketDraft);
+      setDraftStorageState("idle");
     }
   }, [saved]);
 
@@ -1984,7 +2239,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   useEffect(() => {
     if (step !== 2) return;
     if (ticketMeta) return;
-    setError("Intake details are missing. Please start from Home.");
+    setError("Intake details are missing. Please start from Intake.");
     navigateToStep(1, "replace");
   }, [step, ticketMeta]);
 
@@ -2008,34 +2263,85 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     }
   }, [selectedService]);
 
+  useEffect(() => () => {
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+  }, []);
+
   const toggleProvidedDoc = (docId) => {
     setProvidedDocIds((prev) => (
       prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
     ));
   };
 
-  const createTicket = () => {
+  const focusIntakeField = (fieldKey) => {
+    const refByField = {
+      customerName: customerNameInputRef,
+      customerPhone: customerPhoneInputRef,
+      referenceName: referenceNameInputRef,
+    };
+    const targetRef = refByField[fieldKey];
+    if (!targetRef?.current) return;
+    targetRef.current.focus();
+    targetRef.current.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+  };
+
+  const validateIntakeDetails = () => {
     const trimmedName = customerName.trim();
     const phoneDigits = sanitizePhone(customerPhone);
     const trimmedReferenceName = referenceName.trim();
     const trimmedReferenceLabel = referenceLabel.trim();
     const referenceEnabled = hasReference && Boolean(trimmedReferenceName);
+    const nextErrors = {};
 
     if (!trimmedName) {
-      setError("Document holder name is required.");
-      return;
+      nextErrors.customerName = "Document holder name is required.";
     }
-
     if (hasReference && !trimmedReferenceName) {
-      setError("Reference name is required when reference is enabled.");
-      return;
+      nextErrors.referenceName = "Reference name is required when reference is enabled.";
     }
-
     if (phoneDigits && !PHONE_REGEX.test(phoneDigits)) {
-      setError("Contact number must be exactly 10 digits.");
+      nextErrors.customerPhone = "Contact number must be exactly 10 digits.";
+    }
+
+    setIntakeFieldErrors(nextErrors);
+
+    const firstInvalidField = ["customerName", "referenceName", "customerPhone"].find((fieldKey) => nextErrors[fieldKey]);
+    if (firstInvalidField) {
+      setError(nextErrors[firstInvalidField]);
+      focusIntakeField(firstInvalidField);
+    }
+
+    return {
+      isValid: !firstInvalidField,
+      trimmedName,
+      phoneDigits,
+      trimmedReferenceName,
+      trimmedReferenceLabel,
+      referenceEnabled,
+    };
+  };
+
+  const queueUndoAction = (message, undoFn) => {
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+    }
+    setUndoAction({ message, undoFn });
+    undoTimeoutRef.current = setTimeout(() => {
+      setUndoAction(null);
+      undoTimeoutRef.current = null;
+    }, 6000);
+  };
+
+  const createTicket = () => {
+    const intakeValidation = validateIntakeDetails();
+    if (!intakeValidation.isValid) {
       return;
     }
 
+    const { trimmedName, phoneDigits, trimmedReferenceName, trimmedReferenceLabel, referenceEnabled } = intakeValidation;
     setTicketMeta({
       ticketNo: generateBillNo(),
       date: todayStr(),
@@ -2128,7 +2434,19 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   };
 
   const removeDocument = (docId) => {
+    const removeIndex = documents.findIndex((doc) => doc.id === docId);
+    if (removeIndex < 0) return;
+    const removedDoc = documents[removeIndex];
     setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
+    queueUndoAction(`Removed document "${removedDoc.name}".`, () => {
+      setDocuments((current) => {
+        const insertAt = Math.min(removeIndex, current.length);
+        const withUndo = [...current];
+        withUndo.splice(insertAt, 0, removedDoc);
+        return withUndo;
+      });
+    });
+    setError("");
   };
 
   const toggleDocumentRequired = (docId) => {
@@ -2144,7 +2462,17 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   };
 
   const removeTask = (idx) => {
+    if (idx < 0 || idx >= items.length) return;
+    const removedItem = items[idx];
     setItems((prev) => prev.filter((_, i) => i !== idx));
+    queueUndoAction(`Removed service "${removedItem.name}".`, () => {
+      setItems((current) => {
+        const insertAt = Math.min(idx, current.length);
+        const withUndo = [...current];
+        withUndo.splice(insertAt, 0, removedItem);
+        return withUndo;
+      });
+    });
     setError("");
   };
 
@@ -2218,6 +2546,14 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     setDocuments([]);
     setItems([]);
     setTicketMeta(null);
+    setIntakeFieldErrors({});
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+    setUndoAction(null);
+    setDraftSavedAt(null);
+    setDraftStorageState("idle");
     setSaved(null);
     setError("");
   };
@@ -2304,10 +2640,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             <div>
               <div style={sectionEyebrowStyle}>Flow Map</div>
               <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.45rem", fontWeight: 300, letterSpacing: "-0.015em", color: "#15120f", marginBottom: 6 }}>
-                Home, Second, and Go To Page
+                Intake, Ticket Builder, and Workspace Switch
               </div>
               <div style={{ maxWidth: 620, fontSize: "0.84rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
-                Use Home for intake, Second for ticket building, and Go To Page when you need to jump to another workspace without losing the draft.
+                Use Intake for customer context, Ticket Builder for services and payment, and Workspace Switch to jump tabs without losing draft state.
               </div>
             </div>
             <div style={{ ...smallBadgeStyle, background: "rgba(21,18,15,0.05)", border: "1px solid rgba(21,18,15,0.10)", color: "rgba(21,18,15,0.55)" }}>
@@ -2338,7 +2674,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             ))}
           </div>
           <div style={{ ...softPanelStyle, padding: 14 }}>
-            <div style={{ ...sectionEyebrowStyle, marginBottom: 8 }}>Go To Page</div>
+            <div style={{ ...sectionEyebrowStyle, marginBottom: 8 }}>Switch Workspace (Go To Page)</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
               {goToPageItems.map((item) => (
                 <button
@@ -2376,11 +2712,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
         const goNextSubStep = () => {
           if (subStep === 2) {
-            const trimmedName = customerName.trim();
-            if (!trimmedName) { setError("Document holder name is required."); return; }
-            if (hasReference && !referenceName.trim()) { setError("Reference name is required when reference is enabled."); return; }
-            const phoneDigits = sanitizePhone(customerPhone);
-            if (phoneDigits && !PHONE_REGEX.test(phoneDigits)) { setError("Contact number must be exactly 10 digits."); return; }
+            const intakeValidation = validateIntakeDetails();
+            if (!intakeValidation.isValid) return;
           }
           setError("");
           if (subStep < totalSubSteps) setSubStep(subStep + 1);
@@ -2398,8 +2731,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             <div style={{ marginBottom: 28 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div style={sectionEyebrowStyle}>Intake — Step {subStep} of {totalSubSteps}</div>
-                <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.30)", color: "#7b5d2c" }}>
-                  Draft autosaves locally
+                <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.30)", color: draftStatusAccent }}>
+                  {draftStatusLabel}{draftSavedAt ? ` · ${formatSyncTime(draftSavedAt)}` : ""}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -2467,7 +2800,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       title: "No Reference",
                       helper: "The document holder is the only person on this ticket.",
                       active: !hasReference,
-                      onClick: () => { setHasReference(false); setError(""); },
+                      onClick: () => {
+                        setHasReference(false);
+                        setIntakeFieldErrors((prev) => ({ ...prev, referenceName: "" }));
+                        setError("");
+                      },
                     },
                     {
                       id: "with_reference",
@@ -2475,7 +2812,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       title: "Add Reference",
                       helper: "Another person should be attached — agent, relative, or colleague.",
                       active: hasReference,
-                      onClick: () => { setHasReference(true); setError(""); },
+                      onClick: () => {
+                        setHasReference(true);
+                        setError("");
+                      },
                     },
                   ].map((choice) => (
                     <button
@@ -2517,36 +2857,84 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   <label style={{ display: "grid", gap: 8 }}>
                     <span style={sectionEyebrowStyle}>Document Holder Name *</span>
                     <input
+                      ref={customerNameInputRef}
                       autoFocus
                       placeholder="Harsh Kumar"
                       value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
+                      onChange={(e) => {
+                        setCustomerName(e.target.value);
+                        setIntakeFieldErrors((prev) => ({ ...prev, customerName: "" }));
+                        setError("");
+                      }}
                       onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
-                      style={{ ...inputStyle, fontSize: "1rem", padding: "13px 16px" }}
+                      style={{
+                        ...inputStyle,
+                        fontSize: "1rem",
+                        padding: "13px 16px",
+                        border: intakeFieldErrors.customerName ? "1px solid rgba(214,5,43,0.45)" : inputStyle.border,
+                        boxShadow: intakeFieldErrors.customerName ? "0 0 0 2px rgba(214,5,43,0.08)" : inputStyle.boxShadow,
+                      }}
                     />
+                    {intakeFieldErrors.customerName && (
+                      <span style={{ fontSize: "0.78rem", color: "#8f1020", fontFamily: APP_FONT_STACK }}>
+                        {intakeFieldErrors.customerName}
+                      </span>
+                    )}
                   </label>
                   <label style={{ display: "grid", gap: 8 }}>
                     <span style={sectionEyebrowStyle}>Contact Number</span>
                     <input
+                      ref={customerPhoneInputRef}
                       type="tel"
                       placeholder="Optional, 10 digits"
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(sanitizePhone(e.target.value))}
+                      onChange={(e) => {
+                        setCustomerPhone(sanitizePhone(e.target.value));
+                        setIntakeFieldErrors((prev) => ({ ...prev, customerPhone: "" }));
+                        setError("");
+                      }}
                       onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
-                      style={{ ...inputStyle, fontSize: "1rem", padding: "13px 16px" }}
+                      style={{
+                        ...inputStyle,
+                        fontSize: "1rem",
+                        padding: "13px 16px",
+                        border: intakeFieldErrors.customerPhone ? "1px solid rgba(214,5,43,0.45)" : inputStyle.border,
+                        boxShadow: intakeFieldErrors.customerPhone ? "0 0 0 2px rgba(214,5,43,0.08)" : inputStyle.boxShadow,
+                      }}
                     />
+                    {intakeFieldErrors.customerPhone && (
+                      <span style={{ fontSize: "0.78rem", color: "#8f1020", fontFamily: APP_FONT_STACK }}>
+                        {intakeFieldErrors.customerPhone}
+                      </span>
+                    )}
                   </label>
                   {hasReference && (
                     <>
                       <label style={{ display: "grid", gap: 8 }}>
                         <span style={sectionEyebrowStyle}>Reference Name *</span>
                         <input
+                          ref={referenceNameInputRef}
                           placeholder="Riya Sharma"
                           value={referenceName}
-                          onChange={(e) => setReferenceName(e.target.value)}
+                          onChange={(e) => {
+                            setReferenceName(e.target.value);
+                            setIntakeFieldErrors((prev) => ({ ...prev, referenceName: "" }));
+                            setError("");
+                          }}
                           onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
-                          style={{ ...inputStyle, fontSize: "1rem", padding: "13px 16px" }}
+                          style={{
+                            ...inputStyle,
+                            fontSize: "1rem",
+                            padding: "13px 16px",
+                            border: intakeFieldErrors.referenceName ? "1px solid rgba(214,5,43,0.45)" : inputStyle.border,
+                            boxShadow: intakeFieldErrors.referenceName ? "0 0 0 2px rgba(214,5,43,0.08)" : inputStyle.boxShadow,
+                          }}
                         />
+                        {intakeFieldErrors.referenceName && (
+                          <span style={{ fontSize: "0.78rem", color: "#8f1020", fontFamily: APP_FONT_STACK }}>
+                            {intakeFieldErrors.referenceName}
+                          </span>
+                        )}
                       </label>
                       <label style={{ display: "grid", gap: 8 }}>
                         <span style={sectionEyebrowStyle}>Reference Label</span>
@@ -3124,6 +3512,25 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                 </div>
               )}
 
+              {undoAction && (
+                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(184,148,63,0.11)", border: "1px solid rgba(184,148,63,0.30)", color: "#7b5d2c", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <span>{undoAction.message}</span>
+                  <button
+                    onClick={() => {
+                      undoAction.undoFn?.();
+                      if (undoTimeoutRef.current) {
+                        clearTimeout(undoTimeoutRef.current);
+                        undoTimeoutRef.current = null;
+                      }
+                      setUndoAction(null);
+                    }}
+                    style={{ border: "1px solid rgba(184,148,63,0.45)", borderRadius: 999, padding: "7px 12px", background: "rgba(255,255,255,0.74)", color: "#7b5d2c", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.52rem", letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer" }}
+                  >
+                    Undo
+                  </button>
+                </div>
+              )}
+
               {/* Error */}
               {error && (
                 <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f1020", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
@@ -3446,6 +3853,215 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       </div>
     );
   };
+
+  const dashboardCard = {
+    background: OPS.surface,
+    border: `1px solid ${OPS.borderSoft}`,
+    borderRadius: 14,
+    boxShadow: OPS.shadowSoft,
+  };
+  const dashLabel = {
+    fontSize: "0.78rem",
+    color: OPS.textMuted,
+    fontFamily: APP_FONT_STACK,
+    fontWeight: 600,
+  };
+  const listActionStyle = {
+    border: `1px solid ${OPS.primaryBorder}`,
+    borderRadius: 8,
+    background: OPS.primarySoft,
+    color: OPS.primary,
+    fontFamily: APP_FONT_STACK,
+    fontWeight: 600,
+    fontSize: "0.75rem",
+    padding: "7px 10px",
+    cursor: "pointer",
+  };
+  const compactInput = {
+    width: "100%",
+    padding: "9px 10px",
+    borderRadius: 8,
+    border: `1px solid ${OPS.border}`,
+    background: OPS.surface,
+    color: OPS.text,
+    fontSize: "0.84rem",
+    fontFamily: APP_FONT_STACK,
+    outline: "none",
+  };
+
+  if (true) {
+    return (
+      <div style={{ animation: "fadeIn 0.3s ease-out", display: "grid", gap: 12 }}>
+        <div style={{ ...dashboardCard, padding: 14, display: "grid", gap: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ fontSize: "0.95rem", fontWeight: 700, color: OPS.text, fontFamily: APP_FONT_STACK }}>Ticket List</div>
+            <div style={{ fontSize: "0.8rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
+              Showing {filteredTickets.length} of {normalizedTickets.length}
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={dashLabel}>Type Filter</span>
+              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={compactInput}>
+                {typeFilterOptions.map((option) => (
+                  <option key={`type_filter_${option.id}`} value={option.id} style={MENU_OPTION_STYLE}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={dashLabel}>Payment Filter</span>
+              <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} style={compactInput}>
+                {paymentFilterOptions.map((option) => (
+                  <option key={`pay_filter_${option.id}`} value={option.id} style={MENU_OPTION_STYLE}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        {editTicketNo && (
+          <div style={{ ...dashboardCard, padding: 14, display: "grid", gap: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: "0.95rem", fontWeight: 700, color: OPS.text, fontFamily: APP_FONT_STACK }}>Edit Ticket {editTicketNo}</div>
+              <button onClick={() => { setEditTicketNo(null); setEditError(""); }} style={{ ...listActionStyle, border: `1px solid ${OPS.border}`, background: OPS.surfaceMuted, color: OPS.textMuted }}>Cancel</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+              <input value={editDraft.customerName} onChange={(e) => setEditDraft((prev) => ({ ...prev, customerName: e.target.value }))} placeholder="Document Holder Name" style={compactInput} />
+              <input value={editDraft.customerPhone} onChange={(e) => setEditDraft((prev) => ({ ...prev, customerPhone: e.target.value.replace(/\D/g, "").slice(0, 10) }))} placeholder="Contact Number" style={compactInput} />
+              <select value={editDraft.hasReference ? "yes" : "no"} onChange={(e) => setEditDraft((prev) => ({ ...prev, hasReference: e.target.value === "yes" }))} style={compactInput}>
+                <option value="no" style={MENU_OPTION_STYLE}>No Reference</option>
+                <option value="yes" style={MENU_OPTION_STYLE}>With Reference</option>
+              </select>
+              {editDraft.hasReference && (
+                <>
+                  <input value={editDraft.referenceName} onChange={(e) => setEditDraft((prev) => ({ ...prev, referenceName: e.target.value }))} placeholder="Reference Name" style={compactInput} />
+                  <input value={editDraft.referenceLabel} onChange={(e) => setEditDraft((prev) => ({ ...prev, referenceLabel: e.target.value }))} placeholder="Reference Label" style={compactInput} />
+                </>
+              )}
+              <select value={editDraft.operator} onChange={(e) => setEditDraft((prev) => ({ ...prev, operator: e.target.value }))} style={compactInput}>
+                {OPERATORS.map((op) => <option key={`edit_op_${op}`} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
+              </select>
+              <input type="number" min="0" value={editDraft.cashCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, cashCollected: e.target.value }))} placeholder="Cash collected" style={compactInput} />
+              <input type="number" min="0" value={editDraft.upiCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, upiCollected: e.target.value }))} placeholder="UPI collected" style={compactInput} />
+            </div>
+            {editError && <div style={{ color: OPS.danger, fontSize: "0.8rem", fontFamily: APP_FONT_STACK }}>{editError}</div>}
+            <button onClick={saveEdit} style={{ ...listActionStyle, background: OPS.primary, color: "#ffffff" }}>Save Changes</button>
+          </div>
+        )}
+
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 1fr) minmax(0, 1.3fr)", gap: 12, alignItems: "start" }}>
+          <div style={{ ...dashboardCard, padding: 10, display: "grid", gap: 8, maxHeight: "68vh", overflowY: "auto" }}>
+            {filteredTickets.length === 0 ? (
+              <div style={{ padding: 12, color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>No tickets match current filters.</div>
+            ) : (
+              filteredTickets.map((ticket) => {
+                const structured = ticket.structured || toStructuredTicket(ticket);
+                const active = viewingTicket?.ticketNo === ticket.ticketNo;
+                const paymentColor = structured.payment.status === "Paid" ? OPS.success : structured.payment.status === "Partial" ? OPS.warning : OPS.danger;
+                return (
+                  <div key={ticket.ticketNo} style={{ border: active ? `1px solid ${OPS.primaryBorder}` : `1px solid ${OPS.borderSoft}`, background: active ? OPS.primarySoft : OPS.surface, borderRadius: 10, padding: 10, display: "grid", gap: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <div>
+                        <div style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_MONO_STACK }}>{ticket.ticketNo}</div>
+                        <div style={{ fontSize: "0.88rem", fontWeight: 600, color: OPS.text, fontFamily: APP_FONT_STACK }}>{ticket.customerName}</div>
+                      </div>
+                      <div style={{ fontSize: "0.72rem", fontWeight: 700, color: paymentColor, fontFamily: APP_FONT_STACK }}>{structured.payment.status}</div>
+                    </div>
+                    <div style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
+                      {structured.meta.primaryType || "Unassigned"} · Rs. {ticket.total || 0} · Pending Rs. {structured.payment.pendingBalance}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); }} style={listActionStyle}>View</button>
+                      <button onClick={() => startEdit(ticket)} style={listActionStyle}>Edit</button>
+                      <button onClick={() => printTicketSlip(ticket)} style={listActionStyle}>Print</button>
+                      {ticket.status === "Open" ? (
+                        <button onClick={() => onToggleTicketStatus(ticket.ticketNo, "Closed")} style={{ ...listActionStyle, border: `1px solid rgba(22,101,52,0.28)`, background: "rgba(22,101,52,0.12)", color: OPS.success }}>Close</button>
+                      ) : (
+                        <button onClick={() => onToggleTicketStatus(ticket.ticketNo, "Open")} style={{ ...listActionStyle, border: `1px solid rgba(161,98,7,0.28)`, background: "rgba(161,98,7,0.12)", color: OPS.warning }}>Reopen</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div style={{ ...dashboardCard, padding: 14 }}>
+            {!viewingTicket ? (
+              <div style={{ color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontSize: "0.86rem" }}>Select a ticket from the left list to inspect full details.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_MONO_STACK }}>{viewingTicket.ticketNo}</div>
+                    <div style={{ fontSize: "1rem", fontWeight: 700, color: OPS.text, fontFamily: APP_FONT_STACK }}>{viewingTicket.customerName}</div>
+                  </div>
+                  <button onClick={() => setShowRawJson((prev) => !prev)} style={listActionStyle}>{showRawJson ? "Hide JSON" : "Show JSON"}</button>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+                  <div style={{ ...dashboardCard, padding: 10 }}>
+                    <div style={dashLabel}>Document Holder</div>
+                    <div style={{ fontSize: "0.84rem", color: OPS.text, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>{viewingStructured.parties.documentHolder.name}</div>
+                    <div style={{ fontSize: "0.74rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.documentHolder.phone || "No contact saved"}</div>
+                  </div>
+                  <div style={{ ...dashboardCard, padding: 10 }}>
+                    <div style={dashLabel}>Reference</div>
+                    <div style={{ fontSize: "0.84rem", color: OPS.text, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>{viewingStructured.parties.reference.hasReference ? viewingStructured.parties.reference.name : "No reference"}</div>
+                    <div style={{ fontSize: "0.74rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.reference.label || "—"}</div>
+                  </div>
+                  <div style={{ ...dashboardCard, padding: 10 }}>
+                    <div style={dashLabel}>Payment</div>
+                    <div style={{ fontSize: "0.84rem", color: OPS.text, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>{viewingStructured.payment.status}</div>
+                    <div style={{ fontSize: "0.74rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>Paid Rs. {viewingStructured.payment.paidTotal} · Pending Rs. {viewingStructured.payment.pendingBalance}</div>
+                  </div>
+                </div>
+
+                <div style={{ ...dashboardCard, padding: 10 }}>
+                  <div style={{ fontSize: "0.78rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontWeight: 600, marginBottom: 6 }}>Services</div>
+                  {viewingStructured.services.length === 0 ? (
+                    <div style={{ color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontSize: "0.82rem" }}>No services in this ticket.</div>
+                  ) : (
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {viewingStructured.services.map((item, index) => (
+                        <label key={`ticket_service_${index}`} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", alignItems: "center", gap: 8, paddingBottom: 6, borderBottom: index < viewingStructured.services.length - 1 ? `1px solid ${OPS.borderSoft}` : "none" }}>
+                          <span style={{ fontSize: "0.84rem", color: OPS.text, fontFamily: APP_FONT_STACK }}>{item.name}</span>
+                          <span style={{ fontSize: "0.74rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{getQuantityModeConfig(item.quantityMode).label} {item.qty}</span>
+                          <input type="checkbox" checked={Boolean(item.done)} onChange={() => onToggleTaskDone(viewingTicket.ticketNo, index)} />
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ ...dashboardCard, padding: 10 }}>
+                  <div style={{ fontSize: "0.78rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontWeight: 600, marginBottom: 6 }}>Documents</div>
+                  {viewingStructured.documents.items.length === 0 ? (
+                    <div style={{ color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontSize: "0.82rem" }}>No document checklist added.</div>
+                  ) : (
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {viewingStructured.documents.items.map((doc, index) => (
+                        <div key={`ticket_doc_${index}`} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: OPS.text, fontFamily: APP_FONT_STACK }}>
+                          <span>{doc.name}</span>
+                          <span style={{ color: OPS.textMuted }}>{doc.required ? "Required" : "Optional"} · {doc.submitted ? "Submitted" : "Pending"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {showRawJson && (
+                  <pre style={{ margin: 0, background: "#0f172a", borderRadius: 10, color: "#e2e8f0", padding: 12, fontSize: "0.72rem", overflowX: "auto", fontFamily: APP_MONO_STACK }}>
+{JSON.stringify(viewingStructured, null, 2)}
+                  </pre>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
@@ -4360,23 +4976,29 @@ export default function CSCBilling() {
   const [quickLinkUrl, setQuickLinkUrl] = useState("");
   const [quickLinkError, setQuickLinkError] = useState("");
   const [showWalkIn, setShowWalkIn] = useState(false);
-  const walkInDraftRef = useRef(null);
+  const [entryWorkspaceKey, setEntryWorkspaceKey] = useState(0);
+  const [cloudSyncState, setCloudSyncState] = useState(() => (supabase ? "connecting" : "local_only"));
+  const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState(null);
   const dbSyncedRef = useRef(false);
   const openTicketCount = tickets.filter((ticket) => ticket.status !== "Closed").length;
-  const closedTicketCount = tickets.filter((ticket) => ticket.status === "Closed").length;
-  const pricedServiceCount = services.filter((service) => service.price > 0).length;
   const panelBadges = {
     log: openTicketCount > 0 ? String(openTicketCount) : String(tickets.length),
-    b2b: "Beta",
-    monthly: "New",
-    customers: "New",
   };
-  const headerStats = [
-    { label: "Configured services", value: `${pricedServiceCount}/${services.length}`, note: "Rates ready for billing", accent: "#2a5a8f" },
-    { label: "Open tickets", value: String(openTicketCount), note: "Live desk workload", accent: "#7b5d2c" },
-    { label: "Closed tickets", value: String(closedTicketCount), note: "Completed and archived", accent: DS.wine },
-    { label: "Operators", value: String(OPERATORS.length), note: "Front desk staff enabled", accent: "#15120f" },
-  ];
+  const headerStats = [];
+  const cloudSyncLabel = cloudSyncState === "local_only"
+    ? "Local-only"
+    : cloudSyncState === "syncing" || cloudSyncState === "connecting"
+      ? "Syncing"
+      : cloudSyncState === "synced"
+        ? "Synced"
+        : "Sync failed";
+  const cloudSyncAccent = cloudSyncState === "synced"
+    ? OPS.success
+    : cloudSyncState === "sync_failed"
+      ? OPS.danger
+      : cloudSyncState === "local_only"
+        ? OPS.textMuted
+        : OPS.primary;
   const quickLinks = [...QUICK_LINK_DEFAULTS, ...customQuickLinks];
   const navigateTab = (nextTab, mode = "push") => {
     if (!TAB_CONFIG.some((item) => item.id === nextTab)) return;
@@ -4400,7 +5022,7 @@ export default function CSCBilling() {
     });
     setShowWalkIn(false);
     navigateTab("entry");
-    window.location.reload();
+    setEntryWorkspaceKey((prev) => prev + 1);
   };
 
   const saveTicket = (ticket) => setTickets((prev) => [...prev, withStructuredTicket(ticket)]);
@@ -4488,41 +5110,63 @@ export default function CSCBilling() {
   useEffect(() => {
     let cancelled = false;
     async function loadFromSupabase() {
-      const [remoteTickets, remoteServices, remoteQuickLinks] = await Promise.all([
+      if (!supabase) {
+        if (!cancelled) {
+          dbSyncedRef.current = true;
+          setCloudSyncState("local_only");
+        }
+        return;
+      }
+
+      setCloudSyncState("connecting");
+      const [remoteTicketsResult, remoteServicesResult, remoteQuickLinksResult] = await Promise.all([
         dbLoad("tickets"),
         dbLoad("services"),
         dbLoad("quick_links"),
       ]);
 
       if (cancelled) return;
+      let syncFailed = [remoteTicketsResult, remoteServicesResult, remoteQuickLinksResult].some((result) => !result?.ok);
 
       const localTickets = readStoredJSON(STORAGE_KEYS.tickets, []);
       const localServices = readStoredJSON(STORAGE_KEYS.services, []);
       const localQuickLinks = getStoredQuickLinks();
+      const remoteTickets = remoteTicketsResult?.value;
+      const remoteServices = remoteServicesResult?.value;
+      const remoteQuickLinks = remoteQuickLinksResult?.value;
 
       if (Array.isArray(remoteTickets) && remoteTickets.length > 0) {
         setTickets(hydrateTickets(remoteTickets));
         writeStoredJSON(STORAGE_KEYS.tickets, remoteTickets);
       } else if (Array.isArray(localTickets) && localTickets.length > 0) {
-        await dbSave("tickets", localTickets);
+        const seedTicketsResult = await dbSave("tickets", localTickets);
+        if (!seedTicketsResult?.ok) syncFailed = true;
       }
 
       if (Array.isArray(remoteServices) && remoteServices.length > 0) {
         setServices(hydrateServices(remoteServices));
         writeStoredJSON(STORAGE_KEYS.services, remoteServices);
       } else if (Array.isArray(localServices) && localServices.length > 0) {
-        await dbSave("services", localServices);
+        const seedServicesResult = await dbSave("services", localServices);
+        if (!seedServicesResult?.ok) syncFailed = true;
       }
 
       if (Array.isArray(remoteQuickLinks) && remoteQuickLinks.length > 0) {
         setCustomQuickLinks(normalizeQuickLinksList(remoteQuickLinks));
         writeStoredJSON(STORAGE_KEYS.quickLinks, remoteQuickLinks);
       } else if (Array.isArray(localQuickLinks) && localQuickLinks.length > 0) {
-        await dbSave("quick_links", localQuickLinks);
+        const seedQuickLinksResult = await dbSave("quick_links", localQuickLinks);
+        if (!seedQuickLinksResult?.ok) syncFailed = true;
       }
 
       if (!cancelled) {
         dbSyncedRef.current = true;
+        if (syncFailed) {
+          setCloudSyncState("sync_failed");
+        } else {
+          setCloudSyncState("synced");
+          setCloudLastSyncedAt(new Date());
+        }
       }
     }
     loadFromSupabase();
@@ -4536,18 +5180,63 @@ export default function CSCBilling() {
   useDebouncedStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks, 180);
 
   useEffect(() => {
-    if (!dbSyncedRef.current) return;
-    dbSave("services", services);
+    if (!dbSyncedRef.current || !supabase) return undefined;
+    let cancelled = false;
+    async function syncServices() {
+      setCloudSyncState("syncing");
+      const result = await dbSave("services", services);
+      if (cancelled) return;
+      if (!result?.ok) {
+        setCloudSyncState("sync_failed");
+        return;
+      }
+      setCloudSyncState("synced");
+      setCloudLastSyncedAt(new Date());
+    }
+    syncServices();
+    return () => {
+      cancelled = true;
+    };
   }, [services]);
 
   useEffect(() => {
-    if (!dbSyncedRef.current) return;
-    dbSave("tickets", serializeTickets(tickets));
+    if (!dbSyncedRef.current || !supabase) return undefined;
+    let cancelled = false;
+    async function syncTickets() {
+      setCloudSyncState("syncing");
+      const result = await dbSave("tickets", serializeTickets(tickets));
+      if (cancelled) return;
+      if (!result?.ok) {
+        setCloudSyncState("sync_failed");
+        return;
+      }
+      setCloudSyncState("synced");
+      setCloudLastSyncedAt(new Date());
+    }
+    syncTickets();
+    return () => {
+      cancelled = true;
+    };
   }, [tickets]);
 
   useEffect(() => {
-    if (!dbSyncedRef.current) return;
-    dbSave("quick_links", customQuickLinks);
+    if (!dbSyncedRef.current || !supabase) return undefined;
+    let cancelled = false;
+    async function syncQuickLinks() {
+      setCloudSyncState("syncing");
+      const result = await dbSave("quick_links", customQuickLinks);
+      if (cancelled) return;
+      if (!result?.ok) {
+        setCloudSyncState("sync_failed");
+        return;
+      }
+      setCloudSyncState("synced");
+      setCloudLastSyncedAt(new Date());
+    }
+    syncQuickLinks();
+    return () => {
+      cancelled = true;
+    };
   }, [customQuickLinks]);
 
   return (
@@ -5153,6 +5842,22 @@ export default function CSCBilling() {
                   </div>
                 </div>
               ))}
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
+                  Data Sync
+                </div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, padding: "5px 10px", border: `1px solid ${cloudSyncState === "sync_failed" ? "rgba(214,5,43,0.30)" : cloudSyncState === "synced" ? "rgba(42,102,71,0.30)" : "rgba(21,18,15,0.16)"}`, background: cloudSyncState === "sync_failed" ? "rgba(214,5,43,0.08)" : cloudSyncState === "synced" ? "rgba(42,102,71,0.10)" : "rgba(21,18,15,0.05)" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: cloudSyncAccent, display: "inline-block" }} />
+                  <span style={{ fontSize: "0.62rem", fontWeight: 700, color: cloudSyncAccent, fontFamily: APP_BRAND_STACK, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                    {cloudSyncLabel}
+                  </span>
+                  {cloudSyncState === "synced" && cloudLastSyncedAt && (
+                    <span style={{ fontSize: "0.68rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_MONO_STACK }}>
+                      {formatSyncTime(cloudLastSyncedAt)}
+                    </span>
+                  )}
+                </div>
+              </div>
               <button
                 onClick={() => setShowWalkIn(true)}
                 style={{
@@ -5228,7 +5933,7 @@ export default function CSCBilling() {
             zIndex: 1,
           }}>
             <TabPanel active={tab === "entry"}>
-              <TicketWorkspace services={services} tickets={tickets} onSaveTicket={saveTicket} onNavigateTab={navigateTab} isActive={tab === "entry"} />
+              <TicketWorkspace key={entryWorkspaceKey} services={services} tickets={tickets} onSaveTicket={saveTicket} onNavigateTab={navigateTab} isActive={tab === "entry"} />
             </TabPanel>
             <TabPanel active={tab === "rates"}>
               <RateCard services={services} setServices={setServices} />
