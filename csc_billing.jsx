@@ -32,11 +32,11 @@ const INITIAL_SERVICES = [
 
 const CATEGORIES = ["Government ID", "Certificates", "Legal & Docs", "Government Services", "Typing & Print"];
 const CAT_COLORS = {
-  "Government ID":       "#4a82c0",
-  "Certificates":        "#3a9e78",
-  "Legal & Docs":        "#c0414a",
-  "Government Services": "#c8922a",
-  "Typing & Print":      "#8b6fc0",
+  "Government ID":       "#2563eb",
+  "Certificates":        "#0ea5e9",
+  "Legal & Docs":        "#1d4ed8",
+  "Government Services": "#3b82f6",
+  "Typing & Print":      "#60a5fa",
 };
 
 const OPERATOR_DIRECTORY = [
@@ -152,11 +152,11 @@ const CATEGORY_DETAIL_SCHEMA_IDS = {
 
 const PHONE_REGEX = /^[0-9]{10}$/;
 const DELETE_ACCESS_CODE = "241100";
-const MENU_OPTION_STYLE = { color: "#15120f", backgroundColor: "#fffaf2" };
-const MENU_OPTGROUP_STYLE = { color: "rgba(21,18,15,0.58)", backgroundColor: "#f8f1e4" };
+const MENU_OPTION_STYLE = { color: "#0f172a", backgroundColor: "#ffffff" };
+const MENU_OPTGROUP_STYLE = { color: "rgba(15,23,42,0.58)", backgroundColor: "#f1f5f9" };
 const BRAND_PRIMARY = DS.wine;
-const BRAND_PRIMARY_DARK = "#6b2323";
-const BRAND_PRIMARY_SOFT = "rgba(143,47,47,0.14)";
+const BRAND_PRIMARY_DARK = "#1e40af";
+const BRAND_PRIMARY_SOFT = "rgba(37,99,235,0.14)";
 const NEGOTIATION_FACTOR_MIN = 0.5;
 const NEGOTIATION_FACTOR_MAX = 1.5;
 const NEGOTIATION_FACTOR_STEP = 0.05;
@@ -175,6 +175,48 @@ const DOCUMENT_PRESETS = [
   { id: "bank_passbook", label: "Bank Passbook" },
   { id: "photo", label: "Photograph" },
 ];
+const DOCUMENT_PRESET_MAP = DOCUMENT_PRESETS.reduce((acc, preset) => {
+  acc[preset.id] = preset;
+  return acc;
+}, {});
+const DOCUMENT_PRESET_BY_NAME = DOCUMENT_PRESETS.reduce((acc, preset) => {
+  acc[String(preset.label || "").trim().toLowerCase()] = preset;
+  return acc;
+}, {});
+const CATEGORY_REQUIRED_DOC_IDS = {
+  "Government ID": ["aadhaar", "photo"],
+  "Certificates": ["aadhaar", "photo"],
+  "Legal & Docs": ["aadhaar", "pan"],
+  "Government Services": ["aadhaar", "bank_passbook", "photo"],
+  "Typing & Print": [],
+};
+const SERVICE_REQUIRED_DOC_IDS = {
+  aadhaar: ["aadhaar", "photo"],
+  pan_new: ["aadhaar", "photo"],
+  pan_correction: ["aadhaar", "photo"],
+  passport: ["aadhaar", "pan", "photo"],
+  voter_id: ["aadhaar", "photo"],
+  driving_license: ["aadhaar", "photo"],
+  income_cert: ["aadhaar", "photo"],
+  caste_cert: ["aadhaar", "photo"],
+  domicile_cert: ["aadhaar", "photo"],
+  date_cert: ["aadhaar", "photo"],
+  life_cert: ["aadhaar", "photo"],
+  ayushman: ["aadhaar", "photo"],
+  affidavit: ["aadhaar", "pan", "photo"],
+  gazette: ["aadhaar", "pan", "photo"],
+  rent_agreement: ["aadhaar", "pan", "photo"],
+  deed: ["aadhaar", "pan", "photo"],
+  ration_card: ["aadhaar", "bank_passbook", "photo"],
+  pf: ["aadhaar", "bank_passbook", "photo"],
+  pension: ["aadhaar", "bank_passbook", "photo"],
+  resume: ["photo"],
+  typing_hindi: [],
+  typing_english: [],
+  photocopy: [],
+  lamination: [],
+  pvc_card: ["aadhaar", "photo"],
+};
 const APP_FONT_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
 const APP_SERIF_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
 const APP_BRAND_STACK = "'League Spartan', 'Manrope', sans-serif";
@@ -201,8 +243,10 @@ const APP_MAX_WIDTH = 1240;
 const STORAGE_KEYS = {
   activeTab: "csc-buddy.active-tab",
   sidePanelExpanded: "csc-buddy.side-menu-open",
+  sidebarCollapsed: "csc-buddy.sidebar-collapsed",
   services: "csc-buddy.services",
   tickets: "csc-buddy.tickets",
+  b2bLedger: "csc-buddy.b2b-ledger",
   ticketDraft: "csc-buddy.ticket-draft",
   ticketCounter: "csc-buddy.ticket-counter",
   quickLinks: "csc-buddy.quick-links",
@@ -431,6 +475,94 @@ function buildServiceDetailSummary(service, values) {
     .join(" | ");
 }
 
+function normalizeDocNameKey(name) {
+  return String(name || "").trim().toLowerCase();
+}
+
+function getRequiredDocIdsForService(service) {
+  const serviceId = String(service?.id || "").trim();
+  const category = String(service?.category || "").trim();
+  const fromService = SERVICE_REQUIRED_DOC_IDS[serviceId];
+  const fromCategory = CATEGORY_REQUIRED_DOC_IDS[category] || [];
+  const candidateIds = Array.isArray(fromService) ? fromService : fromCategory;
+  const unique = [];
+  const seen = new Set();
+  candidateIds.forEach((docId) => {
+    const normalizedDocId = String(docId || "").trim();
+    if (!normalizedDocId || seen.has(normalizedDocId)) return;
+    if (!DOCUMENT_PRESET_MAP[normalizedDocId]) return;
+    seen.add(normalizedDocId);
+    unique.push(normalizedDocId);
+  });
+  return unique;
+}
+
+function areDocumentListsEqual(currentList, nextList) {
+  if (!Array.isArray(currentList) || !Array.isArray(nextList)) return false;
+  if (currentList.length !== nextList.length) return false;
+  for (let index = 0; index < currentList.length; index += 1) {
+    const left = currentList[index] || {};
+    const right = nextList[index] || {};
+    if (left.id !== right.id) return false;
+    if (left.name !== right.name) return false;
+    if (Boolean(left.required) !== Boolean(right.required)) return false;
+    if (Boolean(left.submitted) !== Boolean(right.submitted)) return false;
+    if (String(left.source || "") !== String(right.source || "")) return false;
+    if (String(left.docPresetId || "") !== String(right.docPresetId || "")) return false;
+    if (String(left.serviceId || "") !== String(right.serviceId || "")) return false;
+    if (String(left.serviceName || "") !== String(right.serviceName || "")) return false;
+  }
+  return true;
+}
+
+function syncServiceRequiredDocuments(existingDocuments, serviceItems) {
+  const currentDocs = Array.isArray(existingDocuments) ? existingDocuments : [];
+  const activeItems = Array.isArray(serviceItems) ? serviceItems : [];
+  const staticDocs = currentDocs.filter((doc) => doc.source !== "service_required");
+  const existingById = new Map(currentDocs.map((doc) => [String(doc.id || ""), doc]));
+  const submittedPresetIds = new Set(
+    currentDocs
+      .filter((doc) => doc.submitted)
+      .map((doc) => String(doc.docPresetId || "").trim())
+      .filter(Boolean)
+  );
+  const submittedNameKeys = new Set(
+    currentDocs
+      .filter((doc) => doc.submitted)
+      .map((doc) => normalizeDocNameKey(doc.name))
+      .filter(Boolean)
+  );
+
+  const generatedDocs = [];
+  const seenServiceIds = new Set();
+  activeItems.forEach((item) => {
+    const serviceId = String(item?.id || "").trim();
+    if (!serviceId || seenServiceIds.has(serviceId)) return;
+    seenServiceIds.add(serviceId);
+    const serviceName = String(item?.name || serviceId);
+    const requiredDocIds = getRequiredDocIdsForService(item);
+    requiredDocIds.forEach((docId) => {
+      const docPreset = DOCUMENT_PRESET_MAP[docId];
+      if (!docPreset) return;
+      const docIdKey = `doc_req_${serviceId}_${docId}`;
+      const existingDoc = existingById.get(docIdKey);
+      const shouldPrefillSubmitted = submittedPresetIds.has(docId) || submittedNameKeys.has(normalizeDocNameKey(docPreset.label));
+      generatedDocs.push({
+        id: docIdKey,
+        name: docPreset.label,
+        required: true,
+        submitted: existingDoc ? Boolean(existingDoc.submitted) : shouldPrefillSubmitted,
+        source: "service_required",
+        docPresetId: docId,
+        serviceId,
+        serviceName,
+      });
+    });
+  });
+
+  return [...generatedDocs, ...staticDocs];
+}
+
 function getTicketServiceTypes(items) {
   return Array.from(new Set((Array.isArray(items) ? items : []).map((item) => item.category).filter(Boolean)));
 }
@@ -464,6 +596,30 @@ function getTicketCounterDateKey(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function toIsoDateKey(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return getTicketCounterDateKey(parsed);
+}
+
+function getOffsetDateKey(offsetDays = 0) {
+  const base = new Date();
+  base.setHours(0, 0, 0, 0);
+  base.setDate(base.getDate() + offsetDays);
+  return getTicketCounterDateKey(base);
+}
+
+function formatIsoDateForDisplay(dateKey) {
+  const normalized = toIsoDateKey(dateKey);
+  if (!normalized) return todayStr();
+  const parsed = new Date(`${normalized}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return todayStr();
+  return parsed.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function getNextTicketSequence(date = new Date()) {
@@ -844,6 +1000,55 @@ function serializeTickets(tickets) {
   });
 }
 
+function normalizeB2BLedgerEntry(entry, fallbackIndex = 0) {
+  const flow = entry?.flow === "us_to_vendor" ? "us_to_vendor" : "vendor_to_us";
+  const quantity = Math.max(1, Number(entry?.quantity) || 1);
+  const rate = Math.max(0, Number(entry?.rate) || 0);
+  const computedAmount = Math.max(0, Number(entry?.amount) || quantity * rate);
+  const paidAmount = Math.max(0, Math.min(computedAmount, Number(entry?.paidAmount) || 0));
+  const pendingAmount = Math.max(0, computedAmount - paidAmount);
+  const paymentStatus = pendingAmount === 0 && computedAmount > 0
+    ? "Paid"
+    : paidAmount > 0
+      ? "Partial"
+      : "Unpaid";
+  const defaultEntryDate = getTicketCounterDateKey(new Date());
+  const entryDate = toIsoDateKey(entry?.entryDate) || defaultEntryDate;
+  const includeInDailyRevenue = flow === "us_to_vendor"
+    ? (typeof entry?.includeInDailyRevenue === "boolean" ? entry.includeInDailyRevenue : true)
+    : false;
+  return {
+    id: String(entry?.id || `b2b_${Date.now()}_${fallbackIndex}`),
+    vendorId: String(entry?.vendorId || ""),
+    vendorName: String(entry?.vendorName || "Unknown Vendor"),
+    flow,
+    serviceName: String(entry?.serviceName || "").trim(),
+    quantity,
+    rate,
+    amount: computedAmount,
+    paidAmount,
+    pendingAmount,
+    paymentStatus,
+    paymentMode: String(entry?.paymentMode || "Unspecified"),
+    entryDate,
+    note: String(entry?.note || "").trim(),
+    includeInDailyRevenue,
+    createdAt: String(entry?.createdAt || new Date().toISOString()),
+  };
+}
+
+function hydrateB2BLedger(storedLedger) {
+  if (!Array.isArray(storedLedger)) return [];
+  return storedLedger
+    .filter((entry) => entry && typeof entry === "object")
+    .map((entry, idx) => normalizeB2BLedgerEntry(entry, idx));
+}
+
+function serializeB2BLedger(ledger) {
+  if (!Array.isArray(ledger)) return [];
+  return ledger.map((entry, idx) => normalizeB2BLedgerEntry(entry, idx));
+}
+
 function getStoredActiveTab() {
   const storedTab = readStoredJSON(STORAGE_KEYS.activeTab, "entry");
   return TAB_CONFIG.some((item) => item.id === storedTab) ? storedTab : "entry";
@@ -851,6 +1056,11 @@ function getStoredActiveTab() {
 
 function getStoredSidePanelExpanded() {
   const storedValue = readStoredJSON(STORAGE_KEYS.sidePanelExpanded, false);
+  return typeof storedValue === "boolean" ? storedValue : false;
+}
+
+function getStoredSidebarCollapsed() {
+  const storedValue = readStoredJSON(STORAGE_KEYS.sidebarCollapsed, false);
   return typeof storedValue === "boolean" ? storedValue : false;
 }
 
@@ -877,19 +1087,37 @@ function getStoredQuickLinks() {
   return normalizeQuickLinksList(stored);
 }
 
-//  Tab Button — vertical sidebar nav item
-function TabBtn({ label, description, active, onClick, badge }) {
+//  Tab Button  -  vertical sidebar nav item
+function TabBtn({ label, description, active, onClick, badge, shortLabel = "", expanded = true }) {
   return (
-    <button onClick={onClick} aria-pressed={active} style={{
-      width: "100%", padding: "10px 12px 10px 14px", border: "none",
+    <button onClick={onClick} aria-pressed={active} title={expanded ? undefined : label} style={{
+      width: "100%", padding: expanded ? "10px 12px 10px 14px" : "10px 10px", border: "none",
       background: active ? OPS.primarySoft : "transparent",
       cursor: "pointer", transition: "all 0.18s ease",
       display: "flex", alignItems: "center", gap: 10, textAlign: "left",
+      justifyContent: "flex-start",
       borderRadius: 10,
       boxShadow: active ? `inset 3px 0 0 ${OPS.primary}` : `inset 3px 0 0 ${OPS.borderSoft}`,
       outline: "none",
     }}>
-      <span style={{ flex: 1, minWidth: 0 }}>
+      <span style={{
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        display: "grid",
+        placeItems: "center",
+        background: active ? OPS.primarySoft : OPS.surfaceMuted,
+        color: active ? OPS.primary : OPS.textMuted,
+        fontSize: "0.58rem",
+        fontWeight: 800,
+        fontFamily: APP_FONT_STACK,
+        letterSpacing: "0.06em",
+        flexShrink: 0,
+      }}>
+        {shortLabel || label.slice(0, 2).toUpperCase()}
+      </span>
+      {expanded ? (
+        <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
           <span style={{
             fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.02em",
@@ -916,7 +1144,38 @@ function TabBtn({ label, description, active, onClick, badge }) {
         }}>
           {description}
         </span>
-      </span>
+        </span>
+      ) : (
+        <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+          <span style={{
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            color: active ? OPS.text : OPS.textMuted,
+            fontFamily: APP_FONT_STACK,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}>
+            {label}
+          </span>
+          {!!badge && (
+            <span style={{
+              fontSize: "0.54rem",
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              fontFamily: APP_FONT_STACK,
+              textTransform: "uppercase",
+              background: active ? OPS.primarySoft : OPS.surfaceMuted,
+              color: active ? OPS.primary : OPS.textMuted,
+              borderRadius: 999,
+              padding: "2px 5px",
+              flexShrink: 0,
+            }}>
+              {badge}
+            </span>
+          )}
+        </span>
+      )}
     </button>
   );
 }
@@ -1079,10 +1338,10 @@ function RateCard({ services, setServices }) {
     }
   }, [services, selectedServiceId]);
 
-  // Cream ink helpers
+  // Light theme ink helpers
   const rcInput = {
-    padding: "9px 12px", borderRadius: 10, border: "1px solid rgba(21,18,15,0.13)",
-    background: "rgba(255,255,255,0.80)", color: "#15120f", outline: "none",
+    padding: "9px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.13)",
+    background: "rgba(255,255,255,0.80)", color: "#0f172a", outline: "none",
     fontSize: "0.85rem", fontFamily: APP_FONT_STACK,
   };
   const rcEyebrow = {
@@ -1195,7 +1454,7 @@ function RateCard({ services, setServices }) {
                           }}
                         >
                           <span style={{ fontSize: "0.86rem", fontWeight: 600 }}>{service.name}</span>
-                          <span style={{ fontSize: "0.76rem", color: OPS.textMuted }}>Rs. {service.price || 0} · {service.unit}</span>
+                          <span style={{ fontSize: "0.76rem", color: OPS.textMuted }}>Rs. {service.price || 0}  |  {service.unit}</span>
                         </button>
                       );
                     })}
@@ -1268,7 +1527,7 @@ function RateCard({ services, setServices }) {
           background: "rgba(214,5,43,0.06)", border: "1px solid rgba(214,5,43,0.20)",
           borderRadius: 12, padding: "13px 18px", marginBottom: 22,
           display: "flex", alignItems: "center", gap: 12,
-          fontSize: "0.86rem", fontFamily: APP_FONT_STACK, color: "#8f1020",
+          fontSize: "0.86rem", fontFamily: APP_FONT_STACK, color: "#1d4ed8",
         }}>
           <span style={{ fontWeight: 700, fontSize: "1rem", color: "#c0001a" }}>!</span>
           <span><strong>{unpriced} services</strong> still have a Rs. 0 rate. Tickets with only zero-rated items are blocked at save time.</span>
@@ -1279,13 +1538,13 @@ function RateCard({ services, setServices }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
         {quantityModeSummary.map((item) => (
           <div key={item.id} style={{
-            background: "rgba(255,255,255,0.72)", border: "1px solid rgba(21,18,15,0.09)",
+            background: "rgba(255,255,255,0.72)", border: "1px solid rgba(15,23,42,0.09)",
             borderRadius: 14, padding: "14px 16px",
-            boxShadow: "0 4px 12px rgba(17,14,12,0.05)",
+            boxShadow: "0 4px 12px rgba(15,23,42,0.05)",
           }}>
             <div style={rcEyebrow}>{item.label}</div>
-            <div style={{ fontSize: "1.8rem", fontWeight: 300, color: "#15120f", fontFamily: APP_SERIF_STACK, lineHeight: 1.1 }}>{item.count}</div>
-            <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.52)", lineHeight: 1.5, fontFamily: APP_FONT_STACK, marginTop: 4 }}>
+            <div style={{ fontSize: "1.8rem", fontWeight: 300, color: "#0f172a", fontFamily: APP_SERIF_STACK, lineHeight: 1.1 }}>{item.count}</div>
+            <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", lineHeight: 1.5, fontFamily: APP_FONT_STACK, marginTop: 4 }}>
               {QUANTITY_MODE_CONFIG[item.id].helper}
             </div>
           </div>
@@ -1301,13 +1560,13 @@ function RateCard({ services, setServices }) {
         return (
           <div key={cat} style={{
             marginBottom: 20, borderRadius: 16, overflow: "hidden",
-            border: "1px solid rgba(21,18,15,0.10)",
-            boxShadow: "0 4px 16px rgba(17,14,12,0.05)",
+            border: "1px solid rgba(15,23,42,0.10)",
+            boxShadow: "0 4px 16px rgba(15,23,42,0.05)",
           }}>
             {/* Category header */}
             <div style={{
               background: `rgba(${rgb},0.10)`,
-              borderBottom: "1px solid rgba(21,18,15,0.08)",
+              borderBottom: "1px solid rgba(15,23,42,0.08)",
               padding: "11px 18px",
               display: "flex", alignItems: "center", gap: 10,
             }}>
@@ -1315,7 +1574,7 @@ function RateCard({ services, setServices }) {
               <span style={{ fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.28em", textTransform: "uppercase", color }}>
                 {cat}
               </span>
-              <span style={{ marginLeft: "auto", fontSize: "0.72rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+              <span style={{ marginLeft: "auto", fontSize: "0.72rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
                 {catServices.length} service{catServices.length !== 1 ? "s" : ""}
               </span>
             </div>
@@ -1329,7 +1588,7 @@ function RateCard({ services, setServices }) {
                     gridTemplateColumns: "minmax(0, 1.2fr) minmax(200px, 0.8fr) auto",
                     alignItems: "start",
                     padding: "16px 18px",
-                    borderBottom: i < catServices.length - 1 ? "1px solid rgba(21,18,15,0.07)" : "none",
+                    borderBottom: i < catServices.length - 1 ? "1px solid rgba(15,23,42,0.07)" : "none",
                     gap: 16, transition: "background 0.15s ease",
                   }}
                   onMouseOver={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.82)"}
@@ -1337,15 +1596,15 @@ function RateCard({ services, setServices }) {
                 >
                   {/* Service info */}
                   <div>
-                    <div style={{ fontSize: "0.90rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>
+                    <div style={{ fontSize: "0.90rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>
                       {s.name}
                     </div>
-                    <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK, marginTop: 3, display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK, marginTop: 3, display: "flex", alignItems: "center", gap: 8 }}>
                       <span>{s.unit}</span>
-                      {s.variable && <span style={{ background: "rgba(211,166,90,0.18)", color: "#7b5d2c", borderRadius: 999, padding: "1px 8px", fontSize: "0.62rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>variable</span>}
+                      {s.variable && <span style={{ background: "rgba(59,130,246,0.18)", color: "#1d4ed8", borderRadius: 999, padding: "1px 8px", fontSize: "0.62rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>variable</span>}
                     </div>
-                    <div style={{ fontSize: "0.70rem", color: "rgba(21,18,15,0.38)", marginTop: 5, fontFamily: APP_FONT_STACK }}>
-                      Template: <strong style={{ color: "rgba(21,18,15,0.55)" }}>{getDetailSchemaTitle(s.detailSchemaId)}</strong>
+                    <div style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.38)", marginTop: 5, fontFamily: APP_FONT_STACK }}>
+                      Template: <strong style={{ color: "rgba(15,23,42,0.55)" }}>{getDetailSchemaTitle(s.detailSchemaId)}</strong>
                     </div>
                   </div>
 
@@ -1372,17 +1631,17 @@ function RateCard({ services, setServices }) {
                   {/* Price cell */}
                   {editingId === s.id ? (
                     <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 2 }}>
-                      <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "rgba(21,18,15,0.45)", fontFamily: APP_MONO_STACK }}>Rs.</span>
+                      <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "rgba(15,23,42,0.45)", fontFamily: APP_MONO_STACK }}>Rs.</span>
                       <input
                         autoFocus type="number" defaultValue={s.price || ""} placeholder="0"
                         onBlur={(e) => { updatePrice(s.id, e.target.value); setEditingId(null); }}
                         onKeyDown={(e) => { if (e.key === "Enter") { updatePrice(s.id, e.target.value); setEditingId(null); } }}
                         style={{
                           width: 80, padding: "8px 10px",
-                          border: "2px solid rgba(143,47,47,0.50)", borderRadius: 8,
+                          border: "2px solid rgba(37,99,235,0.50)", borderRadius: 8,
                           fontSize: "0.88rem", fontWeight: 600, fontFamily: APP_MONO_STACK,
                           outline: "none", textAlign: "right",
-                          background: "rgba(255,255,255,0.90)", color: "#15120f",
+                          background: "rgba(255,255,255,0.90)", color: "#0f172a",
                         }}
                       />
                     </div>
@@ -1393,13 +1652,13 @@ function RateCard({ services, setServices }) {
                       style={{
                         cursor: "pointer", padding: "7px 14px", borderRadius: 8, paddingTop: 4,
                         fontSize: "0.88rem", fontWeight: 600, fontFamily: APP_MONO_STACK,
-                        color: s.price > 0 ? "#7b5d2c" : "rgba(21,18,15,0.30)",
-                        background: s.price > 0 ? "rgba(211,166,90,0.14)" : "rgba(21,18,15,0.04)",
-                        border: s.price > 0 ? "1px solid rgba(211,166,90,0.30)" : "1px dashed rgba(21,18,15,0.16)",
+                        color: s.price > 0 ? "#1d4ed8" : "rgba(15,23,42,0.30)",
+                        background: s.price > 0 ? "rgba(59,130,246,0.14)" : "rgba(15,23,42,0.04)",
+                        border: s.price > 0 ? "1px solid rgba(59,130,246,0.30)" : "1px dashed rgba(15,23,42,0.16)",
                         minWidth: 88, textAlign: "right", transition: DS.transColor,
                       }}
                     >
-                      {s.price > 0 ? `Rs. ${s.price}` : "Rs. —"}
+                      {s.price > 0 ? `Rs. ${s.price}` : "Rs.  - "}
                     </div>
                   )}
                 </div>
@@ -1413,27 +1672,27 @@ function RateCard({ services, setServices }) {
       {!addingCustom ? (
         <button onClick={() => setAddingCustom(true)} style={{
           width: "100%", padding: "14px",
-          border: "1px dashed rgba(21,18,15,0.18)", borderRadius: 12,
+          border: "1px dashed rgba(15,23,42,0.18)", borderRadius: 12,
           background: "rgba(255,255,255,0.60)", cursor: "pointer",
           fontFamily: APP_BRAND_STACK, fontSize: "0.60rem",
           letterSpacing: "0.22em", textTransform: "uppercase",
-          color: "rgba(21,18,15,0.45)", fontWeight: 700, transition: DS.transColor,
+          color: "rgba(15,23,42,0.45)", fontWeight: 700, transition: DS.transColor,
         }}>
           + Add Custom Service
         </button>
       ) : (
         <div style={{
-          border: "1px solid rgba(143,47,47,0.22)", borderRadius: 16, padding: 22,
-          background: "rgba(255,255,255,0.72)", boxShadow: "0 6px 18px rgba(17,14,12,0.06)",
+          border: "1px solid rgba(37,99,235,0.22)", borderRadius: 16, padding: 22,
+          background: "rgba(255,255,255,0.72)", boxShadow: "0 6px 18px rgba(15,23,42,0.06)",
         }}>
           <div style={rcEyebrow}>New Service</div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12, marginTop: 8 }}>
             <input placeholder="Service name" value={customName} onChange={(e) => setCustomName(e.target.value)}
               style={{ ...rcInput, flex: 2, minWidth: 160 }} />
-            <div style={{ display: "flex", alignItems: "center", border: "1px solid rgba(21,18,15,0.13)", borderRadius: 10, background: "rgba(255,255,255,0.80)", paddingRight: 10 }}>
-              <span style={{ paddingLeft: 12, color: "#7b5d2c", fontWeight: 600, fontSize: "0.85rem", fontFamily: APP_MONO_STACK }}>Rs.</span>
+            <div style={{ display: "flex", alignItems: "center", border: "1px solid rgba(15,23,42,0.13)", borderRadius: 10, background: "rgba(255,255,255,0.80)", paddingRight: 10 }}>
+              <span style={{ paddingLeft: 12, color: "#1d4ed8", fontWeight: 600, fontSize: "0.85rem", fontFamily: APP_MONO_STACK }}>Rs.</span>
               <input placeholder="0" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} type="number"
-                style={{ width: 80, padding: "9px 8px", border: "none", background: "transparent", fontSize: "0.88rem", fontFamily: APP_MONO_STACK, outline: "none", textAlign: "right", color: "#15120f" }} />
+                style={{ width: 80, padding: "9px 8px", border: "none", background: "transparent", fontSize: "0.88rem", fontFamily: APP_MONO_STACK, outline: "none", textAlign: "right", color: "#0f172a" }} />
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
@@ -1460,16 +1719,16 @@ function RateCard({ services, setServices }) {
                 ))}
               </select>
             </label>
-            <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", border: "1px solid rgba(21,18,15,0.10)", borderRadius: 10, background: "rgba(255,255,255,0.60)", cursor: "pointer" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 10, background: "rgba(255,255,255,0.60)", cursor: "pointer" }}>
               <input type="checkbox" checked={customVariable} onChange={(e) => setCustomVariable(e.target.checked)} />
-              <span style={{ fontSize: "0.82rem", color: "rgba(21,18,15,0.70)", fontWeight: 500, fontFamily: APP_FONT_STACK }}>Allow custom amount at ticket desk</span>
+              <span style={{ fontSize: "0.82rem", color: "rgba(15,23,42,0.70)", fontWeight: 500, fontFamily: APP_FONT_STACK }}>Allow custom amount at ticket desk</span>
             </label>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={addCustom} style={{
               flex: 1, padding: "12px", borderRadius: 999,
-              background: "rgba(143,47,47,0.12)", color: "#6b1f1f",
-              border: "1px solid rgba(143,47,47,0.38)",
+              background: "rgba(37,99,235,0.12)", color: "#1e40af",
+              border: "1px solid rgba(37,99,235,0.38)",
               fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.20em",
               textTransform: "uppercase", cursor: "pointer", fontFamily: APP_BRAND_STACK,
             }}>
@@ -1477,8 +1736,8 @@ function RateCard({ services, setServices }) {
             </button>
             <button onClick={() => setAddingCustom(false)} style={{
               padding: "12px 22px", borderRadius: 999,
-              background: "rgba(255,255,255,0.72)", color: "rgba(21,18,15,0.60)",
-              border: "1px solid rgba(21,18,15,0.14)",
+              background: "rgba(255,255,255,0.72)", color: "rgba(15,23,42,0.60)",
+              border: "1px solid rgba(15,23,42,0.14)",
               fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.18em",
               textTransform: "uppercase", cursor: "pointer", fontFamily: APP_BRAND_STACK,
             }}>
@@ -1942,6 +2201,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const [hasReference, setHasReference] = useState(() => getHasReferenceValue(draftSeed));
   const [customerName, setCustomerName] = useState(() => draftSeed.customerName || "");
   const [customerPhone, setCustomerPhone] = useState(() => draftSeed.customerPhone || "");
+  const [entryDateKey, setEntryDateKey] = useState(() => toIsoDateKey(draftSeed.entryDateKey) || getTicketCounterDateKey(new Date()));
   const [referenceName, setReferenceName] = useState(() => draftSeed.referenceName || "");
   const [referenceLabel, setReferenceLabel] = useState(() => getReferenceLabelValue(draftSeed));
   const [providedDocIds, setProvidedDocIds] = useState(() => (
@@ -2009,6 +2269,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const customerNameInputRef = useRef(null);
   const customerPhoneInputRef = useRef(null);
   const referenceNameInputRef = useRef(null);
+  const referencePhoneInputRef = useRef(null);
+  const entryDateInputRef = useRef(null);
   const selectedServiceConfig = services.find((service) => service.id === selectedService) || null;
   const selectedQuantityConfig = selectedServiceConfig ? getQuantityModeConfig(selectedServiceConfig.quantityMode) : null;
   const selectedDetailSchema = selectedServiceConfig ? getServiceDetailSchema(selectedServiceConfig) : null;
@@ -2031,6 +2293,23 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const isOverpaid = paidTotal > total;
   const requiredDocsCount = documents.filter((doc) => doc.required).length;
   const submittedRequiredDocsCount = documents.filter((doc) => doc.required && doc.submitted).length;
+  const uniqueServiceItems = useMemo(() => {
+    const seen = new Set();
+    return items.filter((item) => {
+      const serviceId = String(item?.id || "").trim();
+      if (!serviceId || seen.has(serviceId)) return false;
+      seen.add(serviceId);
+      return true;
+    });
+  }, [items]);
+  const serviceDocumentGroups = useMemo(
+    () => uniqueServiceItems.map((serviceItem) => ({
+      serviceId: serviceItem.id,
+      serviceName: serviceItem.name,
+      docs: documents.filter((doc) => doc.source === "service_required" && doc.serviceId === serviceItem.id),
+    })),
+    [uniqueServiceItems, documents]
+  );
   const sanitizePhone = (value) => value.replace(/\D/g, "").slice(0, 10);
   const hasOnlyZeroPricedItems = items.length > 0 && total === 0;
   const canSaveTicket = items.length > 0 && !isOverpaid && !hasOnlyZeroPricedItems;
@@ -2044,17 +2323,17 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const surfaceCardStyle = {
     background: "rgba(255,255,255,0.72)",
     borderRadius: 20,
-    border: "1px solid rgba(21,18,15,0.10)",
+    border: "1px solid rgba(15,23,42,0.10)",
     padding: 22,
-    boxShadow: "0 20px 52px rgba(17,14,12,0.10)",
+    boxShadow: "0 20px 52px rgba(15,23,42,0.10)",
     backdropFilter: "blur(4px)",
   };
   const softPanelStyle = {
     background: "rgba(255,255,255,0.52)",
     borderRadius: 14,
-    border: "1px solid rgba(21,18,15,0.07)",
+    border: "1px solid rgba(15,23,42,0.07)",
     padding: 18,
-    boxShadow: "0 10px 24px rgba(17,14,12,0.06)",
+    boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
   };
   const sectionEyebrowStyle = {
     fontSize: "0.54rem",
@@ -2069,21 +2348,21 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const inputStyle = {
     width: "100%",
     padding: "11px 14px",
-    border: "1px solid rgba(21,18,15,0.12)",
+    border: "1px solid rgba(15,23,42,0.12)",
     borderRadius: 10,
     background: "rgba(255,255,255,0.82)",
-    color: "#15120f",
+    color: "#0f172a",
     outline: "none",
     fontFamily: APP_FONT_STACK,
     fontSize: "0.88rem",
-    boxShadow: "inset 0 1px 2px rgba(21,18,15,0.04)",
+    boxShadow: "inset 0 1px 2px rgba(15,23,42,0.04)",
   };
   const primaryButtonStyle = {
-    border: "1px solid rgba(143,47,47,0.50)",
+    border: "1px solid rgba(37,99,235,0.50)",
     borderRadius: 999,
     padding: "12px 22px",
-    background: "rgba(143,47,47,0.14)",
-    color: "#6b1f1f",
+    background: "rgba(37,99,235,0.14)",
+    color: "#1e40af",
     fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
     fontSize: "0.6rem",
@@ -2093,11 +2372,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     transition: "all 0.22s ease",
   };
   const secondaryButtonStyle = {
-    border: "1px solid rgba(21,18,15,0.14)",
+    border: "1px solid rgba(15,23,42,0.14)",
     borderRadius: 999,
     padding: "12px 22px",
     background: "rgba(255,255,255,0.72)",
-    color: "rgba(21,18,15,0.78)",
+    color: "rgba(15,23,42,0.78)",
     fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
     fontSize: "0.6rem",
@@ -2126,60 +2405,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         ? "Local save failed"
         : "Draft idle";
   const draftStatusAccent = draftStorageState === "error"
-    ? "#8f1020"
+    ? "#1d4ed8"
     : draftStorageState === "saving"
-      ? "#7b5d2c"
-      : "rgba(21,18,15,0.55)";
-  const workspaceMetrics = [
-    {
-      label: "Current step",
-      value: step === 1 ? "Intake" : "Ticket",
-      helper: step === 1 ? "Capture holder and optional reference" : "Build tasks and payment",
-    },
-    {
-      label: "Services added",
-      value: String(items.length),
-      helper: items.length > 0 ? `Draft total Rs. ${total}` : "No services selected yet",
-    },
-    {
-      label: "Required docs",
-      value: `${submittedRequiredDocsCount}/${requiredDocsCount}`,
-      helper: requiredDocsCount > 0 ? "Submitted vs tracked" : "No required docs yet",
-    },
-    {
-      label: "Balance",
-      value: `Rs. ${pendingBalance}`,
-      helper: paidTotal > 0 ? `Collected Rs. ${paidTotal}` : "No payment collected",
-    },
-  ];
-  const flowNavItems = [
-    {
-      id: "home",
-      label: "Intake (Home)",
-      helper: "Capture holder and reference details",
-      active: step === 1,
-      action: () => {
-        if (step === 1) return;
-        navigateToStep(1, "replace");
-      },
-    },
-    {
-      id: "second",
-      label: "Ticket Builder (Second)",
-      helper: "Add services, documents, and payment",
-      active: step === 2,
-      action: () => {
-        if (step === 2) return;
-        createTicket();
-      },
-    },
-  ];
-  const goToPageItems = [
-    { id: "rates", label: "Rate Card", helper: "Edit service rules", tabId: "rates" },
-    { id: "log", label: "Ticket Dashboard", helper: "Review saved tickets", tabId: "log" },
-    { id: "b2b", label: "B2B Desk", helper: "Jump to partner workspace", tabId: "b2b" },
-  ];
-
+      ? "#1d4ed8"
+      : "rgba(15,23,42,0.55)";
   function navigateToStep(nextStep, mode = "push") {
     const normalizedStep = nextStep === 2 ? 2 : 1;
     if (normalizedStep === step) {
@@ -2198,6 +2427,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     hasReference,
     customerName,
     customerPhone,
+    entryDateKey,
     referenceName,
     referenceLabel,
     providedDocIds,
@@ -2279,6 +2509,13 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     }
   }, [selectedService]);
 
+  useEffect(() => {
+    setDocuments((current) => {
+      const synced = syncServiceRequiredDocuments(current, items);
+      return areDocumentListsEqual(current, synced) ? current : synced;
+    });
+  }, [items]);
+
   useEffect(() => () => {
     if (undoTimeoutRef.current) {
       clearTimeout(undoTimeoutRef.current);
@@ -2297,6 +2534,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       customerName: customerNameInputRef,
       customerPhone: customerPhoneInputRef,
       referenceName: referenceNameInputRef,
+      referencePhone: referencePhoneInputRef,
+      entryDateKey: entryDateInputRef,
     };
     const targetRef = refByField[fieldKey];
     if (!targetRef?.current) return;
@@ -2304,38 +2543,81 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     targetRef.current.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
   };
 
-  const validateIntakeDetails = () => {
+  const getIntakeValidationSnapshot = () => {
     const trimmedName = customerName.trim();
     const phoneDigits = sanitizePhone(customerPhone);
+    const normalizedEntryDateKey = toIsoDateKey(entryDateKey);
+    const todayKey = getTicketCounterDateKey(new Date());
+    const minEntryDateKey = getOffsetDateKey(-2);
     const trimmedReferenceName = referenceName.trim();
-    const trimmedReferenceLabel = referenceLabel.trim();
+    const referencePhoneDigits = sanitizePhone(referenceLabel);
     const referenceEnabled = hasReference && Boolean(trimmedReferenceName);
     const nextErrors = {};
 
     if (!trimmedName) {
       nextErrors.customerName = "Document holder name is required.";
     }
+    if (!PHONE_REGEX.test(phoneDigits)) {
+      nextErrors.customerPhone = "Contact number must be exactly 10 digits.";
+    }
+    if (!normalizedEntryDateKey) {
+      nextErrors.entryDateKey = "Entry date is required.";
+    } else if (normalizedEntryDateKey > todayKey) {
+      nextErrors.entryDateKey = "Entry date cannot be in the future.";
+    } else if (normalizedEntryDateKey < minEntryDateKey) {
+      nextErrors.entryDateKey = "Only today or past 2 days entries are allowed.";
+    }
     if (hasReference && !trimmedReferenceName) {
       nextErrors.referenceName = "Reference name is required when reference is enabled.";
     }
-    if (phoneDigits && !PHONE_REGEX.test(phoneDigits)) {
-      nextErrors.customerPhone = "Contact number must be exactly 10 digits.";
+    if (hasReference && !PHONE_REGEX.test(referencePhoneDigits)) {
+      nextErrors.referencePhone = "Reference mobile number must be exactly 10 digits.";
     }
 
+    return {
+      nextErrors,
+      trimmedName,
+      phoneDigits,
+      normalizedEntryDateKey,
+      trimmedReferenceName,
+      referencePhoneDigits,
+      referenceEnabled,
+    };
+  };
+
+  const validateIntakeDetails = ({ focusOnError = true } = {}) => {
+    const {
+      nextErrors,
+      trimmedName,
+      phoneDigits,
+      normalizedEntryDateKey,
+      trimmedReferenceName,
+      referencePhoneDigits,
+      referenceEnabled,
+    } = getIntakeValidationSnapshot();
     setIntakeFieldErrors(nextErrors);
 
-    const firstInvalidField = ["customerName", "referenceName", "customerPhone"].find((fieldKey) => nextErrors[fieldKey]);
+    const firstInvalidField = ["customerName", "customerPhone", "entryDateKey", "referenceName", "referencePhone"].find((fieldKey) => nextErrors[fieldKey]);
     if (firstInvalidField) {
       setError(nextErrors[firstInvalidField]);
-      focusIntakeField(firstInvalidField);
+      const fieldStepMap = {
+        customerName: 1,
+        customerPhone: 1,
+        entryDateKey: 1,
+        referenceName: 1,
+        referencePhone: 1,
+      };
+      setSubStep(fieldStepMap[firstInvalidField] || 1);
+      if (focusOnError) focusIntakeField(firstInvalidField);
     }
 
     return {
       isValid: !firstInvalidField,
       trimmedName,
       phoneDigits,
+      normalizedEntryDateKey,
       trimmedReferenceName,
-      trimmedReferenceLabel,
+      trimmedReferenceLabel: referencePhoneDigits,
       referenceEnabled,
     };
   };
@@ -2352,16 +2634,24 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   };
 
   const createTicket = () => {
-    const intakeValidation = validateIntakeDetails();
+    const intakeValidation = validateIntakeDetails({ focusOnError: true });
     if (!intakeValidation.isValid) {
       return;
     }
 
-    const { trimmedName, phoneDigits, trimmedReferenceName, trimmedReferenceLabel, referenceEnabled } = intakeValidation;
+    const {
+      trimmedName,
+      phoneDigits,
+      normalizedEntryDateKey,
+      trimmedReferenceName,
+      trimmedReferenceLabel,
+      referenceEnabled,
+    } = intakeValidation;
     setTicketMeta({
       ticketNo: generateBillNo(),
-      date: todayStr(),
+      date: formatIsoDateForDisplay(normalizedEntryDateKey),
       time: timeStr(),
+      entryDateKey: normalizedEntryDateKey,
       hasReference: referenceEnabled,
       referenceName: referenceEnabled ? trimmedReferenceName : "",
       referenceLabel: referenceEnabled ? trimmedReferenceLabel : "",
@@ -2376,6 +2666,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       return {
         id: `doc_intake_${docId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         name: preset ? preset.label : docId,
+        docPresetId: preset?.id || "",
         required: false,
         submitted: true,
         source: "intake",
@@ -2440,6 +2731,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       {
         id: `doc_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         name: cleanName,
+        docPresetId: DOCUMENT_PRESET_BY_NAME[normalizeDocNameKey(cleanName)]?.id || "",
         required: docRequired,
         submitted: false,
       },
@@ -2477,6 +2769,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     )));
   };
 
+  const setDocumentSubmitted = (docId, nextSubmitted) => {
+    setDocuments((prev) => prev.map((doc) => (
+      doc.id === docId ? { ...doc, submitted: Boolean(nextSubmitted) } : doc
+    )));
+  };
+
   const removeTask = (idx) => {
     if (idx < 0 || idx >= items.length) return;
     const removedItem = items[idx];
@@ -2495,14 +2793,17 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const saveTicket = (status) => {
     if (!ticketMeta) return;
     if (items.length === 0) {
+      setSubStep(1);
       setError("Add at least one service before saving ticket.");
       return;
     }
     if (isOverpaid) {
+      setSubStep(3);
       setError("Collected amount cannot exceed ticket total.");
       return;
     }
     if (hasOnlyZeroPricedItems) {
+      setSubStep(3);
       setError("This ticket is still fully unpriced. Set at least one rate before saving.");
       return;
     }
@@ -2546,6 +2847,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     setHasReference(false);
     setCustomerName("");
     setCustomerPhone("");
+    setEntryDateKey(getTicketCounterDateKey(new Date()));
     setReferenceName("");
     setReferenceLabel("");
     setProvidedDocIds([]);
@@ -2577,47 +2879,47 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   if (saved) {
     return (
       <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-        <div id="receipt" style={{ background: "rgba(255,250,242,0.96)", border: "1px solid rgba(21,18,15,0.12)", borderRadius: 20, padding: "28px 24px", maxWidth: 420, margin: "0 auto", color: "#15120f", boxShadow: "0 20px 52px rgba(17,14,12,0.12)" }}>
+        <div id="receipt" style={{ background: "rgba(255,255,255,0.96)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 20, padding: "28px 24px", maxWidth: 420, margin: "0 auto", color: "#0f172a", boxShadow: "0 20px 52px rgba(15,23,42,0.12)" }}>
           <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.6rem", letterSpacing: "0.36em", textTransform: "uppercase", color: DS.wine, textAlign: "center", marginBottom: 8 }}>CSC Ticket Slip</div>
-          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "0.72rem", textAlign: "center", color: saved.status === "Open" ? "#7b5d2c" : DS.wine, fontWeight: 400, marginBottom: 16, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "0.72rem", textAlign: "center", color: saved.status === "Open" ? "#1d4ed8" : DS.wine, fontWeight: 400, marginBottom: 16, letterSpacing: "0.12em", textTransform: "uppercase" }}>
             {saved.status}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: "0.66rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(21,18,15,0.45)" }}>Document Holder</div>
+              <div style={{ fontSize: "0.66rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)" }}>Document Holder</div>
               <div style={{ fontWeight: 700, fontSize: "0.9rem", fontFamily: APP_FONT_STACK }}>{saved.customerName}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "0.66rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(21,18,15,0.45)" }}>Ticket</div>
+              <div style={{ fontSize: "0.66rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)" }}>Ticket</div>
               <div style={{ fontWeight: 700, fontSize: "0.9rem", fontFamily: APP_MONO_STACK }}>{saved.ticketNo}</div>
             </div>
           </div>
-          <div style={{ fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", marginBottom: 5, fontFamily: APP_FONT_STACK }}>
+          <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", marginBottom: 5, fontFamily: APP_FONT_STACK }}>
             Reference Contact: {formatReferenceSummary(toStructuredTicket(saved).parties.reference)}
           </div>
           {!!saved.customerPhone && (
-            <div style={{ fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", marginBottom: 12, fontFamily: APP_FONT_STACK }}>Contact: {saved.customerPhone}</div>
+            <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", marginBottom: 12, fontFamily: APP_FONT_STACK }}>Contact: {saved.customerPhone}</div>
           )}
-          <div style={{ borderTop: "1px solid rgba(21,18,15,0.10)", borderBottom: "1px solid rgba(21,18,15,0.10)", padding: "10px 0", marginBottom: 12 }}>
+          <div style={{ borderTop: "1px solid rgba(15,23,42,0.10)", borderBottom: "1px solid rgba(15,23,42,0.10)", padding: "10px 0", marginBottom: 12 }}>
             {saved.items.map((it, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, color: "#15120f" }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, color: "#0f172a" }}>
                 <span>{it.name}</span>
-                <span style={{ color: "rgba(21,18,15,0.55)" }}>×{it.qty}</span>
+                <span style={{ color: "rgba(15,23,42,0.55)" }}>x{it.qty}</span>
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, color: "rgba(21,18,15,0.60)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.60)" }}>
             <span>Operator: {saved.operator}</span>
             <span>Pay: {saved.payMode}</span>
           </div>
-          <div style={{ marginTop: 5, fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>
+          <div style={{ marginTop: 5, fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>
             Payment: {saved.paymentStatus || "Unpaid"} | Paid Rs. {saved.paidTotal || 0} | Pending Rs. {saved.pendingBalance || 0}
           </div>
-          <div style={{ marginTop: 5, fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>
+          <div style={{ marginTop: 5, fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>
             Docs: {saved.documents?.filter((doc) => doc.required && doc.submitted).length || 0}/{saved.documents?.filter((doc) => doc.required).length || 0} required submitted
           </div>
           {!!saved.documents?.filter((doc) => doc.submitted).length && (
-            <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(21,18,15,0.45)", fontFamily: APP_FONT_STACK }}>
+            <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
               Provided docs: {saved.documents.filter((doc) => doc.submitted).map((doc) => doc.name).join(", ")}
             </div>
           )}
@@ -2632,108 +2934,34 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      {!saved && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 16 }}>
-          {workspaceMetrics.map((metric) => (
-            <div key={metric.label} style={{ ...surfaceCardStyle, padding: 16, minHeight: 106 }}>
-              <div style={{ ...sectionEyebrowStyle, marginBottom: 6 }}>
-                {metric.label}
-              </div>
-              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.7rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 4, lineHeight: 1 }}>
-                {metric.value}
-              </div>
-              <div style={{ fontSize: "0.78rem", lineHeight: 1.55, color: "rgba(21,18,15,0.58)" }}>
-                {metric.helper}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!saved && (
-        <div style={{ ...surfaceCardStyle, marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start", marginBottom: 14 }}>
-            <div>
-              <div style={sectionEyebrowStyle}>Flow Map</div>
-              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.45rem", fontWeight: 300, letterSpacing: "-0.015em", color: "#15120f", marginBottom: 6 }}>
-                Intake, Ticket Builder, and Workspace Switch
-              </div>
-              <div style={{ maxWidth: 620, fontSize: "0.84rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
-                Use Intake for customer context, Ticket Builder for services and payment, and Workspace Switch to jump tabs without losing draft state.
-              </div>
-            </div>
-            <div style={{ ...smallBadgeStyle, background: "rgba(21,18,15,0.05)", border: "1px solid rgba(21,18,15,0.10)", color: "rgba(21,18,15,0.55)" }}>
-              Browser back stays in flow
-            </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 12 }}>
-            {flowNavItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={item.action}
-                style={{
-                  textAlign: "left",
-                  padding: "14px 16px",
-                  borderRadius: 14,
-                  border: item.active ? "1px solid rgba(143,47,47,0.35)" : "1px solid rgba(21,18,15,0.09)",
-                  background: item.active ? "linear-gradient(180deg, rgba(143,47,47,0.09) 0%, rgba(143,47,47,0.05) 100%)" : "rgba(255,255,255,0.60)",
-                  color: item.active ? DS.wine : "#15120f",
-                  cursor: "pointer",
-                  boxShadow: item.active ? "0 8px 24px rgba(143,47,47,0.10)" : "0 4px 12px rgba(17,14,12,0.04)",
-                  transition: "all 0.2s ease",
-                  fontFamily: APP_FONT_STACK,
-                }}
-              >
-                <div style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: 5, color: item.active ? DS.wine : "#15120f" }}>{item.label}</div>
-                <div style={{ fontSize: "0.78rem", lineHeight: 1.5, color: item.active ? DS.wine : "rgba(21,18,15,0.55)" }}>{item.helper}</div>
-              </button>
-            ))}
-          </div>
-          <div style={{ ...softPanelStyle, padding: 14 }}>
-            <div style={{ ...sectionEyebrowStyle, marginBottom: 8 }}>Switch Workspace (Go To Page)</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
-              {goToPageItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigateTab?.(item.tabId)}
-                  style={{
-                    textAlign: "left",
-                    padding: "12px 14px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(21,18,15,0.08)",
-                    background: "rgba(255,255,255,0.72)",
-                    color: "#15120f",
-                    cursor: "pointer",
-                    fontFamily: APP_FONT_STACK,
-                    transition: "all 0.18s ease",
-                  }}
-                >
-                  <div style={{ fontSize: "0.86rem", fontWeight: 700, marginBottom: 3 }}>{item.label}</div>
-                  <div style={{ fontSize: "0.76rem", lineHeight: 1.5, color: "rgba(21,18,15,0.55)" }}>{item.helper}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {step === 1 && (() => {
         const WIZARD_STEPS = [
-          { num: 1, label: "Reference", short: "Ref" },
-          { num: 2, label: "Customer", short: "Info" },
-          { num: 3, label: "Documents", short: "Docs" },
-          { num: 4, label: "Operator", short: "Op" },
+          { num: 1, label: "Customer", short: "Info" },
+          { num: 2, label: "Documents", short: "Docs" },
+          { num: 3, label: "Operator", short: "Op" },
         ];
         const totalSubSteps = WIZARD_STEPS.length;
+        const intakeSnapshot = getIntakeValidationSnapshot();
+        const intakeStepHasError = {
+          1: Boolean(
+            intakeSnapshot.nextErrors.customerName
+            || intakeSnapshot.nextErrors.customerPhone
+            || intakeSnapshot.nextErrors.entryDateKey
+            || intakeSnapshot.nextErrors.referenceName
+            || intakeSnapshot.nextErrors.referencePhone
+          ),
+          2: false,
+          3: false,
+        };
 
         const goNextSubStep = () => {
-          if (subStep === 2) {
-            const intakeValidation = validateIntakeDetails();
-            if (!intakeValidation.isValid) return;
-          }
           setError("");
           if (subStep < totalSubSteps) setSubStep(subStep + 1);
-          else createTicket();
+          else {
+            const intakeValidation = validateIntakeDetails({ focusOnError: true });
+            if (!intakeValidation.isValid) return;
+            createTicket();
+          }
         };
 
         const goPrevSubStep = () => {
@@ -2746,53 +2974,78 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             {/* Wizard progress strip */}
             <div style={{ marginBottom: 28 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <div style={sectionEyebrowStyle}>Intake — Step {subStep} of {totalSubSteps}</div>
-                <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.30)", color: draftStatusAccent }}>
-                  {draftStatusLabel}{draftSavedAt ? ` · ${formatSyncTime(draftSavedAt)}` : ""}
+                <div style={sectionEyebrowStyle}>Intake  -  Step {subStep} of {totalSubSteps}</div>
+                <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.30)", color: draftStatusAccent }}>
+                  {draftStatusLabel}{draftSavedAt ? `  |  ${formatSyncTime(draftSavedAt)}` : ""}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 {WIZARD_STEPS.map((ws, i) => {
                   const done = subStep > ws.num;
                   const active = subStep === ws.num;
+                  const hasError = intakeStepHasError[ws.num];
                   return (
                     <React.Fragment key={ws.num}>
                       <button
                         onClick={() => { setError(""); setSubStep(ws.num); }}
                         style={{
                           display: "flex", alignItems: "center", gap: 7,
-                          padding: "7px 13px", borderRadius: 999, border: "none",
-                          background: active ? DS.wine : done ? "rgba(143,47,47,0.12)" : "rgba(21,18,15,0.06)",
-                          color: active ? "#fff" : done ? DS.wine : "rgba(21,18,15,0.45)",
+                          padding: "7px 13px", borderRadius: 999,
+                          border: hasError && !active ? "1px solid rgba(214,5,43,0.32)" : "none",
+                          background: active
+                            ? DS.wine
+                            : hasError
+                              ? "rgba(214,5,43,0.09)"
+                              : done
+                                ? "rgba(37,99,235,0.12)"
+                                : "rgba(15,23,42,0.06)",
+                          color: active
+                            ? "#fff"
+                            : hasError
+                              ? "#1d4ed8"
+                              : done
+                                ? DS.wine
+                                : "rgba(15,23,42,0.45)",
                           fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem",
                           letterSpacing: "0.18em", textTransform: "uppercase",
-                          cursor: done ? "pointer" : active ? "default" : "not-allowed",
+                          cursor: "pointer",
                           transition: "all 0.22s ease",
-                          pointerEvents: done ? "auto" : active ? "none" : "none",
                         }}
                       >
                         <span style={{
                           width: 18, height: 18, borderRadius: "50%",
-                          background: active ? "rgba(255,255,255,0.22)" : done ? DS.wine : "rgba(21,18,15,0.10)",
-                          color: active ? "#fff" : done ? "#fff" : "rgba(21,18,15,0.40)",
+                          background: active
+                            ? "rgba(255,255,255,0.22)"
+                            : hasError
+                              ? "rgba(214,5,43,0.16)"
+                              : done
+                                ? DS.wine
+                                : "rgba(15,23,42,0.10)",
+                          color: active
+                            ? "#fff"
+                            : hasError
+                              ? "#1d4ed8"
+                              : done
+                                ? "#fff"
+                                : "rgba(15,23,42,0.40)",
                           display: "inline-flex", alignItems: "center", justifyContent: "center",
                           fontSize: "0.62rem", fontWeight: 700, fontFamily: APP_BRAND_STACK,
                           flexShrink: 0,
                         }}>
-                          {done ? "✓" : ws.num}
+                          {hasError ? "!" : done ? "v" : ws.num}
                         </span>
                         {ws.label}
                       </button>
                       {i < WIZARD_STEPS.length - 1 && (
-                        <div style={{ flex: 1, height: 1, background: done ? "rgba(143,47,47,0.25)" : "rgba(21,18,15,0.08)", borderRadius: 1, minWidth: 8 }} />
+                        <div style={{ flex: 1, height: 1, background: done ? "rgba(37,99,235,0.25)" : "rgba(15,23,42,0.08)", borderRadius: 1, minWidth: 8 }} />
                       )}
                     </React.Fragment>
                   );
                 })}
               </div>
               {/* thin progress bar */}
-              <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(21,18,15,0.07)", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${((subStep - 1) / (totalSubSteps - 1)) * 100}%`, background: `linear-gradient(90deg, ${DS.wine}, rgba(211,166,90,0.80))`, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
+              <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(15,23,42,0.07)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${((subStep - 1) / (totalSubSteps - 1)) * 100}%`, background: `linear-gradient(90deg, ${DS.wine}, rgba(59,130,246,0.80))`, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
               </div>
             </div>
 
@@ -2800,73 +3053,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             {subStep === 1 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
-                    Reference Contact
-                  </div>
-                  <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)", maxWidth: 560 }}>
-                    Add a reference only when someone else needs to be attached to this ticket.
-                    You can name the reference however it fits the case.
-                  </div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-                  {[
-                    {
-                      id: "no_reference",
-                      icon: "—",
-                      title: "No Reference",
-                      helper: "The document holder is the only person on this ticket.",
-                      active: !hasReference,
-                      onClick: () => {
-                        setHasReference(false);
-                        setIntakeFieldErrors((prev) => ({ ...prev, referenceName: "" }));
-                        setError("");
-                      },
-                    },
-                    {
-                      id: "with_reference",
-                      icon: "+",
-                      title: "Add Reference",
-                      helper: "Another person should be attached — agent, relative, or colleague.",
-                      active: hasReference,
-                      onClick: () => {
-                        setHasReference(true);
-                        setError("");
-                      },
-                    },
-                  ].map((choice) => (
-                    <button
-                      key={choice.id}
-                      onClick={choice.onClick}
-                      style={{
-                        textAlign: "left", padding: "20px 18px", borderRadius: 16,
-                        border: choice.active ? "1.5px solid rgba(143,47,47,0.45)" : "1px solid rgba(21,18,15,0.10)",
-                        background: choice.active ? "linear-gradient(135deg, rgba(143,47,47,0.09) 0%, rgba(143,47,47,0.04) 100%)" : "rgba(255,255,255,0.72)",
-                        cursor: "pointer", fontFamily: APP_FONT_STACK,
-                        transition: "all 0.22s ease",
-                        boxShadow: choice.active ? "0 10px 28px rgba(143,47,47,0.12)" : "0 4px 14px rgba(17,14,12,0.05)",
-                      }}
-                    >
-                      <div style={{ width: 36, height: 36, borderRadius: 10, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", fontWeight: 700, background: choice.active ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.06)", color: choice.active ? DS.wine : "rgba(21,18,15,0.40)" }}>
-                        {choice.icon}
-                      </div>
-                      <div style={{ fontSize: "1rem", fontWeight: 700, color: choice.active ? DS.wine : "#15120f", marginBottom: 7 }}>{choice.title}</div>
-                      <div style={{ fontSize: "0.83rem", color: choice.active ? "rgba(143,47,47,0.70)" : "rgba(21,18,15,0.52)", lineHeight: 1.55 }}>
-                        {choice.helper}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {subStep === 2 && (
-              <div style={{ animation: "fadeIn 0.28s ease-out" }}>
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
+                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
                     Customer Details
                   </div>
-                  <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
-                    Who is this file for? {hasReference ? "Add their reference contact below too." : "No reference will be added."}
+                  <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.60)" }}>
+                    Enter customer mobile number, name, and entry date first. Add reference person with number if needed.
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
@@ -2882,7 +3073,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         setIntakeFieldErrors((prev) => ({ ...prev, customerName: "" }));
                         setError("");
                       }}
-                      onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
                       style={{
                         ...inputStyle,
                         fontSize: "1rem",
@@ -2892,24 +3082,23 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       }}
                     />
                     {intakeFieldErrors.customerName && (
-                      <span style={{ fontSize: "0.78rem", color: "#8f1020", fontFamily: APP_FONT_STACK }}>
+                      <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
                         {intakeFieldErrors.customerName}
                       </span>
                     )}
                   </label>
                   <label style={{ display: "grid", gap: 8 }}>
-                    <span style={sectionEyebrowStyle}>Contact Number</span>
+                    <span style={sectionEyebrowStyle}>Customer Mobile Number *</span>
                     <input
                       ref={customerPhoneInputRef}
                       type="tel"
-                      placeholder="Optional, 10 digits"
+                      placeholder="10 digits"
                       value={customerPhone}
                       onChange={(e) => {
                         setCustomerPhone(sanitizePhone(e.target.value));
                         setIntakeFieldErrors((prev) => ({ ...prev, customerPhone: "" }));
                         setError("");
                       }}
-                      onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
                       style={{
                         ...inputStyle,
                         fontSize: "1rem",
@@ -2919,15 +3108,61 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       }}
                     />
                     {intakeFieldErrors.customerPhone && (
-                      <span style={{ fontSize: "0.78rem", color: "#8f1020", fontFamily: APP_FONT_STACK }}>
+                      <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
                         {intakeFieldErrors.customerPhone}
                       </span>
                     )}
                   </label>
+                  <label style={{ display: "grid", gap: 8 }}>
+                    <span style={sectionEyebrowStyle}>Entry Date *</span>
+                    <input
+                      ref={entryDateInputRef}
+                      type="date"
+                      min={getOffsetDateKey(-2)}
+                      max={getTicketCounterDateKey(new Date())}
+                      value={entryDateKey}
+                      onChange={(e) => {
+                        setEntryDateKey(toIsoDateKey(e.target.value));
+                        setIntakeFieldErrors((prev) => ({ ...prev, entryDateKey: "" }));
+                        setError("");
+                      }}
+                      style={{
+                        ...inputStyle,
+                        fontSize: "1rem",
+                        padding: "13px 16px",
+                        border: intakeFieldErrors.entryDateKey ? "1px solid rgba(214,5,43,0.45)" : inputStyle.border,
+                        boxShadow: intakeFieldErrors.entryDateKey ? "0 0 0 2px rgba(214,5,43,0.08)" : inputStyle.boxShadow,
+                      }}
+                    />
+                    {intakeFieldErrors.entryDateKey && (
+                      <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
+                        {intakeFieldErrors.entryDateKey}
+                      </span>
+                    )}
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 10, background: "rgba(255,255,255,0.60)", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={hasReference}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setHasReference(checked);
+                        if (!checked) {
+                          setReferenceName("");
+                          setReferenceLabel("");
+                          setIntakeFieldErrors((prev) => ({ ...prev, referenceName: "", referencePhone: "" }));
+                        }
+                        setError("");
+                      }}
+                    />
+                    <span style={{ fontSize: "0.82rem", color: "rgba(15,23,42,0.70)", fontWeight: 500, fontFamily: APP_FONT_STACK }}>
+                      Add reference person
+                    </span>
+                  </label>
                   {hasReference && (
                     <>
                       <label style={{ display: "grid", gap: 8 }}>
-                        <span style={sectionEyebrowStyle}>Reference Name *</span>
+                        <span style={sectionEyebrowStyle}>Reference Person Name *</span>
                         <input
                           ref={referenceNameInputRef}
                           placeholder="Riya Sharma"
@@ -2937,7 +3172,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             setIntakeFieldErrors((prev) => ({ ...prev, referenceName: "" }));
                             setError("");
                           }}
-                          onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
                           style={{
                             ...inputStyle,
                             fontSize: "1rem",
@@ -2947,20 +3181,36 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                           }}
                         />
                         {intakeFieldErrors.referenceName && (
-                          <span style={{ fontSize: "0.78rem", color: "#8f1020", fontFamily: APP_FONT_STACK }}>
+                          <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
                             {intakeFieldErrors.referenceName}
                           </span>
                         )}
                       </label>
                       <label style={{ display: "grid", gap: 8 }}>
-                        <span style={sectionEyebrowStyle}>Reference Label</span>
+                        <span style={sectionEyebrowStyle}>Reference Mobile Number *</span>
                         <input
-                          placeholder="e.g. relative, agent, office staff"
+                          ref={referencePhoneInputRef}
+                          type="tel"
+                          placeholder="10 digits"
                           value={referenceLabel}
-                          onChange={(e) => setReferenceLabel(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && goNextSubStep()}
-                          style={{ ...inputStyle, fontSize: "1rem", padding: "13px 16px" }}
+                          onChange={(e) => {
+                            setReferenceLabel(sanitizePhone(e.target.value));
+                            setIntakeFieldErrors((prev) => ({ ...prev, referencePhone: "" }));
+                            setError("");
+                          }}
+                          style={{
+                            ...inputStyle,
+                            fontSize: "1rem",
+                            padding: "13px 16px",
+                            border: intakeFieldErrors.referencePhone ? "1px solid rgba(214,5,43,0.45)" : inputStyle.border,
+                            boxShadow: intakeFieldErrors.referencePhone ? "0 0 0 2px rgba(214,5,43,0.08)" : inputStyle.boxShadow,
+                          }}
                         />
+                        {intakeFieldErrors.referencePhone && (
+                          <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
+                            {intakeFieldErrors.referencePhone}
+                          </span>
+                        )}
                       </label>
                     </>
                   )}
@@ -2968,19 +3218,19 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               </div>
             )}
 
-            {subStep === 3 && (
+            {subStep === 2 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
                   <div>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
                       Documents at Intake
                     </div>
-                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
+                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.60)" }}>
                       What did the customer hand over right now? These prefill the ticket checklist.
                     </div>
                   </div>
                   {providedDocIds.length > 0 && (
-                    <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.30)", color: "#7b5d2c" }}>
+                    <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.30)", color: "#1d4ed8" }}>
                       {providedDocIds.length} selected
                     </div>
                   )}
@@ -2995,20 +3245,20 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         style={{
                           display: "flex", alignItems: "center", gap: 10,
                           padding: "13px 14px", borderRadius: 12,
-                          border: checked ? "1.5px solid rgba(184,148,63,0.50)" : "1px solid rgba(21,18,15,0.10)",
-                          background: checked ? "linear-gradient(135deg, rgba(184,148,63,0.13) 0%, rgba(184,148,63,0.06) 100%)" : "rgba(255,255,255,0.72)",
-                          color: checked ? "#7b5d2c" : "#15120f",
+                          border: checked ? "1.5px solid rgba(59,130,246,0.50)" : "1px solid rgba(15,23,42,0.10)",
+                          background: checked ? "linear-gradient(135deg, rgba(59,130,246,0.13) 0%, rgba(59,130,246,0.06) 100%)" : "rgba(255,255,255,0.72)",
+                          color: checked ? "#1d4ed8" : "#0f172a",
                           cursor: "pointer", fontSize: "0.86rem", fontFamily: APP_FONT_STACK, fontWeight: 600,
                           transition: "all 0.18s ease", textAlign: "left",
-                          boxShadow: checked ? "0 6px 18px rgba(184,148,63,0.14)" : "0 3px 10px rgba(17,14,12,0.04)",
+                          boxShadow: checked ? "0 6px 18px rgba(59,130,246,0.14)" : "0 3px 10px rgba(15,23,42,0.04)",
                         }}
                       >
                         <span style={{
                           width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                          background: checked ? "rgba(184,148,63,0.22)" : "rgba(21,18,15,0.07)",
-                          color: checked ? "#7b5d2c" : "rgba(21,18,15,0.35)", fontSize: "0.72rem",
+                          background: checked ? "rgba(59,130,246,0.22)" : "rgba(15,23,42,0.07)",
+                          color: checked ? "#1d4ed8" : "rgba(15,23,42,0.35)", fontSize: "0.72rem",
                         }}>
-                          {checked ? "✓" : ""}
+                          {checked ? "v" : ""}
                         </span>
                         {doc.label}
                       </button>
@@ -3016,26 +3266,26 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   })}
                 </div>
                 {providedDocIds.length === 0 && (
-                  <div style={{ marginTop: 14, fontSize: "0.82rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
-                    Nothing selected — you can skip and add documents manually in the ticket.
+                  <div style={{ marginTop: 14, fontSize: "0.82rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
+                    Nothing selected  -  you can skip and add documents manually in the ticket.
                   </div>
                 )}
               </div>
             )}
 
-            {subStep === 4 && (
+            {subStep === 3 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
                   <div>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
                       Assign Operator
                     </div>
-                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.60)" }}>
+                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.60)" }}>
                       Pick the desk owner handling this file. Their metrics are live.
                     </div>
                   </div>
-                  <div style={{ ...smallBadgeStyle, background: "rgba(21,18,15,0.05)", border: "1px solid rgba(21,18,15,0.09)", color: "rgba(21,18,15,0.55)" }}>
-                    {selectedOperatorConfig.role} · Avg Rs. {selectedOperatorMetrics.avgTicketRate}
+                  <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(15,23,42,0.09)", color: "rgba(15,23,42,0.55)" }}>
+                    {selectedOperatorConfig.role}  |  Avg Rs. {selectedOperatorMetrics.avgTicketRate}
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
@@ -3048,31 +3298,31 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         onClick={() => setOperator(op.name)}
                         style={{
                           textAlign: "left", padding: "18px 16px", borderRadius: 16,
-                          border: active ? "1.5px solid rgba(143,47,47,0.45)" : "1px solid rgba(21,18,15,0.10)",
-                          background: active ? "linear-gradient(135deg, rgba(143,47,47,0.09) 0%, rgba(143,47,47,0.04) 100%)" : "rgba(255,255,255,0.72)",
+                          border: active ? "1.5px solid rgba(37,99,235,0.45)" : "1px solid rgba(15,23,42,0.10)",
+                          background: active ? "linear-gradient(135deg, rgba(37,99,235,0.09) 0%, rgba(37,99,235,0.04) 100%)" : "rgba(255,255,255,0.72)",
                           cursor: "pointer", fontFamily: APP_FONT_STACK,
                           transition: "all 0.22s ease",
-                          boxShadow: active ? "0 10px 28px rgba(143,47,47,0.12)" : "0 4px 14px rgba(17,14,12,0.05)",
+                          boxShadow: active ? "0 10px 28px rgba(37,99,235,0.12)" : "0 4px 14px rgba(15,23,42,0.05)",
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
                           <div>
-                            <div style={{ fontSize: "1rem", fontWeight: 700, color: active ? DS.wine : "#15120f", marginBottom: 3 }}>{op.name}</div>
-                            <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.52)" }}>{op.role} · {op.desk}</div>
+                            <div style={{ fontSize: "1rem", fontWeight: 700, color: active ? DS.wine : "#0f172a", marginBottom: 3 }}>{op.name}</div>
+                            <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)" }}>{op.role}  |  {op.desk}</div>
                           </div>
-                          <div style={{ ...smallBadgeStyle, padding: "4px 9px", background: active ? "rgba(143,47,47,0.10)" : "rgba(21,18,15,0.04)", border: active ? "1px solid rgba(143,47,47,0.25)" : "1px solid rgba(21,18,15,0.08)", color: active ? DS.wine : "rgba(21,18,15,0.50)" }}>
+                          <div style={{ ...smallBadgeStyle, padding: "4px 9px", background: active ? "rgba(37,99,235,0.10)" : "rgba(15,23,42,0.04)", border: active ? "1px solid rgba(37,99,235,0.25)" : "1px solid rgba(15,23,42,0.08)", color: active ? DS.wine : "rgba(15,23,42,0.50)" }}>
                             {op.status}
                           </div>
                         </div>
-                        <div style={{ fontSize: "0.80rem", color: "rgba(21,18,15,0.58)", lineHeight: 1.55, marginBottom: 10 }}>{op.focus}</div>
+                        <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.58)", lineHeight: 1.55, marginBottom: 10 }}>{op.focus}</div>
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
                           {op.specialties.map((specialty) => (
-                            <span key={`${op.id}_${specialty}`} style={{ fontSize: "0.64rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: active ? DS.wine : "rgba(21,18,15,0.50)", background: active ? "rgba(143,47,47,0.08)" : "rgba(21,18,15,0.04)", borderRadius: 999, padding: "4px 8px" }}>
+                            <span key={`${op.id}_${specialty}`} style={{ fontSize: "0.64rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: active ? DS.wine : "rgba(15,23,42,0.50)", background: active ? "rgba(37,99,235,0.08)" : "rgba(15,23,42,0.04)", borderRadius: 999, padding: "4px 8px" }}>
                               {specialty}
                             </span>
                           ))}
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4, fontSize: "0.76rem", color: "rgba(21,18,15,0.52)", borderTop: "1px solid rgba(21,18,15,0.07)", paddingTop: 10 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4, fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", borderTop: "1px solid rgba(15,23,42,0.07)", paddingTop: 10 }}>
                           <span>{metrics.ticketCount} tickets</span>
                           <span>Rs. {metrics.revenue} today</span>
                           <span>Avg Rs. {metrics.avgTicketRate}</span>
@@ -3086,7 +3336,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
             {/* Error */}
             {error && (
-              <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f1020", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+              <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#1d4ed8", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
                 {error}
               </div>
             )}
@@ -3095,20 +3345,20 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 28, gap: 12 }}>
               <div style={{ display: "flex", gap: 8 }}>
                 {subStep > 1 ? (
-                  <button onClick={goPrevSubStep} style={secondaryButtonStyle}>← Back</button>
+                  <button onClick={goPrevSubStep} style={secondaryButtonStyle}>&larr; Back</button>
                 ) : (
                   <button onClick={resetTicket} style={secondaryButtonStyle}>Clear Draft</button>
                 )}
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span style={{ fontSize: "0.75rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+                <span style={{ fontSize: "0.75rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
                   {subStep < totalSubSteps ? `${totalSubSteps - subStep} step${totalSubSteps - subStep > 1 ? "s" : ""} left` : "Ready to continue"}
                 </span>
                 <button
                   onClick={goNextSubStep}
                   style={{ ...primaryButtonStyle, padding: "13px 28px" }}
                 >
-                  {subStep < totalSubSteps ? "Next →" : "Continue to Ticket"}
+                  {subStep < totalSubSteps ? "Next ->" : "Continue to Ticket"}
                 </button>
               </div>
             </div>
@@ -3123,12 +3373,13 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
           { num: 3, label: "Payment" },
         ];
         const t2Total = T2_STEPS.length;
+        const t2StepHasError = {
+          1: items.length === 0,
+          2: false,
+          3: isOverpaid || hasOnlyZeroPricedItems,
+        };
 
         const goNextT2 = () => {
-          if (subStep === 1 && items.length === 0) {
-            setError("Add at least one service before continuing.");
-            return;
-          }
           setError("");
           if (subStep < t2Total) setSubStep(subStep + 1);
         };
@@ -3147,22 +3398,22 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <div>
                     <div style={{ ...sectionEyebrowStyle, marginBottom: 3 }}>Ticket in Progress</div>
-                    <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "#15120f", fontFamily: APP_FONT_STACK }}>
+                    <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
                       {ticketMeta?.customerName}
                     </div>
-                    <div style={{ fontSize: "0.78rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
-                      #{ticketMeta?.ticketNo} · {ticketReferenceSummary}
+                    <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
+                      #{ticketMeta?.ticketNo}  |  {ticketReferenceSummary}
                     </div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   {items.length > 0 && (
-                    <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.30)", color: "#7b5d2c" }}>
+                    <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.30)", color: "#1d4ed8" }}>
                       Rs. {total}
                     </div>
                   )}
                   <button onClick={() => navigateToStep(1, "replace")} style={secondaryButtonStyle}>
-                    ← Intake
+                    &larr; Intake
                   </button>
                   <button onClick={() => onNavigateTab?.("log")} style={secondaryButtonStyle}>
                     Dashboard
@@ -3176,47 +3427,73 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               {/* Progress strip */}
               <div style={{ marginBottom: 28 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                  <div style={sectionEyebrowStyle}>Build Ticket — Step {subStep} of {t2Total}</div>
+                  <div style={sectionEyebrowStyle}>Build Ticket  -  Step {subStep} of {t2Total}</div>
                 </div>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                   {T2_STEPS.map((ws, i) => {
                     const done = subStep > ws.num;
                     const active = subStep === ws.num;
+                    const hasError = t2StepHasError[ws.num];
                     return (
                       <React.Fragment key={ws.num}>
                         <button
-                          onClick={() => done && setSubStep(ws.num)}
+                          onClick={() => { setError(""); setSubStep(ws.num); }}
                           style={{
                             display: "flex", alignItems: "center", gap: 7,
-                            padding: "7px 13px", borderRadius: 999, border: "none",
-                            background: active ? DS.wine : done ? "rgba(143,47,47,0.12)" : "rgba(21,18,15,0.06)",
-                            color: active ? "#fff" : done ? DS.wine : "rgba(21,18,15,0.40)",
+                            padding: "7px 13px", borderRadius: 999,
+                            border: hasError && !active ? "1px solid rgba(214,5,43,0.32)" : "none",
+                            background: active
+                              ? DS.wine
+                              : hasError
+                                ? "rgba(214,5,43,0.09)"
+                                : done
+                                  ? "rgba(37,99,235,0.12)"
+                                  : "rgba(15,23,42,0.06)",
+                            color: active
+                              ? "#fff"
+                              : hasError
+                                ? "#1d4ed8"
+                                : done
+                                  ? DS.wine
+                                  : "rgba(15,23,42,0.40)",
                             fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem",
                             letterSpacing: "0.18em", textTransform: "uppercase",
-                            cursor: done ? "pointer" : "default",
+                            cursor: "pointer",
                             transition: "all 0.22s ease",
                           }}
                         >
                           <span style={{
                             width: 18, height: 18, borderRadius: "50%",
-                            background: active ? "rgba(255,255,255,0.22)" : done ? DS.wine : "rgba(21,18,15,0.10)",
-                            color: active ? "#fff" : done ? "#fff" : "rgba(21,18,15,0.40)",
+                            background: active
+                              ? "rgba(255,255,255,0.22)"
+                              : hasError
+                                ? "rgba(214,5,43,0.16)"
+                                : done
+                                  ? DS.wine
+                                  : "rgba(15,23,42,0.10)",
+                            color: active
+                              ? "#fff"
+                              : hasError
+                                ? "#1d4ed8"
+                                : done
+                                  ? "#fff"
+                                  : "rgba(15,23,42,0.40)",
                             display: "inline-flex", alignItems: "center", justifyContent: "center",
                             fontSize: "0.62rem", fontWeight: 700, fontFamily: APP_BRAND_STACK, flexShrink: 0,
                           }}>
-                            {done ? "✓" : ws.num}
+                            {hasError ? "!" : done ? "v" : ws.num}
                           </span>
                           {ws.label}
                         </button>
                         {i < T2_STEPS.length - 1 && (
-                          <div style={{ flex: 1, height: 1, background: done ? "rgba(143,47,47,0.25)" : "rgba(21,18,15,0.08)", borderRadius: 1, minWidth: 8 }} />
+                          <div style={{ flex: 1, height: 1, background: done ? "rgba(37,99,235,0.25)" : "rgba(15,23,42,0.08)", borderRadius: 1, minWidth: 8 }} />
                         )}
                       </React.Fragment>
                     );
                   })}
                 </div>
-                <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(21,18,15,0.07)", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${((subStep - 1) / (t2Total - 1)) * 100}%`, background: `linear-gradient(90deg, ${DS.wine}, rgba(211,166,90,0.80))`, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
+                <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(15,23,42,0.07)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${((subStep - 1) / (t2Total - 1)) * 100}%`, background: `linear-gradient(90deg, ${DS.wine}, rgba(59,130,246,0.80))`, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
                 </div>
               </div>
 
@@ -3224,10 +3501,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               {subStep === 1 && (
                 <div style={{ animation: "fadeIn 0.28s ease-out" }}>
                   <div style={{ marginBottom: 22 }}>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
                       Add Services
                     </div>
-                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.58)" }}>
+                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.58)" }}>
                       Pick each service this customer needs. Add them one at a time.
                     </div>
                   </div>
@@ -3237,7 +3514,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <label style={{ display: "grid", gap: 7 }}>
                       <span style={sectionEyebrowStyle}>Select Service</span>
                       <select value={selectedService} onChange={(e) => { setSelectedService(e.target.value); setCustomAmt(""); }} style={inputStyle}>
-                        <option value="" style={MENU_OPTION_STYLE}>Choose a service…</option>
+                        <option value="" style={MENU_OPTION_STYLE}>Choose a service...</option>
                         {CATEGORIES.map((cat) => (
                           <optgroup key={cat} label={cat} style={MENU_OPTGROUP_STYLE}>
                             {services.filter((s) => s.category === cat).map((s) => (
@@ -3258,7 +3535,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             disabled={selectedServiceConfig?.quantityMode === "fixed"}
                             value={selectedServiceConfig?.quantityMode === "fixed" ? 1 : qty}
                             onChange={(e) => setQty(e.target.value)}
-                            style={{ ...inputStyle, textAlign: "center", background: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(21,18,15,0.04)" : "rgba(255,255,255,0.82)", color: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(21,18,15,0.40)" : "#15120f" }}
+                            style={{ ...inputStyle, textAlign: "center", background: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.82)", color: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.40)" : "#0f172a" }}
                           />
                         </label>
                         {selectedServiceConfig?.variable && (
@@ -3276,7 +3553,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <div style={{ ...softPanelStyle, marginBottom: 14 }}>
                       <div style={{ marginBottom: 10 }}>
                         <div style={sectionEyebrowStyle}>{selectedDetailSchema?.title || "Service Details"}</div>
-                        <div style={{ fontSize: "0.82rem", color: "rgba(21,18,15,0.58)", lineHeight: 1.6 }}>
+                        <div style={{ fontSize: "0.82rem", color: "rgba(15,23,42,0.58)", lineHeight: 1.6 }}>
                           {selectedDetailSchema?.description}
                         </div>
                       </div>
@@ -3293,7 +3570,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                                 }}
                                 style={inputStyle}
                               >
-                                <option value="" style={MENU_OPTION_STYLE}>Select…</option>
+                                <option value="" style={MENU_OPTION_STYLE}>Select...</option>
                                 {field.options?.map((option) => (
                                   <option key={`${field.key}_${option}`} value={option} style={MENU_OPTION_STYLE}>{option}</option>
                                 ))}
@@ -3312,11 +3589,30 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               />
                             )}
                             {selectedServiceDetailErrors[field.key] && (
-                              <span style={{ fontSize: "0.76rem", color: "#8f1020", fontFamily: APP_FONT_STACK }}>{selectedServiceDetailErrors[field.key]}</span>
+                              <span style={{ fontSize: "0.76rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>{selectedServiceDetailErrors[field.key]}</span>
                             )}
                           </label>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {selectedServiceConfig && (
+                    <div style={{ ...softPanelStyle, marginBottom: 14 }}>
+                      <div style={sectionEyebrowStyle}>Required Documents (Preview)</div>
+                      {getRequiredDocIdsForService(selectedServiceConfig).length === 0 ? (
+                        <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>
+                          No compulsory documents configured for this service.
+                        </div>
+                      ) : (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8 }}>
+                          {getRequiredDocIdsForService(selectedServiceConfig).map((docId) => (
+                            <div key={`preview_${selectedServiceConfig.id}_${docId}`} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.74)", padding: "9px 11px", fontSize: "0.80rem", color: "#0f172a", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                              {DOCUMENT_PRESET_MAP[docId]?.label || docId}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -3326,9 +3622,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       <button onClick={addTask} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
                         + Add to Ticket
                       </button>
-                      <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(21,18,15,0.45)", fontFamily: APP_FONT_STACK }}>
+                      <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
                         {selectedServiceConfig?.variable ? "Variable price" : `Rs. ${selectedServiceConfig?.price || 0}`}
-                        {selectedServiceConfig?.quantityMode !== "fixed" ? ` · max qty ${selectedServiceConfig.maxQty}` : ""}
+                        {selectedServiceConfig?.quantityMode !== "fixed" ? `  |  max qty ${selectedServiceConfig.maxQty}` : ""}
                       </span>
                     </div>
                   )}
@@ -3337,13 +3633,13 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                     <div style={sectionEyebrowStyle}>Added Services</div>
                     {items.length > 0 && (
-                      <div style={{ ...smallBadgeStyle, background: "rgba(184,148,63,0.12)", border: "1px solid rgba(184,148,63,0.28)", color: "#7b5d2c" }}>
+                      <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.28)", color: "#1d4ed8" }}>
                         Rs. {total}
                       </div>
                     )}
                   </div>
                   {items.length === 0 ? (
-                    <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(21,18,15,0.45)", fontSize: "0.85rem", padding: "22px 16px" }}>
+                    <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(15,23,42,0.45)", fontSize: "0.85rem", padding: "22px 16px" }}>
                       No services added yet. Choose one above and tap + Add to Ticket.
                     </div>
                   ) : (
@@ -3351,17 +3647,17 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       {items.map((it, i) => (
                         <div key={i} style={{ ...softPanelStyle, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center" }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, color: "#15120f", fontSize: "0.90rem", fontFamily: APP_FONT_STACK }}>{it.name}</div>
-                            <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.52)", marginTop: 2 }}>
-                              {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty} · Unit Rs. {it.unitPrice}
+                            <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.90rem", fontFamily: APP_FONT_STACK }}>{it.name}</div>
+                            <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", marginTop: 2 }}>
+                              {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty}  |  Unit Rs. {it.unitPrice}
                             </div>
                             {!!it.detailSummary && (
-                              <div style={{ fontSize: "0.74rem", color: "rgba(21,18,15,0.48)", lineHeight: 1.5, marginTop: 3 }}>{it.detailSummary}</div>
+                              <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.48)", lineHeight: 1.5, marginTop: 3 }}>{it.detailSummary}</div>
                             )}
                           </div>
-                          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#7b5d2c", whiteSpace: "nowrap" }}>Rs. {it.amount}</div>
-                          <button onClick={() => removeTask(i)} style={{ width: 30, height: 30, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f1020", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
-                            ×
+                          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1d4ed8", whiteSpace: "nowrap" }}>Rs. {it.amount}</div>
+                          <button onClick={() => removeTask(i)} style={{ width: 30, height: 30, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#1d4ed8", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
+                            x
                           </button>
                         </div>
                       ))}
@@ -3375,69 +3671,69 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                 <div style={{ animation: "fadeIn 0.28s ease-out" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 22 }}>
                     <div>
-                      <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
-                        Document Checklist
+                      <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
+                        Service Document Intake
                       </div>
-                      <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.58)" }}>
-                        Track which documents were submitted. Intake docs are already prefilled.
+                      <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.58)" }}>
+                        After selecting services, only required documents for each service are listed here. Mark each one as intaked or pending.
                       </div>
                     </div>
-                    <div style={{ ...smallBadgeStyle, background: "rgba(21,18,15,0.05)", border: "1px solid rgba(21,18,15,0.09)", color: "rgba(21,18,15,0.52)" }}>
+                    <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(15,23,42,0.09)", color: "rgba(15,23,42,0.52)" }}>
                       {submittedRequiredDocsCount}/{requiredDocsCount} required submitted
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 16, alignItems: "end" }}>
-                    <label style={{ display: "grid", gap: 7 }}>
-                      <span style={sectionEyebrowStyle}>Add Document</span>
-                      <input
-                        value={docName}
-                        onChange={(e) => setDocName(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && addDocument()}
-                        placeholder="e.g. Aadhaar copy"
-                        style={inputStyle}
-                      />
-                    </label>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                      <label style={{ display: "flex", alignItems: "center", gap: 7, color: "rgba(21,18,15,0.65)", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600, cursor: "pointer" }}>
-                        <input type="checkbox" checked={docRequired} onChange={(e) => setDocRequired(e.target.checked)} />
-                        Required
-                      </label>
-                      <button onClick={addDocument} style={secondaryButtonStyle}>Add</button>
-                    </div>
-                  </div>
-
                   <div style={{ display: "grid", gap: 8 }}>
-                    {documents.length === 0 ? (
-                      <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(21,18,15,0.45)", fontSize: "0.84rem", padding: "22px 16px" }}>
-                        No documents tracked. You can skip this step.
+                    {serviceDocumentGroups.length === 0 ? (
+                      <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(15,23,42,0.45)", fontSize: "0.84rem", padding: "22px 16px" }}>
+                        Add at least one service first. Required documents will appear service-wise.
                       </div>
                     ) : (
-                      documents.map((doc) => (
-                        <div key={doc.id} style={{ ...softPanelStyle, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center" }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: "0.88rem", color: "#15120f", fontWeight: 700, fontFamily: APP_FONT_STACK, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                              {doc.name}
-                              {doc.source === "intake" && (
-                                <span style={{ ...smallBadgeStyle, padding: "2px 7px", fontSize: "0.52rem", background: "rgba(184,148,63,0.10)", border: "1px solid rgba(184,148,63,0.25)", color: "#7b5d2c" }}>
-                                  Intake
-                                </span>
-                              )}
+                      serviceDocumentGroups.map((group) => (
+                        <div key={`group_${group.serviceId}`} style={{ ...softPanelStyle, padding: "14px 15px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+                            <div style={{ fontSize: "0.92rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                              {group.serviceName}
                             </div>
-                            <div style={{ display: "flex", gap: 14, marginTop: 6 }}>
-                              <label style={{ display: "flex", alignItems: "center", gap: 5, color: "rgba(21,18,15,0.58)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
-                                <input type="checkbox" checked={doc.required} onChange={() => toggleDocumentRequired(doc.id)} />
-                                Required
-                              </label>
-                              <label style={{ display: "flex", alignItems: "center", gap: 5, color: "rgba(21,18,15,0.58)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
-                                <input type="checkbox" checked={doc.submitted} onChange={() => toggleDocumentSubmitted(doc.id)} />
-                                Submitted
-                              </label>
+                            <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.24)", color: "#1d4ed8" }}>
+                              {group.docs.filter((doc) => doc.submitted).length}/{group.docs.length} intaked
                             </div>
                           </div>
-                          <button onClick={() => removeDocument(doc.id)} style={{ width: 28, height: 28, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 7, background: "rgba(214,5,43,0.06)", color: "#8f1020", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
-                            ×
-                          </button>
+                          {group.docs.length === 0 ? (
+                            <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
+                              No required documents configured for this service.
+                            </div>
+                          ) : (
+                            <div style={{ display: "grid", gap: 8 }}>
+                              {group.docs.map((doc) => (
+                                <div key={doc.id} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.72)", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                                  <div style={{ fontSize: "0.84rem", color: "#0f172a", fontWeight: 600, fontFamily: APP_FONT_STACK }}>
+                                    {doc.name}
+                                  </div>
+                                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(15,23,42,0.64)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
+                                      <input
+                                        type="radio"
+                                        name={`doc_status_${doc.id}`}
+                                        checked={Boolean(doc.submitted)}
+                                        onChange={() => setDocumentSubmitted(doc.id, true)}
+                                      />
+                                      Intaked
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(15,23,42,0.64)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
+                                      <input
+                                        type="radio"
+                                        name={`doc_status_${doc.id}`}
+                                        checked={!doc.submitted}
+                                        onChange={() => setDocumentSubmitted(doc.id, false)}
+                                      />
+                                      Pending
+                                    </label>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
@@ -3449,11 +3745,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               {subStep === 3 && (
                 <div style={{ animation: "fadeIn 0.28s ease-out" }}>
                   <div style={{ marginBottom: 22 }}>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
                       Payment & Save
                     </div>
-                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(21,18,15,0.58)" }}>
-                      Enter what was collected. Partial payment is fine — you can keep the balance pending.
+                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.58)" }}>
+                      Enter what was collected. Partial payment is fine  -  you can keep the balance pending.
                     </div>
                   </div>
 
@@ -3462,12 +3758,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <div style={sectionEyebrowStyle}>Services Summary</div>
                     <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
                       {items.map((it, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.86rem", color: "#15120f", fontFamily: APP_FONT_STACK }}>
-                          <span>{it.name} ×{it.qty}</span>
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.86rem", color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                          <span>{it.name} x{it.qty}</span>
                           <span style={{ fontWeight: 700 }}>Rs. {it.amount}</span>
                         </div>
                       ))}
-                      <div style={{ borderTop: "1px solid rgba(21,18,15,0.09)", paddingTop: 8, marginTop: 4, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1rem", fontFamily: APP_FONT_STACK, color: "#15120f" }}>
+                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.09)", paddingTop: 8, marginTop: 4, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1rem", fontFamily: APP_FONT_STACK, color: "#0f172a" }}>
                         <span>Total</span>
                         <span>Rs. {total}</span>
                       </div>
@@ -3487,19 +3783,19 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
                   <div style={{ ...softPanelStyle, marginBottom: 16 }}>
                     <div style={{ display: "grid", gap: 8 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(21,18,15,0.60)", fontFamily: APP_FONT_STACK }}>
-                        <span>Collected</span><span style={{ color: "#15120f", fontWeight: 700 }}>Rs. {paidTotal}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
+                        <span>Collected</span><span style={{ color: "#0f172a", fontWeight: 700 }}>Rs. {paidTotal}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(21,18,15,0.60)", fontFamily: APP_FONT_STACK }}>
-                        <span>Docs submitted</span><span style={{ color: "#15120f", fontWeight: 700 }}>{submittedRequiredDocsCount}/{requiredDocsCount}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
+                        <span>Docs submitted</span><span style={{ color: "#0f172a", fontWeight: 700 }}>{submittedRequiredDocsCount}/{requiredDocsCount}</span>
                       </div>
-                      <div style={{ borderTop: "1px solid rgba(21,18,15,0.08)", paddingTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.05rem", fontFamily: APP_FONT_STACK, color: pendingBalance > 0 ? "#7b5d2c" : DS.wine }}>
+                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.05rem", fontFamily: APP_FONT_STACK, color: pendingBalance > 0 ? "#1d4ed8" : DS.wine }}>
                         <span>Pending Balance</span><span>Rs. {pendingBalance}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ marginBottom: 18, padding: "12px 14px", borderRadius: 10, background: isOverpaid ? "rgba(214,5,43,0.07)" : pendingBalance > 0 ? "rgba(184,148,63,0.10)" : "rgba(143,47,47,0.07)", border: isOverpaid ? "1px solid rgba(214,5,43,0.22)" : pendingBalance > 0 ? "1px solid rgba(184,148,63,0.26)" : "1px solid rgba(143,47,47,0.22)", color: isOverpaid ? "#8f1020" : pendingBalance > 0 ? "#7b5d2c" : DS.wine, fontSize: "0.83rem", lineHeight: 1.6, fontFamily: APP_FONT_STACK, fontWeight: 500 }}>
+                  <div style={{ marginBottom: 18, padding: "12px 14px", borderRadius: 10, background: isOverpaid ? "rgba(214,5,43,0.07)" : pendingBalance > 0 ? "rgba(59,130,246,0.10)" : "rgba(37,99,235,0.07)", border: isOverpaid ? "1px solid rgba(214,5,43,0.22)" : pendingBalance > 0 ? "1px solid rgba(59,130,246,0.26)" : "1px solid rgba(37,99,235,0.22)", color: isOverpaid ? "#1d4ed8" : pendingBalance > 0 ? "#1d4ed8" : DS.wine, fontSize: "0.83rem", lineHeight: 1.6, fontFamily: APP_FONT_STACK, fontWeight: 500 }}>
                     {hasOnlyZeroPricedItems
                       ? "All services are still Rs. 0. Update the rate card or enter a custom amount before saving."
                       : isOverpaid
@@ -3512,15 +3808,13 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     <button
                       onClick={() => saveTicket("Open")}
-                      disabled={!canSaveTicket}
-                      style={{ ...secondaryButtonStyle, background: canSaveTicket ? "rgba(184,148,63,0.12)" : "rgba(21,18,15,0.04)", border: canSaveTicket ? "1px solid rgba(184,148,63,0.34)" : "1px solid rgba(21,18,15,0.09)", color: canSaveTicket ? "#7b5d2c" : "rgba(21,18,15,0.30)", cursor: canSaveTicket ? "pointer" : "not-allowed" }}
+                      style={{ ...secondaryButtonStyle, background: canSaveTicket ? "rgba(59,130,246,0.12)" : "rgba(15,23,42,0.04)", border: canSaveTicket ? "1px solid rgba(59,130,246,0.34)" : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? "#1d4ed8" : "rgba(15,23,42,0.45)", cursor: "pointer" }}
                     >
                       Save for Later
                     </button>
                     <button
                       onClick={() => saveTicket("Closed")}
-                      disabled={!canSaveTicket}
-                      style={{ ...primaryButtonStyle, padding: "13px 22px", background: canSaveTicket ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.04)", border: canSaveTicket ? "1px solid rgba(143,47,47,0.42)" : "1px solid rgba(21,18,15,0.09)", color: canSaveTicket ? DS.wine : "rgba(21,18,15,0.30)", cursor: canSaveTicket ? "pointer" : "not-allowed" }}
+                      style={{ ...primaryButtonStyle, padding: "13px 22px", background: canSaveTicket ? "rgba(37,99,235,0.14)" : "rgba(15,23,42,0.04)", border: canSaveTicket ? "1px solid rgba(37,99,235,0.42)" : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? DS.wine : "rgba(15,23,42,0.45)", cursor: "pointer" }}
                     >
                       Save & Complete
                     </button>
@@ -3529,7 +3823,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               )}
 
               {undoAction && (
-                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(184,148,63,0.11)", border: "1px solid rgba(184,148,63,0.30)", color: "#7b5d2c", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(59,130,246,0.11)", border: "1px solid rgba(59,130,246,0.30)", color: "#1d4ed8", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <span>{undoAction.message}</span>
                   <button
                     onClick={() => {
@@ -3540,7 +3834,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       }
                       setUndoAction(null);
                     }}
-                    style={{ border: "1px solid rgba(184,148,63,0.45)", borderRadius: 999, padding: "7px 12px", background: "rgba(255,255,255,0.74)", color: "#7b5d2c", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.52rem", letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer" }}
+                    style={{ border: "1px solid rgba(59,130,246,0.45)", borderRadius: 999, padding: "7px 12px", background: "rgba(255,255,255,0.74)", color: "#1d4ed8", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.52rem", letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer" }}
                   >
                     Undo
                   </button>
@@ -3549,7 +3843,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
               {/* Error */}
               {error && (
-                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f1020", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#1d4ed8", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
                   {error}
                 </div>
               )}
@@ -3557,20 +3851,20 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               {/* Wizard nav */}
               {subStep < 3 && (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 28, gap: 12 }}>
-                  <button onClick={goPrevT2} style={secondaryButtonStyle}>← Back</button>
+                  <button onClick={goPrevT2} style={secondaryButtonStyle}>&larr; Back</button>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <span style={{ fontSize: "0.75rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+                    <span style={{ fontSize: "0.75rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
                       {t2Total - subStep} step{t2Total - subStep > 1 ? "s" : ""} left
                     </span>
                     <button onClick={goNextT2} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
-                      Next →
+                      Next &rarr;
                     </button>
                   </div>
                 </div>
               )}
               {subStep === 3 && (
                 <div style={{ marginTop: 16 }}>
-                  <button onClick={goPrevT2} style={secondaryButtonStyle}>← Documents</button>
+                  <button onClick={goPrevT2} style={secondaryButtonStyle}>&larr; Documents</button>
                 </div>
               )}
             </div>
@@ -3645,17 +3939,17 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   const editingTicket = normalizedTickets.find((t) => t.ticketNo === editTicketNo) || null;
   const detailCardStyle = {
     background: "rgba(255,255,255,0.65)",
-    border: "1px solid rgba(21,18,15,0.09)",
+    border: "1px solid rgba(15,23,42,0.09)",
     borderRadius: 12,
     padding: 14,
-    boxShadow: "0 8px 20px rgba(17,14,12,0.06)",
+    boxShadow: "0 8px 20px rgba(15,23,42,0.06)",
   };
   const sectionCardStyle = {
     background: "rgba(255,255,255,0.72)",
-    border: "1px solid rgba(21,18,15,0.09)",
+    border: "1px solid rgba(15,23,42,0.09)",
     borderRadius: 14,
     padding: 14,
-    boxShadow: "0 10px 24px rgba(17,14,12,0.07)",
+    boxShadow: "0 10px 24px rgba(15,23,42,0.07)",
   };
   const dashEyebrowStyle = {
     fontSize: "0.52rem",
@@ -3670,10 +3964,10 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   const dashInputStyle = {
     width: "100%",
     padding: "10px 12px",
-    border: "1px solid rgba(21,18,15,0.12)",
+    border: "1px solid rgba(15,23,42,0.12)",
     borderRadius: 8,
     background: "rgba(255,255,255,0.82)",
-    color: "#15120f",
+    color: "#0f172a",
     outline: "none",
     fontFamily: APP_FONT_STACK,
     fontSize: "0.84rem",
@@ -3698,9 +3992,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     },
     closeView: {
       ...actionButtonBase,
-      border: "1px solid rgba(21,18,15,0.14)",
+      border: "1px solid rgba(15,23,42,0.14)",
       background: "rgba(255,255,255,0.70)",
-      color: "rgba(21,18,15,0.70)",
+      color: "rgba(15,23,42,0.70)",
     },
     view: {
       ...actionButtonBase,
@@ -3710,21 +4004,21 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     },
     print: {
       ...actionButtonBase,
-      border: "1px solid rgba(143,47,47,0.35)",
-      background: "rgba(143,47,47,0.08)",
+      border: "1px solid rgba(37,99,235,0.35)",
+      background: "rgba(37,99,235,0.08)",
       color: DS.wine,
     },
     edit: {
       ...actionButtonBase,
-      border: "1px solid rgba(184,148,63,0.38)",
-      background: "rgba(184,148,63,0.10)",
-      color: "#7b5d2c",
+      border: "1px solid rgba(59,130,246,0.38)",
+      background: "rgba(59,130,246,0.10)",
+      color: "#1d4ed8",
     },
     neutral: {
       ...actionButtonBase,
-      border: "1px solid rgba(21,18,15,0.14)",
-      background: "rgba(21,18,15,0.04)",
-      color: "rgba(21,18,15,0.60)",
+      border: "1px solid rgba(15,23,42,0.14)",
+      background: "rgba(15,23,42,0.04)",
+      color: "rgba(15,23,42,0.60)",
     },
     success: {
       ...actionButtonBase,
@@ -3734,9 +4028,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     },
     warning: {
       ...actionButtonBase,
-      border: "1px solid rgba(184,148,63,0.38)",
-      background: "rgba(184,148,63,0.10)",
-      color: "#7b5d2c",
+      border: "1px solid rgba(59,130,246,0.38)",
+      background: "rgba(59,130,246,0.10)",
+      color: "#1d4ed8",
     },
   };
 
@@ -3824,7 +4118,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   const renderExpandedContent = (ticket) => {
     const structured = ticket.structured || toStructuredTicket(ticket);
     return (
-      <div style={{ marginTop: 10, borderTop: "1px solid rgba(21,18,15,0.09)", paddingTop: 10 }}>
+      <div style={{ marginTop: 10, borderTop: "1px solid rgba(15,23,42,0.09)", paddingTop: 10 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8, marginBottom: 10 }}>
           {[
             { label: "Document Holder", main: structured.parties.documentHolder.name, sub: structured.parties.documentHolder.phone || "No contact saved" },
@@ -3834,21 +4128,21 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           ].map((info) => (
             <div key={info.label} style={{ ...detailCardStyle, padding: 10 }}>
               <div style={dashEyebrowStyle}>{info.label}</div>
-              <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK }}>{info.main}</div>
-              <div style={{ fontSize: "0.75rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>{info.sub}</div>
+              <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK }}>{info.main}</div>
+              <div style={{ fontSize: "0.75rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>{info.sub}</div>
             </div>
           ))}
         </div>
         <div style={{ fontSize: "0.72rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: DS.wine, marginBottom: 6 }}>Service Breakdown</div>
         <div style={{ display: "grid", gap: 4 }}>
           {structured.services.map((it, idx) => (
-            <div key={`${ticket.ticketNo}_expand_${idx}`} style={{ fontSize: "0.82rem", color: "#15120f", padding: "5px 0", borderBottom: idx < structured.services.length - 1 ? "1px solid rgba(21,18,15,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
+            <div key={`${ticket.ticketNo}_expand_${idx}`} style={{ fontSize: "0.82rem", color: "#0f172a", padding: "5px 0", borderBottom: idx < structured.services.length - 1 ? "1px solid rgba(15,23,42,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                 <span>{it.name}</span>
-                <span style={{ color: "rgba(21,18,15,0.55)" }}>{getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty} | Rs. {it.amount}</span>
+                <span style={{ color: "rgba(15,23,42,0.55)" }}>{getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty} | Rs. {it.amount}</span>
               </div>
               {!!it.detailSummary && (
-                <div style={{ color: "rgba(21,18,15,0.50)", marginTop: 2, lineHeight: 1.5, fontSize: "0.76rem" }}>{it.detailSummary}</div>
+                <div style={{ color: "rgba(15,23,42,0.50)", marginTop: 2, lineHeight: 1.5, fontSize: "0.76rem" }}>{it.detailSummary}</div>
               )}
             </div>
           ))}
@@ -3858,9 +4152,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
             <div style={{ fontSize: "0.72rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: DS.wine, marginBottom: 5 }}>Document Status</div>
             <div style={{ display: "grid", gap: 4 }}>
               {structured.documents.items.map((doc, idx) => (
-                <div key={`${ticket.ticketNo}_doc_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#15120f", fontSize: "0.80rem", fontFamily: APP_FONT_STACK }}>
+                <div key={`${ticket.ticketNo}_doc_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#0f172a", fontSize: "0.80rem", fontFamily: APP_FONT_STACK }}>
                   <span>{doc.name}</span>
-                  <span style={{ color: "rgba(21,18,15,0.55)" }}>{doc.required ? "Required" : "Optional"} | {doc.submitted ? "Submitted" : "Pending"}</span>
+                  <span style={{ color: "rgba(15,23,42,0.55)" }}>{doc.required ? "Required" : "Optional"} | {doc.submitted ? "Submitted" : "Pending"}</span>
                 </div>
               ))}
             </div>
@@ -4009,7 +4303,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                       <div style={{ fontSize: "0.72rem", fontWeight: 700, color: paymentColor, fontFamily: APP_FONT_STACK }}>{structured.payment.status}</div>
                     </div>
                     <div style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
-                      {structured.meta.primaryType || "Unassigned"} · Rs. {ticket.total || 0} · Pending Rs. {structured.payment.pendingBalance}
+                      {structured.meta.primaryType || "Unassigned"}  |  Rs. {ticket.total || 0}  |  Pending Rs. {structured.payment.pendingBalance}
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); }} style={listActionStyle}>View</button>
@@ -4053,12 +4347,12 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                   <div style={{ ...dashboardCard, padding: 10 }}>
                     <div style={dashLabel}>Reference</div>
                     <div style={{ fontSize: "0.84rem", color: OPS.text, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>{viewingStructured.parties.reference.hasReference ? viewingStructured.parties.reference.name : "No reference"}</div>
-                    <div style={{ fontSize: "0.74rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.reference.label || "—"}</div>
+                    <div style={{ fontSize: "0.74rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.reference.label || " - "}</div>
                   </div>
                   <div style={{ ...dashboardCard, padding: 10 }}>
                     <div style={dashLabel}>Payment</div>
                     <div style={{ fontSize: "0.84rem", color: OPS.text, fontFamily: APP_FONT_STACK, fontWeight: 600 }}>{viewingStructured.payment.status}</div>
-                    <div style={{ fontSize: "0.74rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>Paid Rs. {viewingStructured.payment.paidTotal} · Pending Rs. {viewingStructured.payment.pendingBalance}</div>
+                    <div style={{ fontSize: "0.74rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>Paid Rs. {viewingStructured.payment.paidTotal}  |  Pending Rs. {viewingStructured.payment.pendingBalance}</div>
                   </div>
                 </div>
 
@@ -4088,7 +4382,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                       {viewingStructured.documents.items.map((doc, index) => (
                         <div key={`ticket_doc_${index}`} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: OPS.text, fontFamily: APP_FONT_STACK }}>
                           <span>{doc.name}</span>
-                          <span style={{ color: OPS.textMuted }}>{doc.required ? "Required" : "Optional"} · {doc.submitted ? "Submitted" : "Pending"}</span>
+                          <span style={{ color: OPS.textMuted }}>{doc.required ? "Required" : "Optional"}  |  {doc.submitted ? "Submitted" : "Pending"}</span>
                         </div>
                       ))}
                     </div>
@@ -4111,11 +4405,11 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
       {viewingTicket && (
-        <div style={{ background: "rgba(255,255,255,0.80)", border: "1px solid rgba(21,18,15,0.12)", borderRadius: 18, padding: 20, marginBottom: 18, boxShadow: "0 16px 40px rgba(17,14,12,0.09)" }}>
+        <div style={{ background: "rgba(255,255,255,0.80)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 18, padding: 20, marginBottom: 18, boxShadow: "0 16px 40px rgba(15,23,42,0.09)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
             <div>
               <div style={dashEyebrowStyle}>Ticket View</div>
-              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.2rem", fontWeight: 300, color: "#15120f" }}>{viewingTicket.ticketNo} — {viewingTicket.customerName}</div>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.2rem", fontWeight: 300, color: "#0f172a" }}>{viewingTicket.ticketNo}  -  {viewingTicket.customerName}</div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => printTicketSlip(viewingTicket)} style={actionButtonStyles.print}>Print Ticket</button>
@@ -4127,46 +4421,46 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
             <div style={detailCardStyle}>
               <div style={dashEyebrowStyle}>Document Holder</div>
-              <div style={{ color: "#15120f", fontWeight: 700, fontSize: "0.88rem", fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.documentHolder.name}</div>
-              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.documentHolder.phone || "No contact saved"}</div>
+              <div style={{ color: "#0f172a", fontWeight: 700, fontSize: "0.88rem", fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.documentHolder.name}</div>
+              <div style={{ color: "rgba(15,23,42,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>{viewingStructured.parties.documentHolder.phone || "No contact saved"}</div>
             </div>
             <div style={detailCardStyle}>
               <div style={dashEyebrowStyle}>Reference Contact</div>
-              <div style={{ color: "#15120f", fontWeight: 700, fontSize: "0.88rem", fontFamily: APP_FONT_STACK }}>
+              <div style={{ color: "#0f172a", fontWeight: 700, fontSize: "0.88rem", fontFamily: APP_FONT_STACK }}>
                 {viewingStructured.parties.reference.hasReference ? viewingStructured.parties.reference.name : "No reference"}
               </div>
-              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>
+              <div style={{ color: "rgba(15,23,42,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>
                 {viewingStructured.parties.reference.hasReference ? (viewingStructured.parties.reference.label || "No label") : "Optional"}
               </div>
             </div>
             <div style={detailCardStyle}>
               <div style={dashEyebrowStyle}>Meta</div>
-              <div style={{ color: "#15120f", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>Status: {viewingStructured.meta.status}</div>
-              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Created: {viewingStructured.meta.createdDate} {viewingStructured.meta.createdTime}</div>
-              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Updated: {viewingStructured.meta.updatedAt || "N/A"}</div>
+              <div style={{ color: "#0f172a", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>Status: {viewingStructured.meta.status}</div>
+              <div style={{ color: "rgba(15,23,42,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Created: {viewingStructured.meta.createdDate} {viewingStructured.meta.createdTime}</div>
+              <div style={{ color: "rgba(15,23,42,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Updated: {viewingStructured.meta.updatedAt || "N/A"}</div>
             </div>
             <div style={detailCardStyle}>
               <div style={dashEyebrowStyle}>Payment</div>
-              <div style={{ color: "#15120f", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>Operator: {viewingStructured.assignment.operator || "N/A"}</div>
-              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Mode: {viewingStructured.payment.mode} | Status: {viewingStructured.payment.status}</div>
-              <div style={{ color: "rgba(21,18,15,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Paid Rs. {viewingStructured.payment.paidTotal} | Pending Rs. {viewingStructured.payment.pendingBalance}</div>
+              <div style={{ color: "#0f172a", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>Operator: {viewingStructured.assignment.operator || "N/A"}</div>
+              <div style={{ color: "rgba(15,23,42,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Mode: {viewingStructured.payment.mode} | Status: {viewingStructured.payment.status}</div>
+              <div style={{ color: "rgba(15,23,42,0.55)", fontSize: "0.76rem", fontFamily: APP_FONT_STACK }}>Paid Rs. {viewingStructured.payment.paidTotal} | Pending Rs. {viewingStructured.payment.pendingBalance}</div>
             </div>
           </div>
 
           <div style={{ ...sectionCardStyle, marginTop: 10 }}>
             <div style={dashEyebrowStyle}>Services</div>
             {viewingStructured.services.length === 0 ? (
-              <div style={{ color: "rgba(21,18,15,0.50)", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>No services linked to this ticket.</div>
+              <div style={{ color: "rgba(15,23,42,0.50)", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>No services linked to this ticket.</div>
             ) : (
               <div style={{ display: "grid", gap: 5 }}>
                 {viewingStructured.services.map((it, idx) => (
-                  <div key={`view_${viewingTicket.ticketNo}_${idx}`} style={{ color: "#15120f", fontSize: "0.82rem", paddingBottom: 5, borderBottom: idx < viewingStructured.services.length - 1 ? "1px solid rgba(21,18,15,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
+                  <div key={`view_${viewingTicket.ticketNo}_${idx}`} style={{ color: "#0f172a", fontSize: "0.82rem", paddingBottom: 5, borderBottom: idx < viewingStructured.services.length - 1 ? "1px solid rgba(15,23,42,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                       <span>{it.name}</span>
-                      <span style={{ color: "rgba(21,18,15,0.55)" }}>{getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty} | Rs. {it.amount}</span>
+                      <span style={{ color: "rgba(15,23,42,0.55)" }}>{getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty} | Rs. {it.amount}</span>
                     </div>
                     {!!it.detailSummary && (
-                      <div style={{ color: "rgba(21,18,15,0.45)", marginTop: 3, lineHeight: 1.5, fontSize: "0.76rem" }}>{it.detailSummary}</div>
+                      <div style={{ color: "rgba(15,23,42,0.45)", marginTop: 3, lineHeight: 1.5, fontSize: "0.76rem" }}>{it.detailSummary}</div>
                     )}
                   </div>
                 ))}
@@ -4177,13 +4471,13 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           <div style={{ ...sectionCardStyle, marginTop: 8 }}>
             <div style={dashEyebrowStyle}>Document Status</div>
             {viewingStructured.documents.items.length === 0 ? (
-              <div style={{ color: "rgba(21,18,15,0.50)", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>No document checklist added.</div>
+              <div style={{ color: "rgba(15,23,42,0.50)", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>No document checklist added.</div>
             ) : (
               <div style={{ display: "grid", gap: 5 }}>
                 {viewingStructured.documents.items.map((doc, idx) => (
-                  <div key={`view_doc_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#15120f", fontSize: "0.82rem", paddingBottom: 5, borderBottom: idx < viewingStructured.documents.items.length - 1 ? "1px solid rgba(21,18,15,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
+                  <div key={`view_doc_${idx}`} style={{ display: "flex", justifyContent: "space-between", color: "#0f172a", fontSize: "0.82rem", paddingBottom: 5, borderBottom: idx < viewingStructured.documents.items.length - 1 ? "1px solid rgba(15,23,42,0.08)" : "none", fontFamily: APP_FONT_STACK }}>
                     <span>{doc.name}</span>
-                    <span style={{ color: "rgba(21,18,15,0.55)" }}>{doc.required ? "Required" : "Optional"} | {doc.submitted ? "Submitted" : "Pending"}</span>
+                    <span style={{ color: "rgba(15,23,42,0.55)" }}>{doc.required ? "Required" : "Optional"} | {doc.submitted ? "Submitted" : "Pending"}</span>
                   </div>
                 ))}
               </div>
@@ -4191,7 +4485,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           </div>
 
           {showRawJson && (
-            <pre style={{ margin: "10px 0 0", background: "#15120f", border: "1px solid rgba(21,18,15,0.20)", borderRadius: 10, padding: 14, color: "#f8f1e4", fontSize: "0.7rem", overflowX: "auto", fontFamily: APP_MONO_STACK }}>
+            <pre style={{ margin: "10px 0 0", background: "#0f172a", border: "1px solid rgba(15,23,42,0.20)", borderRadius: 10, padding: 14, color: "#f1f5f9", fontSize: "0.7rem", overflowX: "auto", fontFamily: APP_MONO_STACK }}>
 {JSON.stringify(viewingStructured, null, 2)}
             </pre>
           )}
@@ -4199,9 +4493,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       )}
 
       {editTicketNo && (
-        <div style={{ background: "rgba(255,255,255,0.78)", border: "1px solid rgba(21,18,15,0.12)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
+        <div style={{ background: "rgba(255,255,255,0.78)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
           <div style={dashEyebrowStyle}>Edit Ticket</div>
-          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: "#15120f", marginBottom: 12 }}>{editTicketNo}</div>
+          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: "#0f172a", marginBottom: 12 }}>{editTicketNo}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
             <input value={editDraft.customerName} onChange={(e) => setEditDraft((prev) => ({ ...prev, customerName: e.target.value }))} placeholder="Document Holder Name" style={dashInputStyle} />
             <input value={editDraft.customerPhone} onChange={(e) => setEditDraft((prev) => ({ ...prev, customerPhone: e.target.value.replace(/\D/g, "").slice(0, 10) }))} placeholder="Contact Number" style={dashInputStyle} />
@@ -4221,7 +4515,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
             <input type="number" min="0" value={editDraft.cashCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, cashCollected: e.target.value }))} placeholder="Cash collected" style={dashInputStyle} />
             <input type="number" min="0" value={editDraft.upiCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, upiCollected: e.target.value }))} placeholder="UPI collected" style={dashInputStyle} />
           </div>
-          <div style={{ marginTop: 8, fontSize: "0.78rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>
+          <div style={{ marginTop: 8, fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>
             Ticket total Rs. {editingTicket?.total || 0} | Collected Rs. {(Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)} | Pending Rs. {Math.max((Number(editingTicket?.total) || 0) - ((Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)), 0)}
           </div>
           {editError && <div style={{ marginTop: 8, color: "#FCA5A5", fontSize: 12 }}>{editError}</div>}
@@ -4232,18 +4526,18 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
         </div>
       )}
 
-      <div style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(21,18,15,0.10)", borderRadius: 14, padding: 14, marginBottom: 16 }}>
+      <div style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 14, padding: 14, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 12 }}>
           <div>
             <div style={dashEyebrowStyle}>Filters</div>
-            <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: "#15120f", marginBottom: 5 }}>Type and Payment Status</div>
-            <div style={{ fontSize: "0.80rem", color: "rgba(21,18,15,0.55)", lineHeight: 1.55 }}>
+            <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: "#0f172a", marginBottom: 5 }}>Type and Payment Status</div>
+            <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.55)", lineHeight: 1.55 }}>
               Filter tickets by reference state, service type, or payment status without leaving the dashboard.
             </div>
           </div>
-          <div style={{ fontSize: "0.80rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+          <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
             Showing {filteredTickets.length} of {normalizedTickets.length} tickets
-            <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK }}>
+            <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
               Active: {activeTypeFilterLabel} | {activePaymentFilterLabel}
             </div>
           </div>
@@ -4259,9 +4553,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                   style={{
                     padding: "7px 12px",
                     borderRadius: 999,
-                    border: active ? "1px solid rgba(143,47,47,0.35)" : "1px solid rgba(21,18,15,0.10)",
-                    background: active ? "rgba(143,47,47,0.09)" : "rgba(255,255,255,0.65)",
-                    color: active ? DS.wine : "rgba(21,18,15,0.65)",
+                    border: active ? "1px solid rgba(37,99,235,0.35)" : "1px solid rgba(15,23,42,0.10)",
+                    background: active ? "rgba(37,99,235,0.09)" : "rgba(255,255,255,0.65)",
+                    color: active ? DS.wine : "rgba(15,23,42,0.65)",
                     cursor: "pointer",
                     fontSize: "0.72rem",
                     fontFamily: APP_BRAND_STACK,
@@ -4286,9 +4580,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                   style={{
                     padding: "7px 12px",
                     borderRadius: 999,
-                    border: active ? "1px solid rgba(184,148,63,0.38)" : "1px solid rgba(21,18,15,0.10)",
-                    background: active ? "rgba(184,148,63,0.10)" : "rgba(255,255,255,0.65)",
-                    color: active ? "#7b5d2c" : "rgba(21,18,15,0.65)",
+                    border: active ? "1px solid rgba(59,130,246,0.38)" : "1px solid rgba(15,23,42,0.10)",
+                    background: active ? "rgba(59,130,246,0.10)" : "rgba(255,255,255,0.65)",
+                    color: active ? "#1d4ed8" : "rgba(15,23,42,0.65)",
                     cursor: "pointer",
                     fontSize: "0.72rem",
                     fontFamily: APP_BRAND_STACK,
@@ -4308,13 +4602,13 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
         {[
-          { label: "Visible", value: filteredTickets.length, color: "#15120f" },
-          { label: "Open", value: openTickets.length, color: "#7b5d2c" },
+          { label: "Visible", value: filteredTickets.length, color: "#0f172a" },
+          { label: "Open", value: openTickets.length, color: "#1d4ed8" },
           { label: "Closed", value: closedTickets.length, color: DS.wine },
           { label: "Task Progress", value: `${doneTasks}/${totalTasks || 0}`, color: "#2a5a8f" },
         ].map((stat) => (
-          <div key={stat.label} style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 10, padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(21,18,15,0.42)", marginBottom: 4 }}>{stat.label}</div>
+          <div key={stat.label} style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, padding: "12px 14px" }}>
+            <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)", marginBottom: 4 }}>{stat.label}</div>
             <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.6rem", fontWeight: 300, color: stat.color, lineHeight: 1 }}>{stat.value}</div>
           </div>
         ))}
@@ -4322,15 +4616,15 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
 
       <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: DS.wine, marginBottom: 8 }}>Open Tickets</div>
       {openTickets.length === 0 ? (
-        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px dashed rgba(21,18,15,0.14)", borderRadius: 10, padding: 14, color: "rgba(21,18,15,0.45)", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}>No open tickets.</div>
+        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px dashed rgba(15,23,42,0.14)", borderRadius: 10, padding: 14, color: "rgba(15,23,42,0.45)", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}>No open tickets.</div>
       ) : (
         <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
           {openTickets.map((t) => (
-            <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(21,18,15,0.10)", borderRadius: 12, padding: 14 }}>
+            <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.72)", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 12, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                 <div>
-                  <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(21,18,15,0.45)", marginBottom: 2 }}>{t.ticketNo}</div>
-                  <div style={{ color: "#15120f", fontWeight: 700, fontSize: "0.92rem", fontFamily: APP_FONT_STACK }}>{t.customerName}</div>
+                  <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(15,23,42,0.45)", marginBottom: 2 }}>{t.ticketNo}</div>
+                  <div style={{ color: "#0f172a", fontWeight: 700, fontSize: "0.92rem", fontFamily: APP_FONT_STACK }}>{t.customerName}</div>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button onClick={() => printTicketSlip(t)} style={actionButtonStyles.print}>Print</button>
@@ -4341,16 +4635,16 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                 </div>
               </div>
               {t.items.map((it, idx) => (
-                <label key={`${t.ticketNo}_${idx}`} style={{ display: "flex", alignItems: "center", gap: 8, color: "#15120f", padding: "5px 0", borderBottom: idx < t.items.length - 1 ? "1px solid rgba(21,18,15,0.07)" : "none", cursor: "pointer" }}>
+                <label key={`${t.ticketNo}_${idx}`} style={{ display: "flex", alignItems: "center", gap: 8, color: "#0f172a", padding: "5px 0", borderBottom: idx < t.items.length - 1 ? "1px solid rgba(15,23,42,0.07)" : "none", cursor: "pointer" }}>
                   <input type="checkbox" checked={!!it.done} onChange={() => onToggleTaskDone(t.ticketNo, idx)} />
-                  <span style={{ flex: 1, textDecoration: it.done ? "line-through" : "none", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, color: it.done ? "rgba(21,18,15,0.40)" : "#15120f" }}>
+                  <span style={{ flex: 1, textDecoration: it.done ? "line-through" : "none", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, color: it.done ? "rgba(15,23,42,0.40)" : "#0f172a" }}>
                     {it.name}
-                    {!!it.detailSummary && <span style={{ display: "block", color: "rgba(21,18,15,0.50)", fontSize: "0.72rem", lineHeight: 1.45, marginTop: 2 }}>{it.detailSummary}</span>}
+                    {!!it.detailSummary && <span style={{ display: "block", color: "rgba(15,23,42,0.50)", fontSize: "0.72rem", lineHeight: 1.45, marginTop: 2 }}>{it.detailSummary}</span>}
                   </span>
-                  <span style={{ fontSize: "0.72rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK }}>{getQuantityModeConfig(it.quantityMode).label} {it.qty}</span>
+                  <span style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>{getQuantityModeConfig(it.quantityMode).label} {it.qty}</span>
                 </label>
               ))}
-              <div style={{ marginTop: 8, fontSize: "0.74rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK }}>
+              <div style={{ marginTop: 8, fontSize: "0.74rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>
                 Type: {t.structured?.meta?.primaryType || "Unassigned"} | Payment: {t.paymentStatus || t.structured?.payment?.status || "Unpaid"} | Pending Rs. {t.pendingBalance ?? t.structured?.payment?.pendingBalance ?? 0} | Docs: {t.structured?.documents?.submitted?.length || 0}/{t.structured?.documents?.required?.length || 0} required submitted
               </div>
               {expandedTickets[t.ticketNo] && renderExpandedContent(t)}
@@ -4359,15 +4653,15 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
         </div>
       )}
 
-      <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.45)", marginBottom: 8 }}>Closed Tickets</div>
+      <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", marginBottom: 8 }}>Closed Tickets</div>
       {closedTickets.length === 0 ? (
-        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px dashed rgba(21,18,15,0.14)", borderRadius: 10, padding: 14, color: "rgba(21,18,15,0.45)", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}>No closed tickets yet.</div>
+        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px dashed rgba(15,23,42,0.14)", borderRadius: 10, padding: 14, color: "rgba(15,23,42,0.45)", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}>No closed tickets yet.</div>
       ) : (
-        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ background: "rgba(255,255,255,0.65)", border: "1px solid rgba(15,23,42,0.09)", borderRadius: 12, overflow: "hidden" }}>
           {[...closedTickets].reverse().map((t, idx) => (
-            <div key={t.ticketNo} style={{ padding: "11px 14px", borderBottom: idx < closedTickets.length - 1 ? "1px solid rgba(21,18,15,0.07)" : "none" }}>
+            <div key={t.ticketNo} style={{ padding: "11px 14px", borderBottom: idx < closedTickets.length - 1 ? "1px solid rgba(15,23,42,0.07)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <div style={{ color: "#15120f", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}><span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.70rem", color: "rgba(21,18,15,0.40)" }}>{t.ticketNo}</span> {t.customerName} · {t.structured?.meta?.primaryType || "Unassigned"} · Rs. {t.total} · {t.paymentStatus || t.structured?.payment?.status || "Unpaid"}</div>
+                <div style={{ color: "#0f172a", fontSize: "0.84rem", fontFamily: APP_FONT_STACK }}><span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.70rem", color: "rgba(15,23,42,0.40)" }}>{t.ticketNo}</span> {t.customerName}  |  {t.structured?.meta?.primaryType || "Unassigned"}  |  Rs. {t.total}  |  {t.paymentStatus || t.structured?.payment?.status || "Unpaid"}</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <button onClick={() => printTicketSlip(t)} style={actionButtonStyles.print}>Print</button>
                   <button onClick={() => { setViewTicketNo(t.ticketNo); setShowRawJson(false); }} style={actionButtonStyles.view}>View</button>
@@ -4386,103 +4680,356 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
 }
 
 // --- B2B TAB ---
-function B2BWorkspace() {
-  const b2bServices = [
-    { name: "Bulk Form Filing Support", unit: "per batch", note: "Ideal for partners with recurring submissions" },
-    { name: "Enterprise Document Printing", unit: "per order", note: "Bulk print, scan, and dispatch workflow" },
-    { name: "Staff Onboarding KYC Desk", unit: "per employee", note: "Structured verification with tracking" },
-    { name: "Vendor Certificate Processing", unit: "per request", note: "Fast turnaround for compliance docs" },
+function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
+  const b2bVendors = [
+    {
+      id: "asaan_kagajat_raja",
+      vendor: "Asaan Kagajat (RAJA)",
+      inboundServices: ["Notary", "Mobile Number Update"],
+      outboundServices: ["Document Printing", "Aadhaar Support", "Form Filling"],
+    },
+    {
+      id: "raj_akansha",
+      vendor: "RAJ/AKANSHA",
+      inboundServices: ["PVC Card", "Lamination", "Mobile Number Update", "Aadhaar Appointment"],
+      outboundServices: ["Certificate Printing", "Application Filing", "Document Scan"],
+    },
   ];
+  const [activeVendorId, setActiveVendorId] = useState(() => b2bVendors[0]?.id || "");
+  const [flow, setFlow] = useState("vendor_to_us");
+  const [serviceName, setServiceName] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [rate, setRate] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
+  const [paymentMode, setPaymentMode] = useState("UPI");
+  const [entryDate, setEntryDate] = useState(() => getTicketCounterDateKey(new Date()));
+  const [entryNote, setEntryNote] = useState("");
+  const [includeInDailyRevenue, setIncludeInDailyRevenue] = useState(true);
+  const [formError, setFormError] = useState("");
+
+  const normalizedLedger = useMemo(() => hydrateB2BLedger(ledger), [ledger]);
+  const activeVendor = b2bVendors.find((vendor) => vendor.id === activeVendorId) || b2bVendors[0] || null;
+  const serviceSuggestions = activeVendor
+    ? (flow === "vendor_to_us" ? activeVendor.inboundServices : activeVendor.outboundServices)
+    : [];
+  const amountPreview = Math.max(1, Number(quantity) || 1) * Math.max(0, Number(rate) || 0);
+  const paidPreview = Math.max(0, Math.min(amountPreview, Number(paidAmount) || 0));
+  const pendingPreview = Math.max(0, amountPreview - paidPreview);
+  const serviceListId = activeVendor ? `b2b_service_options_${activeVendor.id}_${flow}` : "b2b_service_options";
+  const todayKey = getTicketCounterDateKey(new Date());
+
+  useEffect(() => {
+    if (!activeVendor) return;
+    setServiceName(serviceSuggestions[0] || "");
+  }, [activeVendorId, flow]);
+
+  useEffect(() => {
+    setIncludeInDailyRevenue(flow === "us_to_vendor");
+  }, [flow]);
+
+  const vendorSummaries = useMemo(() => (
+    b2bVendors.map((vendor) => {
+      const vendorEntries = normalizedLedger
+        .filter((entry) => entry.vendorId === vendor.id || entry.vendorName === vendor.vendor)
+        .sort((a, b) => {
+          const byDate = String(b.entryDate || "").localeCompare(String(a.entryDate || ""));
+          if (byDate !== 0) return byDate;
+          return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+        });
+      const purchases = vendorEntries.filter((entry) => entry.flow === "vendor_to_us");
+      const sales = vendorEntries.filter((entry) => entry.flow === "us_to_vendor");
+      return {
+        ...vendor,
+        entries: vendorEntries,
+        purchasesValue: purchases.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0),
+        purchasesPaid: purchases.reduce((sum, entry) => sum + (Number(entry.paidAmount) || 0), 0),
+        purchasesPending: purchases.reduce((sum, entry) => sum + (Number(entry.pendingAmount) || 0), 0),
+        salesValue: sales.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0),
+        salesCollected: sales.reduce((sum, entry) => sum + (Number(entry.paidAmount) || 0), 0),
+        salesPending: sales.reduce((sum, entry) => sum + (Number(entry.pendingAmount) || 0), 0),
+      };
+    })
+  ), [normalizedLedger]);
+  const activeSummary = vendorSummaries.find((vendor) => vendor.id === activeVendorId) || vendorSummaries[0] || null;
+  const formatCurrency = (value) => `Rs. ${Math.round(Number(value) || 0).toLocaleString("en-IN")}`;
+  const formatEntryDate = (value) => {
+    const parsed = new Date(`${String(value || "").trim()}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return value || "N/A";
+    return parsed.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  const handleAddEntry = () => {
+    if (!activeVendor) return;
+    const trimmedService = String(serviceName || "").trim();
+    const qtyNum = Math.max(1, Number(quantity) || 1);
+    const rateNum = Math.max(0, Number(rate) || 0);
+    const amount = qtyNum * rateNum;
+    const paid = Math.max(0, Math.min(amount, Number(paidAmount) || 0));
+    const normalizedEntryDate = toIsoDateKey(entryDate) || todayKey;
+
+    if (!trimmedService) {
+      setFormError("Service name is required.");
+      return;
+    }
+    if (rateNum <= 0) {
+      setFormError("B2B rate must be greater than zero.");
+      return;
+    }
+    if (amount <= 0) {
+      setFormError("Amount must be greater than zero.");
+      return;
+    }
+
+    setFormError("");
+    onAddLedgerEntry?.({
+      id: `b2b_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      vendorId: activeVendor.id,
+      vendorName: activeVendor.vendor,
+      flow,
+      serviceName: trimmedService,
+      quantity: qtyNum,
+      rate: rateNum,
+      amount,
+      paidAmount: paid,
+      paymentMode,
+      entryDate: normalizedEntryDate,
+      note: String(entryNote || "").trim(),
+      includeInDailyRevenue: flow === "us_to_vendor" ? includeInDailyRevenue : false,
+      createdAt: new Date().toISOString(),
+    });
+    setRate("");
+    setPaidAmount("");
+    setQuantity("1");
+    setEntryNote("");
+    setServiceName(serviceSuggestions[0] || "");
+  };
+
+  const handleDeleteEntry = (entry) => {
+    if (!entry?.id || typeof onDeleteLedgerEntry !== "function") return;
+    const confirmed = typeof window !== "undefined"
+      ? window.confirm(`Delete B2B entry for ${entry.serviceName}? This cannot be undone.`)
+      : false;
+    if (!confirmed) return;
+    if (!verifyDeleteAccess(`delete B2B entry ${entry.id}`)) return;
+    onDeleteLedgerEntry(entry.id);
+  };
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      <div style={{
-        background: "linear-gradient(145deg, rgba(255,255,255,0.82), rgba(242,232,216,0.88))",
-        borderRadius: 18,
-        padding: "22px 24px",
-        border: "1px solid rgba(21,18,15,0.10)",
-        marginBottom: 16,
-        boxShadow: "0 16px 40px rgba(17,14,12,0.09)",
-        backgroundImage: "radial-gradient(circle at 12% 10%, rgba(184,148,63,0.16), transparent 36%), radial-gradient(circle at 88% 88%, rgba(143,47,47,0.10), transparent 34%), linear-gradient(145deg, rgba(255,255,255,0.84), rgba(242,232,216,0.88))",
-      }}>
-        <div style={{ fontSize: "0.52rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.32em", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 10 }}>
-          Partner Desk
-        </div>
-        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.8rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 8 }}>
-          B2B Workspace
-        </div>
-        <div style={{ fontSize: "0.86rem", color: "rgba(21,18,15,0.65)", fontFamily: APP_FONT_STACK, lineHeight: 1.72 }}>
-          Manage business clients, bulk service requests, and partner operations from one place.
-        </div>
-      </div>
-
-      <div style={{
-        background: "rgba(255,255,255,0.72)",
-        borderRadius: 14,
-        border: "1px solid rgba(21,18,15,0.10)",
-        overflow: "hidden",
-        boxShadow: "0 8px 24px rgba(17,14,12,0.07)",
-        marginBottom: 14,
-      }}>
-        <div style={{
-          padding: "12px 18px",
-          borderBottom: "1px solid rgba(21,18,15,0.08)",
-          background: "rgba(255,255,255,0.60)",
-          fontSize: "0.52rem",
-          fontWeight: 700,
-          letterSpacing: "0.28em",
-          textTransform: "uppercase",
-          color: DS.wine,
-          fontFamily: APP_BRAND_STACK,
-        }}>
-          B2B Services
-        </div>
-        {b2bServices.map((svc, i) => (
-          <div key={svc.name} style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "13px 18px",
-            borderBottom: i < b2bServices.length - 1 ? "1px solid rgba(21,18,15,0.07)" : "none",
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK }}>
-                {svc.name}
-              </div>
-              <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.55)", marginTop: 2, fontFamily: APP_FONT_STACK }}>
-                {svc.note}
-              </div>
-            </div>
-            <div style={{
-              fontSize: "0.58rem",
-              fontFamily: APP_BRAND_STACK,
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "#7b5d2c",
-              background: "rgba(184,148,63,0.12)",
-              border: "1px solid rgba(184,148,63,0.30)",
-              borderRadius: 999,
-              padding: "5px 10px",
-            }}>
-              {svc.unit}
-            </div>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
+        <div style={{ flex: "1 1 250px", minWidth: 240, background: "rgba(255,255,255,0.72)", borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", padding: 12 }}>
+          <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 10 }}>
+            Vendors
           </div>
-        ))}
+          <div role="tablist" aria-label="B2B vendor list" style={{ display: "grid", gap: 7 }}>
+            {vendorSummaries.map((vendor) => {
+              const active = vendor.id === activeSummary?.id;
+              return (
+                <button
+                  key={vendor.id}
+                  role="tab"
+                  aria-selected={active}
+                  aria-controls={`b2b_vendor_panel_${vendor.id}`}
+                  id={`b2b_vendor_tab_${vendor.id}`}
+                  onClick={() => setActiveVendorId(vendor.id)}
+                  style={{
+                    borderRadius: 10,
+                    border: active ? "1px solid rgba(37,99,235,0.35)" : "1px solid rgba(15,23,42,0.10)",
+                    background: active ? "rgba(37,99,235,0.09)" : "rgba(255,255,255,0.65)",
+                    padding: "9px 10px",
+                    textAlign: "left",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                    {vendor.vendor}
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.55)", marginTop: 2, fontFamily: APP_FONT_STACK }}>
+                    Purchases {formatCurrency(vendor.purchasesValue)} | Sales {formatCurrency(vendor.salesValue)}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div
+          role="tabpanel"
+          id={`b2b_vendor_panel_${activeSummary?.id || "none"}`}
+          aria-labelledby={`b2b_vendor_tab_${activeSummary?.id || "none"}`}
+          style={{ flex: "2 1 480px", minWidth: 280, background: "rgba(255,255,255,0.72)", borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", padding: 14 }}
+        >
+          {!activeSummary ? (
+            <div style={{ color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>No vendor selected.</div>
+          ) : (
+            <>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.2rem", fontWeight: 300, color: "#0f172a", marginBottom: 6 }}>
+                {activeSummary.vendor}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 10 }}>
+                {[
+                  { label: "Purchases", value: activeSummary.purchasesValue, color: "#1d4ed8" },
+                  { label: "Vendor Pending", value: activeSummary.purchasesPending, color: "#0f172a" },
+                  { label: "Sales", value: activeSummary.salesValue, color: "#1d4ed8" },
+                  { label: "Collection Pending", value: activeSummary.salesPending, color: "#0f172a" },
+                ].map((item) => (
+                  <div key={item.label} style={{ borderRadius: 10, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.60)", padding: "8px 9px" }}>
+                    <div style={{ fontSize: "0.46rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 4 }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.05rem", fontWeight: 300, color: item.color, lineHeight: 1 }}>
+                      {formatCurrency(item.value)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
+                <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>
+                  Vendor Services
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {activeSummary.inboundServices.map((service) => (
+                    <span key={`${activeSummary.id}_in_${service}`} style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "#1f2937", background: "rgba(15,23,42,0.06)", border: "1px solid rgba(15,23,42,0.11)", borderRadius: 999, padding: "4px 8px", fontFamily: APP_BRAND_STACK }}>
+                      IN: {service}
+                    </span>
+                  ))}
+                  {activeSummary.outboundServices.map((service) => (
+                    <span key={`${activeSummary.id}_out_${service}`} style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "#1d4ed8", background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.24)", borderRadius: 999, padding: "4px 8px", fontFamily: APP_BRAND_STACK }}>
+                      OUT: {service}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
+                Recent Entries
+              </div>
+              {activeSummary.entries.length === 0 ? (
+                <div style={{ background: "rgba(255,255,255,0.65)", border: "1px dashed rgba(15,23,42,0.14)", borderRadius: 10, padding: 12, color: "rgba(15,23,42,0.55)", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
+                  No ledger entries for this vendor yet. Add a B2B entry below to start tracking payments and services.
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: 7 }}>
+                  {activeSummary.entries.slice(0, 8).map((entry) => (
+                    <div key={entry.id} style={{ borderRadius: 10, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.60)", padding: "9px 10px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                          {entry.serviceName}
+                        </div>
+                        <button onClick={() => handleDeleteEntry(entry)} style={{ border: "1px solid rgba(214,5,43,0.28)", borderRadius: 999, background: "rgba(214,5,43,0.08)", color: "#1d4ed8", fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 8px", cursor: "pointer" }}>
+                          Delete
+                        </button>
+                      </div>
+                      <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.58)", marginTop: 3, fontFamily: APP_FONT_STACK }}>
+                        {entry.flow === "vendor_to_us" ? "From Vendor" : "To Vendor"} | Qty {entry.quantity} x Rs. {entry.rate} = {formatCurrency(entry.amount)}
+                      </div>
+                      <div style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", marginTop: 2, fontFamily: APP_FONT_STACK }}>
+                        {entry.paymentStatus} | Paid {formatCurrency(entry.paidAmount)} | Pending {formatCurrency(entry.pendingAmount)} | {entry.paymentMode} | {formatEntryDate(entry.entryDate)}
+                      </div>
+                      {entry.flow === "us_to_vendor" && entry.includeInDailyRevenue && (
+                        <div style={{ marginTop: 3, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#1d4ed8", fontFamily: APP_BRAND_STACK }}>
+                          Included in daily revenue
+                        </div>
+                      )}
+                      {entry.note && (
+                        <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
+                          Note: {entry.note}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
-      <div style={{
-        background: "rgba(255,255,255,0.65)",
-        borderRadius: 14,
-        border: "1px dashed rgba(21,18,15,0.14)",
-        padding: "22px 20px",
-        textAlign: "center",
-      }}>
-        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: "#15120f", marginBottom: 8 }}>
-          B2B billing board is ready for expansion
+      <div style={{ background: "rgba(255,255,255,0.72)", borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", padding: 14 }}>
+        <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
+          Add B2B Entry
         </div>
-        <div style={{ fontSize: "0.84rem", color: "rgba(21,18,15,0.55)", fontFamily: APP_FONT_STACK }}>
-          We can plug in corporate client profiles, credit cycles, and GST invoices in this tab next.
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Vendor</span>
+            <select value={activeVendorId} onChange={(e) => setActiveVendorId(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
+              {b2bVendors.map((vendor) => (
+                <option key={`b2b_vendor_select_${vendor.id}`} value={vendor.id} style={MENU_OPTION_STYLE}>{vendor.vendor}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Flow</span>
+            <select value={flow} onChange={(e) => setFlow(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
+              <option value="vendor_to_us" style={MENU_OPTION_STYLE}>From Vendor (Our Cost)</option>
+              <option value="us_to_vendor" style={MENU_OPTION_STYLE}>To Vendor (Our Revenue)</option>
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Service</span>
+            <input
+              list={serviceListId}
+              value={serviceName}
+              onChange={(e) => setServiceName(e.target.value)}
+              placeholder="Service name"
+              style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
+            />
+            <datalist id={serviceListId}>
+              {serviceSuggestions.map((service) => (
+                <option key={`${serviceListId}_${service}`} value={service} />
+              ))}
+            </datalist>
+          </label>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Quantity</span>
+            <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+          </label>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>B2B Rate (Rs.)</span>
+            <input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+          </label>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Paid Amount (Rs.)</span>
+            <input type="number" min="0" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+          </label>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Payment Mode</span>
+            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
+              {["Cash", "UPI", "Bank Transfer", "Credit", "Unspecified"].map((mode) => (
+                <option key={`b2b_mode_${mode}`} value={mode} style={MENU_OPTION_STYLE}>{mode}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Date</span>
+            <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+          </label>
+          <label style={{ display: "grid", gap: 5 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Note</span>
+            <input value={entryNote} onChange={(e) => setEntryNote(e.target.value)} placeholder="Optional note" style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+          </label>
+        </div>
+
+        {flow === "us_to_vendor" && (
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 10, padding: "8px 10px", border: "1px solid rgba(37,99,235,0.22)", borderRadius: 9, background: "rgba(37,99,235,0.08)", cursor: "pointer" }}>
+            <input type="checkbox" checked={includeInDailyRevenue} onChange={(e) => setIncludeInDailyRevenue(e.target.checked)} />
+            <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.72)", fontFamily: APP_FONT_STACK }}>
+              Include this sale in daily revenue
+            </span>
+          </label>
+        )}
+
+        <div style={{ marginTop: 10, fontSize: "0.80rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
+          Amount {formatCurrency(amountPreview)} | Paid {formatCurrency(paidPreview)} | Pending {formatCurrency(pendingPreview)}
+        </div>
+        {formError && (
+          <div style={{ marginTop: 8, color: "#1d4ed8", fontSize: "0.80rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+            {formError}
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+          <button onClick={handleAddEntry} style={{ border: "1px solid rgba(37,99,235,0.40)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: "#1e40af", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
+            Add B2B Entry
+          </button>
         </div>
       </div>
     </div>
@@ -4507,7 +5054,7 @@ function MonthlyOverview({ tickets }) {
   const closedCount = normalized.filter((t) => t.status === "Closed").length;
 
   const eb = { fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, display: "block", marginBottom: 5 };
-  const card = { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 16, boxShadow: "0 4px 16px rgba(17,14,12,0.06)" };
+  const card = { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(15,23,42,0.09)", borderRadius: 16, boxShadow: "0 4px 16px rgba(15,23,42,0.06)" };
 
   const hasData = normalized.length > 0;
 
@@ -4515,31 +5062,31 @@ function MonthlyOverview({ tickets }) {
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
 
       {/* Hero summary strip */}
-      <div style={{ ...card, padding: "22px 24px", marginBottom: 24, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(184,148,63,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(143,47,47,0.08), transparent 30%)" }}>
+      <div style={{ ...card, padding: "22px 24px", marginBottom: 24, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(59,130,246,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(37,99,235,0.08), transparent 30%)" }}>
         <span style={eb}>Centre Performance</span>
-        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#15120f", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
-          Monthly <em style={{ fontStyle: "italic", color: "rgba(21,18,15,0.45)" }}>Overview.</em>
+        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#0f172a", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
+          Monthly <em style={{ fontStyle: "italic", color: "rgba(15,23,42,0.45)" }}>Overview.</em>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
           {[
-            { label: "Total Tickets", value: normalized.length, color: "#15120f" },
-            { label: "Open", value: openCount, color: "#c8922a" },
+            { label: "Total Tickets", value: normalized.length, color: "#0f172a" },
+            { label: "Open", value: openCount, color: "#2563eb" },
             { label: "Closed", value: closedCount, color: DS.wine },
             { label: "Revenue", value: `Rs. ${allRevenue.toLocaleString("en-IN")}`, color: "#2a5a8f" },
             { label: "Pending", value: `Rs. ${allPending.toLocaleString("en-IN")}`, color: DS.wine },
-            { label: "Months Active", value: months.filter((m) => m !== "Unknown").length, color: "#15120f" },
+            { label: "Months Active", value: months.filter((m) => m !== "Unknown").length, color: "#0f172a" },
           ].map((s) => (
-            <div key={s.label} style={{ background: "rgba(21,18,15,0.04)", border: "1px solid rgba(21,18,15,0.08)", borderRadius: 12, padding: "12px 14px" }}>
-              <div style={{ fontSize: "0.44rem", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 5 }}>{s.label}</div>
+            <div key={s.label} style={{ background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 12, padding: "12px 14px" }}>
+              <div style={{ fontSize: "0.44rem", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 5 }}>{s.label}</div>
               <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.4rem", fontWeight: 300, color: s.color, lineHeight: 1 }}>{s.value}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Category breakdown bar — always shown */}
+      {/* Category breakdown bar  -  always shown */}
       <div style={{ ...card, padding: "18px 20px", marginBottom: 24 }}>
-        <span style={eb}>Service Mix — All Time</span>
+        <span style={eb}>Service Mix  -  All Time</span>
         <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
           {CATEGORIES.map((cat) => {
             const count = normalized.filter((t) => (t.structured?.meta?.serviceTypes || []).includes(cat)).length;
@@ -4549,14 +5096,14 @@ function MonthlyOverview({ tickets }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: CAT_COLORS[cat], display: "inline-block", flexShrink: 0 }} />
-                    <span style={{ fontSize: "0.80rem", fontFamily: APP_FONT_STACK, color: "rgba(21,18,15,0.72)" }}>{cat}</span>
+                    <span style={{ fontSize: "0.80rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.72)" }}>{cat}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ fontSize: "0.72rem", fontFamily: APP_MONO_STACK, color: CAT_COLORS[cat], fontWeight: 700 }}>{count}</span>
-                    <span style={{ fontSize: "0.66rem", fontFamily: APP_MONO_STACK, color: "rgba(21,18,15,0.35)" }}>{pct}%</span>
+                    <span style={{ fontSize: "0.66rem", fontFamily: APP_MONO_STACK, color: "rgba(15,23,42,0.35)" }}>{pct}%</span>
                   </div>
                 </div>
-                <div style={{ height: 5, borderRadius: 999, background: "rgba(21,18,15,0.07)", overflow: "hidden" }}>
+                <div style={{ height: 5, borderRadius: 999, background: "rgba(15,23,42,0.07)", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: CAT_COLORS[cat], transition: "width 0.6s ease", minWidth: pct > 0 ? 6 : 0 }} />
                 </div>
               </div>
@@ -4568,10 +5115,10 @@ function MonthlyOverview({ tickets }) {
       {/* Empty state */}
       {!hasData && (
         <div style={{ ...card, padding: "40px 28px", textAlign: "center" }}>
-          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.4rem", fontWeight: 300, color: "#15120f", marginBottom: 10 }}>
+          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.4rem", fontWeight: 300, color: "#0f172a", marginBottom: 10 }}>
             No tickets recorded yet.
           </div>
-          <div style={{ fontSize: "0.84rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_FONT_STACK, lineHeight: 1.7, maxWidth: 400, margin: "0 auto" }}>
+          <div style={{ fontSize: "0.84rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK, lineHeight: 1.7, maxWidth: 400, margin: "0 auto" }}>
             Once you start creating service tickets from the <strong>Service Entry</strong> tab, monthly breakdowns, revenue trends, and category insights will appear here automatically.
           </div>
         </div>
@@ -4599,20 +5146,20 @@ function MonthlyOverview({ tickets }) {
         return (
           <div key={month} style={{ ...card, marginBottom: 18, overflow: "hidden" }}>
             {/* Month header */}
-            <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(21,18,15,0.07)", backgroundImage: "radial-gradient(circle at 98% 0%, rgba(184,148,63,0.12), transparent 30%)" }}>
+            <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(15,23,42,0.07)", backgroundImage: "radial-gradient(circle at 98% 0%, rgba(59,130,246,0.12), transparent 30%)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
                 <div>
                   <span style={eb}>Period</span>
-                  <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.55rem", fontWeight: 300, color: "#15120f", letterSpacing: "-0.02em", lineHeight: 1 }}>{label}</div>
+                  <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.55rem", fontWeight: 300, color: "#0f172a", letterSpacing: "-0.02em", lineHeight: 1 }}>{label}</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {[
-                    { l: "Tickets", v: mTickets.length, c: "#15120f" },
+                    { l: "Tickets", v: mTickets.length, c: "#0f172a" },
                     { l: "Collected", v: `Rs. ${mRevenue.toLocaleString("en-IN")}`, c: "#2a5a8f" },
                     { l: "Pending", v: `Rs. ${mPending.toLocaleString("en-IN")}`, c: DS.wine },
                   ].map((s) => (
-                    <div key={s.l} style={{ background: "rgba(21,18,15,0.04)", border: "1px solid rgba(21,18,15,0.08)", borderRadius: 10, padding: "8px 14px", textAlign: "right" }}>
-                      <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: "rgba(21,18,15,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 3 }}>{s.l}</div>
+                    <div key={s.l} style={{ background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 10, padding: "8px 14px", textAlign: "right" }}>
+                      <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: "rgba(15,23,42,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 3 }}>{s.l}</div>
                       <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.05rem", fontWeight: 300, color: s.c }}>{s.v}</div>
                     </div>
                   ))}
@@ -4622,25 +5169,25 @@ function MonthlyOverview({ tickets }) {
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 0 }}>
               {/* Payment breakdown */}
-              <div style={{ padding: "14px 20px", borderRight: "1px solid rgba(21,18,15,0.06)" }}>
+              <div style={{ padding: "14px 20px", borderRight: "1px solid rgba(15,23,42,0.06)" }}>
                 <span style={eb}>Payment Status</span>
                 <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
                   {[
                     { l: "Paid", v: paid, bar: "#2a6647", bg: "rgba(42,102,71,0.10)" },
-                    { l: "Partial", v: partial, bar: "#c8922a", bg: "rgba(200,146,42,0.10)" },
-                    { l: "Unpaid", v: unpaid, bar: DS.wine, bg: "rgba(143,47,47,0.10)" },
+                    { l: "Partial", v: partial, bar: "#2563eb", bg: "rgba(59,130,246,0.10)" },
+                    { l: "Unpaid", v: unpaid, bar: DS.wine, bg: "rgba(37,99,235,0.10)" },
                   ].map((p) => (
                     <div key={p.l} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 10, height: 10, borderRadius: 3, background: p.bar, flexShrink: 0 }} />
-                      <span style={{ fontSize: "0.80rem", color: "rgba(21,18,15,0.65)", fontFamily: APP_FONT_STACK, flex: 1 }}>{p.l}</span>
+                      <span style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.65)", fontFamily: APP_FONT_STACK, flex: 1 }}>{p.l}</span>
                       <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.88rem", fontWeight: 700, color: p.bar, background: p.bg, borderRadius: 6, padding: "2px 8px" }}>{p.v}</span>
                     </div>
                   ))}
                 </div>
                 <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                  {[{ l: "Open", v: mOpen, c: "#c8922a" }, { l: "Closed", v: mClosed, c: DS.wine }].map((s) => (
-                    <div key={s.l} style={{ flex: 1, background: "rgba(21,18,15,0.04)", borderRadius: 8, padding: "7px 10px", border: "1px solid rgba(21,18,15,0.07)" }}>
-                      <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(21,18,15,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 3 }}>{s.l}</div>
+                  {[{ l: "Open", v: mOpen, c: "#2563eb" }, { l: "Closed", v: mClosed, c: DS.wine }].map((s) => (
+                    <div key={s.l} style={{ flex: 1, background: "rgba(15,23,42,0.04)", borderRadius: 8, padding: "7px 10px", border: "1px solid rgba(15,23,42,0.07)" }}>
+                      <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(15,23,42,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 3 }}>{s.l}</div>
                       <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: s.c }}>{s.v}</div>
                     </div>
                   ))}
@@ -4652,7 +5199,7 @@ function MonthlyOverview({ tickets }) {
                 <span style={eb}>By Service Category</span>
                 <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
                   {Object.keys(catCounts).length === 0 ? (
-                    <div style={{ fontSize: "0.78rem", color: "rgba(21,18,15,0.35)", fontFamily: APP_FONT_STACK }}>No category data</div>
+                    <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.35)", fontFamily: APP_FONT_STACK }}>No category data</div>
                   ) : Object.entries(catCounts).sort((a, b) => b[1] - a[1]).map(([cat, count]) => {
                     const pct = Math.round((count / mTickets.length) * 100);
                     return (
@@ -4660,11 +5207,11 @@ function MonthlyOverview({ tickets }) {
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <span style={{ width: 7, height: 7, borderRadius: "50%", background: CAT_COLORS[cat] || "#888", flexShrink: 0, display: "inline-block" }} />
-                            <span style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.65)", fontFamily: APP_FONT_STACK }}>{cat}</span>
+                            <span style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.65)", fontFamily: APP_FONT_STACK }}>{cat}</span>
                           </div>
-                          <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.76rem", fontWeight: 700, color: CAT_COLORS[cat] || "#15120f" }}>{count}</span>
+                          <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.76rem", fontWeight: 700, color: CAT_COLORS[cat] || "#0f172a" }}>{count}</span>
                         </div>
-                        <div style={{ height: 4, borderRadius: 999, background: "rgba(21,18,15,0.07)" }}>
+                        <div style={{ height: 4, borderRadius: 999, background: "rgba(15,23,42,0.07)" }}>
                           <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: CAT_COLORS[cat] || "#888", minWidth: pct > 0 ? 4 : 0 }} />
                         </div>
                       </div>
@@ -4675,27 +5222,27 @@ function MonthlyOverview({ tickets }) {
             </div>
 
             {/* Ticket rows */}
-            <div style={{ borderTop: "1px solid rgba(21,18,15,0.07)" }}>
+            <div style={{ borderTop: "1px solid rgba(15,23,42,0.07)" }}>
               <div style={{ padding: "10px 20px 6px" }}>
                 <span style={{ ...eb, marginBottom: 8 }}>Ticket Log</span>
               </div>
               {mTickets.map((t, i) => {
                 const ps = t.structured?.payment?.status || "Unpaid";
-                const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#c8922a" : DS.wine;
+                const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#2563eb" : DS.wine;
                 return (
-                  <div key={t.ticketNo} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "9px 20px", borderTop: i > 0 ? "1px solid rgba(21,18,15,0.05)" : "none", flexWrap: "wrap", transition: "background 0.15s ease" }}
+                  <div key={t.ticketNo} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "9px 20px", borderTop: i > 0 ? "1px solid rgba(15,23,42,0.05)" : "none", flexWrap: "wrap", transition: "background 0.15s ease" }}
                     onMouseOver={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.60)"}
                     onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
                   >
                     <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
-                      <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.65rem", color: "rgba(21,18,15,0.35)", flexShrink: 0 }}>{t.ticketNo}</span>
-                      <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.customerName}</span>
-                      <span style={{ fontSize: "0.72rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_FONT_STACK, display: "none" }}>{t.structured?.meta?.primaryType || "—"}</span>
+                      <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.65rem", color: "rgba(15,23,42,0.35)", flexShrink: 0 }}>{t.ticketNo}</span>
+                      <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.customerName}</span>
+                      <span style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK, display: "none" }}>{t.structured?.meta?.primaryType || " - "}</span>
                     </div>
                     <div style={{ display: "flex", gap: 7, alignItems: "center", flexShrink: 0 }}>
                       <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.80rem", color: "#2a5a8f", fontWeight: 600 }}>Rs. {(t.total || 0).toLocaleString("en-IN")}</span>
                       <span style={{ fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: psColor, background: `${psColor}15`, border: `1px solid ${psColor}28`, borderRadius: 999, padding: "3px 9px" }}>{ps}</span>
-                      <span style={{ fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#c8922a", background: t.status === "Closed" ? "rgba(143,47,47,0.07)" : "rgba(200,146,42,0.10)", border: `1px solid ${t.status === "Closed" ? "rgba(143,47,47,0.20)" : "rgba(200,146,42,0.24)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
+                      <span style={{ fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#2563eb", background: t.status === "Closed" ? "rgba(37,99,235,0.07)" : "rgba(59,130,246,0.10)", border: `1px solid ${t.status === "Closed" ? "rgba(37,99,235,0.20)" : "rgba(59,130,246,0.24)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
                     </div>
                   </div>
                 );
@@ -4745,27 +5292,27 @@ function CustomersWorkspace({ tickets, onDeleteCustomer }) {
   };
 
   const eb = { fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, display: "block", marginBottom: 5 };
-  const card = { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 16, boxShadow: "0 4px 16px rgba(17,14,12,0.06)" };
-  const inputSt = { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid rgba(21,18,15,0.12)", background: "rgba(255,255,255,0.86)", color: "#15120f", outline: "none", fontFamily: APP_FONT_STACK, fontSize: "0.88rem" };
+  const card = { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(15,23,42,0.09)", borderRadius: 16, boxShadow: "0 4px 16px rgba(15,23,42,0.06)" };
+  const inputSt = { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.86)", color: "#0f172a", outline: "none", fontFamily: APP_FONT_STACK, fontSize: "0.88rem" };
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
 
       {/* Hero + summary */}
-      <div style={{ ...card, padding: "22px 24px", marginBottom: 22, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(184,148,63,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(143,47,47,0.08), transparent 30%)" }}>
+      <div style={{ ...card, padding: "22px 24px", marginBottom: 22, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(59,130,246,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(37,99,235,0.08), transparent 30%)" }}>
         <span style={eb}>Customer Registry</span>
-        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#15120f", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
-          Clients &amp; <em style={{ fontStyle: "italic", color: "rgba(21,18,15,0.45)" }}>Documents.</em>
+        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#0f172a", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
+          Clients &amp; <em style={{ fontStyle: "italic", color: "rgba(15,23,42,0.45)" }}>Documents.</em>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
           {[
-            { label: "Total Customers", value: customers.length, color: "#15120f" },
+            { label: "Total Customers", value: customers.length, color: "#0f172a" },
             { label: "With Phone", value: customers.filter((c) => c.phone).length, color: "#2a5a8f" },
-            { label: "Returning", value: customers.filter((c) => c.tickets.length > 1).length, color: "#c8922a" },
+            { label: "Returning", value: customers.filter((c) => c.tickets.length > 1).length, color: "#2563eb" },
             { label: "Total Tickets", value: normalized.length, color: DS.wine },
           ].map((s) => (
-            <div key={s.label} style={{ background: "rgba(21,18,15,0.04)", border: "1px solid rgba(21,18,15,0.08)", borderRadius: 12, padding: "12px 14px" }}>
-              <div style={{ fontSize: "0.44rem", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 5 }}>{s.label}</div>
+            <div key={s.label} style={{ background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 12, padding: "12px 14px" }}>
+              <div style={{ fontSize: "0.44rem", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 5 }}>{s.label}</div>
               <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.4rem", fontWeight: 300, color: s.color, lineHeight: 1 }}>{s.value}</div>
             </div>
           ))}
@@ -4777,15 +5324,15 @@ function CustomersWorkspace({ tickets, onDeleteCustomer }) {
         {/* Left: search + list */}
         <div>
           <div style={{ marginBottom: 12 }}>
-            <input placeholder="Search by name or phone…" value={search} onChange={(e) => setSearch(e.target.value)} style={inputSt} />
+            <input placeholder="Search by name or phone..." value={search} onChange={(e) => setSearch(e.target.value)} style={inputSt} />
           </div>
 
           {filtered.length === 0 ? (
             <div style={{ ...card, padding: "40px 24px", textAlign: "center" }}>
-              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.3rem", fontWeight: 300, color: "#15120f", marginBottom: 8 }}>
+              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.3rem", fontWeight: 300, color: "#0f172a", marginBottom: 8 }}>
                 {customers.length === 0 ? "No customers yet." : "No results."}
               </div>
-              <div style={{ fontSize: "0.82rem", color: "rgba(21,18,15,0.48)", fontFamily: APP_FONT_STACK, lineHeight: 1.7, maxWidth: 340, margin: "0 auto" }}>
+              <div style={{ fontSize: "0.82rem", color: "rgba(15,23,42,0.48)", fontFamily: APP_FONT_STACK, lineHeight: 1.7, maxWidth: 340, margin: "0 auto" }}>
                 {customers.length === 0
                   ? "Customers are automatically created from tickets. Start by adding a ticket in the Service Entry tab."
                   : "Try a different name or phone number."}
@@ -4803,36 +5350,36 @@ function CustomersWorkspace({ tickets, onDeleteCustomer }) {
                 return (
                   <div key={key} onClick={() => setSelectedKey(isSelected ? null : key)} style={{
                     ...card, padding: "14px 16px", cursor: "pointer",
-                    border: isSelected ? "1px solid rgba(143,47,47,0.28)" : "1px solid rgba(21,18,15,0.09)",
-                    background: isSelected ? "rgba(143,47,47,0.05)" : "rgba(255,255,255,0.75)",
-                    boxShadow: isSelected ? "inset 3px 0 0 rgba(143,47,47,0.65), 0 4px 16px rgba(17,14,12,0.06)" : "0 4px 16px rgba(17,14,12,0.06)",
+                    border: isSelected ? "1px solid rgba(37,99,235,0.28)" : "1px solid rgba(15,23,42,0.09)",
+                    background: isSelected ? "rgba(37,99,235,0.05)" : "rgba(255,255,255,0.75)",
+                    boxShadow: isSelected ? "inset 3px 0 0 rgba(37,99,235,0.65), 0 4px 16px rgba(15,23,42,0.06)" : "0 4px 16px rgba(15,23,42,0.06)",
                     transition: "all 0.18s ease",
                   }}>
                     <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                       {/* Avatar */}
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: isSelected ? "rgba(143,47,47,0.14)" : "rgba(21,18,15,0.07)", border: `1px solid ${isSelected ? "rgba(143,47,47,0.22)" : "rgba(21,18,15,0.10)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.06em", color: isSelected ? DS.wine : "rgba(21,18,15,0.50)" }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: isSelected ? "rgba(37,99,235,0.14)" : "rgba(15,23,42,0.07)", border: `1px solid ${isSelected ? "rgba(37,99,235,0.22)" : "rgba(15,23,42,0.10)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.06em", color: isSelected ? DS.wine : "rgba(15,23,42,0.50)" }}>
                         {initials}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                           <div>
-                            <div style={{ fontSize: "0.92rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>{c.name}</div>
-                            <div style={{ fontSize: "0.74rem", color: "rgba(21,18,15,0.48)", fontFamily: APP_MONO_STACK, marginTop: 1 }}>
+                            <div style={{ fontSize: "0.92rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>{c.name}</div>
+                            <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.48)", fontFamily: APP_MONO_STACK, marginTop: 1 }}>
                               {c.phone ? `+91 ${c.phone.slice(0,5)} ${c.phone.slice(5)}` : "No phone"}
                             </div>
                           </div>
                           <div style={{ textAlign: "right", flexShrink: 0 }}>
-                            <div style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c.tickets.length > 1 ? "#2a5a8f" : "rgba(21,18,15,0.38)", background: c.tickets.length > 1 ? "rgba(42,90,143,0.09)" : "rgba(21,18,15,0.05)", borderRadius: 999, padding: "3px 9px", border: `1px solid ${c.tickets.length > 1 ? "rgba(42,90,143,0.22)" : "rgba(21,18,15,0.09)"}`, display: "inline-block", marginBottom: 4 }}>
+                            <div style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c.tickets.length > 1 ? "#2a5a8f" : "rgba(15,23,42,0.38)", background: c.tickets.length > 1 ? "rgba(42,90,143,0.09)" : "rgba(15,23,42,0.05)", borderRadius: 999, padding: "3px 9px", border: `1px solid ${c.tickets.length > 1 ? "rgba(42,90,143,0.22)" : "rgba(15,23,42,0.09)"}`, display: "inline-block", marginBottom: 4 }}>
                               {c.tickets.length} ticket{c.tickets.length !== 1 ? "s" : ""}
                             </div>
-                            <div style={{ fontSize: "0.70rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_MONO_STACK }}>Rs. {totalPaid.toLocaleString("en-IN")}</div>
+                            <div style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_MONO_STACK }}>Rs. {totalPaid.toLocaleString("en-IN")}</div>
                           </div>
                         </div>
                         <div style={{ marginTop: 8, display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
                           {allCats.map((cat) => (
                             <span key={cat} style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: CAT_COLORS[cat] || "#888", background: `${CAT_COLORS[cat] || "#888"}18`, border: `1px solid ${CAT_COLORS[cat] || "#888"}28`, borderRadius: 999, padding: "2px 8px" }}>{cat}</span>
                           ))}
-                          {lastDate && <span style={{ marginLeft: "auto", fontSize: "0.66rem", color: "rgba(21,18,15,0.32)", fontFamily: APP_FONT_STACK }}>Last: {lastDate}</span>}
+                          {lastDate && <span style={{ marginLeft: "auto", fontSize: "0.66rem", color: "rgba(15,23,42,0.32)", fontFamily: APP_FONT_STACK }}>Last: {lastDate}</span>}
                         </div>
                       </div>
                     </div>
@@ -4854,16 +5401,16 @@ function CustomersWorkspace({ tickets, onDeleteCustomer }) {
             <div style={{ position: "sticky", top: 80 }}>
               <div style={{ ...card, overflow: "hidden" }}>
                 {/* Profile header */}
-                <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(21,18,15,0.08)", backgroundImage: "radial-gradient(circle at 90% 0%, rgba(184,148,63,0.12), transparent 36%)" }}>
+                <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(15,23,42,0.08)", backgroundImage: "radial-gradient(circle at 90% 0%, rgba(59,130,246,0.12), transparent 36%)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                     <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                      <div style={{ width: 50, height: 50, borderRadius: "50%", background: "rgba(143,47,47,0.10)", border: "1px solid rgba(143,47,47,0.20)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.80rem", letterSpacing: "0.06em", color: DS.wine, flexShrink: 0 }}>
+                      <div style={{ width: 50, height: 50, borderRadius: "50%", background: "rgba(37,99,235,0.10)", border: "1px solid rgba(37,99,235,0.20)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.80rem", letterSpacing: "0.06em", color: DS.wine, flexShrink: 0 }}>
                         {initials}
                       </div>
                       <div>
                         <span style={eb}>Customer Profile</span>
-                        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.35rem", fontWeight: 300, color: "#15120f", letterSpacing: "-0.02em", lineHeight: 1.1 }}>{selected.name}</div>
-                        <div style={{ fontSize: "0.76rem", color: "rgba(21,18,15,0.50)", fontFamily: APP_MONO_STACK, marginTop: 3 }}>
+                        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.35rem", fontWeight: 300, color: "#0f172a", letterSpacing: "-0.02em", lineHeight: 1.1 }}>{selected.name}</div>
+                        <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_MONO_STACK, marginTop: 3 }}>
                           {selected.phone ? `+91 ${selected.phone.slice(0,5)} ${selected.phone.slice(5)}` : "No phone saved"}
                         </div>
                       </div>
@@ -4871,7 +5418,7 @@ function CustomersWorkspace({ tickets, onDeleteCustomer }) {
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                       <button
                         onClick={() => setSelectedKey(null)}
-                        style={{ border: "1px solid rgba(21,18,15,0.12)", borderRadius: 999, padding: "7px 14px", background: "rgba(255,255,255,0.70)", color: "rgba(21,18,15,0.55)", fontFamily: APP_BRAND_STACK, fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
+                        style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 999, padding: "7px 14px", background: "rgba(255,255,255,0.70)", color: "rgba(15,23,42,0.55)", fontFamily: APP_BRAND_STACK, fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
                       >
                         Close
                       </button>
@@ -4889,9 +5436,9 @@ function CustomersWorkspace({ tickets, onDeleteCustomer }) {
                       { l: "Collected", v: `Rs. ${totalPaid.toLocaleString("en-IN")}` },
                       { l: "Pending", v: `Rs. ${totalPending.toLocaleString("en-IN")}` },
                     ].map((s) => (
-                      <div key={s.l} style={{ background: "rgba(21,18,15,0.04)", borderRadius: 10, padding: "9px 12px", border: "1px solid rgba(21,18,15,0.07)", textAlign: "center" }}>
-                        <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(21,18,15,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 4 }}>{s.l}</div>
-                        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.05rem", fontWeight: 300, color: "#15120f" }}>{s.v}</div>
+                      <div key={s.l} style={{ background: "rgba(15,23,42,0.04)", borderRadius: 10, padding: "9px 12px", border: "1px solid rgba(15,23,42,0.07)", textAlign: "center" }}>
+                        <div style={{ fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(15,23,42,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 4 }}>{s.l}</div>
+                        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.05rem", fontWeight: 300, color: "#0f172a" }}>{s.v}</div>
                       </div>
                     ))}
                   </div>
@@ -4899,18 +5446,18 @@ function CustomersWorkspace({ tickets, onDeleteCustomer }) {
 
                 {/* Documents section */}
                 {allDocs.length > 0 && (
-                  <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(21,18,15,0.07)" }}>
+                  <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(15,23,42,0.07)" }}>
                     <span style={eb}>All Documents on File</span>
                     <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
                       {allDocs.map((doc, di) => (
-                        <div key={di} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderRadius: 9, background: "rgba(21,18,15,0.03)", border: "1px solid rgba(21,18,15,0.07)" }}>
+                        <div key={di} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderRadius: 9, background: "rgba(15,23,42,0.03)", border: "1px solid rgba(15,23,42,0.07)" }}>
                           <div>
-                            <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK }}>{doc.name}</div>
-                            <div style={{ fontSize: "0.66rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_MONO_STACK, marginTop: 1 }}>{doc.ticketNo} · {doc.ticketDate || "—"}</div>
+                            <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK }}>{doc.name}</div>
+                            <div style={{ fontSize: "0.66rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_MONO_STACK, marginTop: 1 }}>{doc.ticketNo}  |  {doc.ticketDate || " - "}</div>
                           </div>
                           <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                            <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.required ? DS.wine : "rgba(21,18,15,0.40)", background: doc.required ? "rgba(143,47,47,0.07)" : "rgba(21,18,15,0.04)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.required ? "rgba(143,47,47,0.18)" : "rgba(21,18,15,0.08)"}` }}>{doc.required ? "Required" : "Optional"}</span>
-                            <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.submitted ? "#2a6647" : "#c8922a", background: doc.submitted ? "rgba(42,102,71,0.08)" : "rgba(200,146,42,0.09)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.submitted ? "rgba(42,102,71,0.18)" : "rgba(200,146,42,0.22)"}` }}>{doc.submitted ? "Submitted" : "Pending"}</span>
+                            <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.required ? DS.wine : "rgba(15,23,42,0.40)", background: doc.required ? "rgba(37,99,235,0.07)" : "rgba(15,23,42,0.04)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.required ? "rgba(37,99,235,0.18)" : "rgba(15,23,42,0.08)"}` }}>{doc.required ? "Required" : "Optional"}</span>
+                            <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.submitted ? "#2a6647" : "#2563eb", background: doc.submitted ? "rgba(42,102,71,0.08)" : "rgba(59,130,246,0.09)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.submitted ? "rgba(42,102,71,0.18)" : "rgba(59,130,246,0.22)"}` }}>{doc.submitted ? "Submitted" : "Pending"}</span>
                           </div>
                         </div>
                       ))}
@@ -4924,21 +5471,21 @@ function CustomersWorkspace({ tickets, onDeleteCustomer }) {
                   <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
                     {sortedTickets.map((t) => {
                       const ps = t.structured?.payment?.status || "Unpaid";
-                      const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#c8922a" : DS.wine;
-                      const services = (t.structured?.services || []).map((s) => s.name).join(", ") || "—";
+                      const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#2563eb" : DS.wine;
+                      const services = (t.structured?.services || []).map((s) => s.name).join(", ") || " - ";
                       return (
-                        <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.65)", border: "1px solid rgba(21,18,15,0.09)", borderRadius: 10, padding: "12px 14px" }}>
+                        <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.65)", border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, padding: "12px 14px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                             <div>
-                              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.65rem", color: "rgba(21,18,15,0.35)", marginBottom: 2 }}>{t.ticketNo} · {t.structured?.meta?.createdDate || "—"}</div>
-                              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#15120f", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>{services}</div>
-                              <div style={{ fontSize: "0.72rem", color: "rgba(21,18,15,0.45)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
-                                {t.operator || "—"} · Rs. {(t.total || 0).toLocaleString("en-IN")}
+                              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.65rem", color: "rgba(15,23,42,0.35)", marginBottom: 2 }}>{t.ticketNo}  |  {t.structured?.meta?.createdDate || " - "}</div>
+                              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK, lineHeight: 1.3 }}>{services}</div>
+                              <div style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
+                                {t.operator || " - "}  |  Rs. {(t.total || 0).toLocaleString("en-IN")}
                               </div>
                             </div>
                             <div style={{ display: "flex", gap: 5, alignItems: "flex-start", flexShrink: 0 }}>
                               <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: psColor, background: `${psColor}15`, border: `1px solid ${psColor}28`, borderRadius: 999, padding: "3px 9px" }}>{ps}</span>
-                              <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#c8922a", background: t.status === "Closed" ? "rgba(143,47,47,0.07)" : "rgba(200,146,42,0.09)", border: `1px solid ${t.status === "Closed" ? "rgba(143,47,47,0.18)" : "rgba(200,146,42,0.22)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
+                              <span style={{ fontSize: "0.54rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#2563eb", background: t.status === "Closed" ? "rgba(37,99,235,0.07)" : "rgba(59,130,246,0.09)", border: `1px solid ${t.status === "Closed" ? "rgba(37,99,235,0.18)" : "rgba(59,130,246,0.22)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
                             </div>
                           </div>
                         </div>
@@ -4972,8 +5519,8 @@ function WalkInModal({ onClose, onStart }) {
 
   const inputSt = {
     width: "100%", padding: "11px 14px", borderRadius: 10,
-    border: "1px solid rgba(21,18,15,0.14)", background: "rgba(255,255,255,0.86)",
-    color: "#15120f", outline: "none", fontFamily: APP_FONT_STACK, fontSize: "0.90rem",
+    border: "1px solid rgba(15,23,42,0.14)", background: "rgba(255,255,255,0.86)",
+    color: "#0f172a", outline: "none", fontFamily: APP_FONT_STACK, fontSize: "0.90rem",
   };
 
   return (
@@ -4981,18 +5528,18 @@ function WalkInModal({ onClose, onStart }) {
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(15,17,22,0.55)", backdropFilter: "blur(6px)" }} />
       <div style={{
         position: "relative", zIndex: 1, width: "min(480px, 100%)",
-        background: "#fffaf2", border: "1px solid rgba(21,18,15,0.14)", borderRadius: 20,
-        padding: "28px 24px", boxShadow: "0 28px 68px rgba(17,14,12,0.18)",
-        backgroundImage: "radial-gradient(circle at 8% 8%, rgba(184,148,63,0.18), transparent 32%), radial-gradient(circle at 90% 90%, rgba(143,47,47,0.10), transparent 30%)",
+        background: "#ffffff", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 20,
+        padding: "28px 24px", boxShadow: "0 28px 68px rgba(15,23,42,0.18)",
+        backgroundImage: "radial-gradient(circle at 8% 8%, rgba(59,130,246,0.18), transparent 32%), radial-gradient(circle at 90% 90%, rgba(37,99,235,0.10), transparent 30%)",
       }}>
         <div style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, marginBottom: 10 }}>
           Quick Walk-In
         </div>
-        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.65rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#15120f", marginBottom: 6, lineHeight: 1.1 }}>
+        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.65rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1 }}>
           Start <em style={{ fontStyle: "italic" }}>instantly.</em>
         </div>
-        <div style={{ fontSize: "0.84rem", color: "rgba(21,18,15,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.65, marginBottom: 22 }}>
-          Enter the customer name and start the ticket immediately — no WhatsApp needed.
+        <div style={{ fontSize: "0.84rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.65, marginBottom: 22 }}>
+          Enter the customer name and start the ticket immediately  -  no WhatsApp needed.
         </div>
 
         <div style={{ display: "grid", gap: 14, marginBottom: 18 }}>
@@ -5001,11 +5548,11 @@ function WalkInModal({ onClose, onStart }) {
             <input autoFocus placeholder="e.g. Rahul Sharma" value={name} onChange={(e) => { setName(e.target.value); setError(""); }} style={inputSt} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.42)" }}>Phone (optional)</span>
+            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)" }}>Phone (optional)</span>
             <input type="tel" placeholder="10-digit mobile" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }} style={inputSt} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(21,18,15,0.42)" }}>Operator</span>
+            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)" }}>Operator</span>
             <select value={operator} onChange={(e) => setOperator(e.target.value)} style={inputSt}>
               {OPERATORS.map((op) => <option key={op} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
             </select>
@@ -5013,17 +5560,17 @@ function WalkInModal({ onClose, onStart }) {
         </div>
 
         {error && (
-          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f1020", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
+          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#1d4ed8", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
             {error}
           </div>
         )}
 
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ border: "1px solid rgba(21,18,15,0.14)", borderRadius: 999, padding: "11px 20px", background: "rgba(255,255,255,0.72)", color: "rgba(21,18,15,0.70)", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
+          <button onClick={onClose} style={{ border: "1px solid rgba(15,23,42,0.14)", borderRadius: 999, padding: "11px 20px", background: "rgba(255,255,255,0.72)", color: "rgba(15,23,42,0.70)", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
             Cancel
           </button>
-          <button onClick={handleStart} style={{ border: "1px solid rgba(143,47,47,0.48)", borderRadius: 999, padding: "11px 24px", background: "rgba(143,47,47,0.13)", color: "#6b1f1f", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
-            Start Ticket →
+          <button onClick={handleStart} style={{ border: "1px solid rgba(37,99,235,0.48)", borderRadius: 999, padding: "11px 24px", background: "rgba(37,99,235,0.13)", color: "#1e40af", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
+            Start Ticket &rarr;
           </button>
         </div>
       </div>
@@ -5035,11 +5582,15 @@ function WalkInModal({ onClose, onStart }) {
 export default function CSCBilling() {
   const [tab, setTab] = useState(() => getInitialActiveTab());
   const [sidePanelExpanded, setSidePanelExpanded] = useState(() => getStoredSidePanelExpanded());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => getStoredSidebarCollapsed());
   const [services, setServices] = useState(() => (
     hydrateServices(readStoredJSON(STORAGE_KEYS.services, INITIAL_SERVICES))
   ));
   const [tickets, setTickets] = useState(() => (
     hydrateTickets(readStoredJSON(STORAGE_KEYS.tickets, []))
+  ));
+  const [b2bLedger, setB2BLedger] = useState(() => (
+    hydrateB2BLedger(readStoredJSON(STORAGE_KEYS.b2bLedger, []))
   ));
   const [customQuickLinks, setCustomQuickLinks] = useState(() => getStoredQuickLinks());
   const [showAddQuickLink, setShowAddQuickLink] = useState(false);
@@ -5051,11 +5602,37 @@ export default function CSCBilling() {
   const [cloudSyncState, setCloudSyncState] = useState(() => (supabase ? "connecting" : "local_only"));
   const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState(null);
   const dbSyncedRef = useRef(false);
+  const todayDateKey = getTicketCounterDateKey(new Date());
   const openTicketCount = tickets.filter((ticket) => ticket.status !== "Closed").length;
+  const ticketRevenueToday = useMemo(() => (
+    tickets.reduce((sum, ticket) => {
+      const structured = ticket.structured || toStructuredTicket(ticket);
+      const ticketDateKey = toIsoDateKey(structured.meta.createdDate || ticket.date || "");
+      if (ticketDateKey !== todayDateKey) return sum;
+      return sum + (Number(ticket.total) || Number(structured.payment.total) || 0);
+    }, 0)
+  ), [tickets, todayDateKey]);
+  const b2bRevenueToday = useMemo(() => (
+    b2bLedger.reduce((sum, entry) => {
+      const normalizedEntry = normalizeB2BLedgerEntry(entry);
+      if (normalizedEntry.flow !== "us_to_vendor") return sum;
+      if (!normalizedEntry.includeInDailyRevenue) return sum;
+      if (normalizedEntry.entryDate !== todayDateKey) return sum;
+      return sum + (Number(normalizedEntry.amount) || 0);
+    }, 0)
+  ), [b2bLedger, todayDateKey]);
+  const dailyRevenueTotal = ticketRevenueToday + b2bRevenueToday;
+  const b2bPendingCount = b2bLedger.filter((entry) => (Number(entry.pendingAmount) || 0) > 0).length;
   const panelBadges = {
     log: openTicketCount > 0 ? String(openTicketCount) : String(tickets.length),
+    b2b: b2bPendingCount > 0 ? String(b2bPendingCount) : String(b2bLedger.length),
   };
-  const headerStats = [];
+  const sidebarWidth = sidebarCollapsed ? 168 : 260;
+  const headerStats = [
+    { label: "Daily Revenue", value: `Rs. ${Math.round(dailyRevenueTotal).toLocaleString("en-IN")}`, accent: "#0f172a" },
+    { label: "B2B Sales Today", value: `Rs. ${Math.round(b2bRevenueToday).toLocaleString("en-IN")}`, accent: "#1d4ed8" },
+    { label: "Open Tickets", value: String(openTicketCount), accent: openTicketCount > 0 ? "#1d4ed8" : "#0f172a" },
+  ];
   const cloudSyncLabel = cloudSyncState === "local_only"
     ? "Local-only"
     : cloudSyncState === "syncing" || cloudSyncState === "connecting"
@@ -5070,6 +5647,7 @@ export default function CSCBilling() {
       : cloudSyncState === "local_only"
         ? OPS.textMuted
         : OPS.primary;
+  const CSC_WHATSAPP_NUMBER = String(import.meta.env.VITE_CSC_WHATSAPP_NUMBER || "").replace(/\D/g, "");
   const quickLinks = [...QUICK_LINK_DEFAULTS, ...customQuickLinks];
   const navigateTab = (nextTab, mode = "push") => {
     if (!TAB_CONFIG.some((item) => item.id === nextTab)) return;
@@ -5097,6 +5675,12 @@ export default function CSCBilling() {
   };
 
   const saveTicket = (ticket) => setTickets((prev) => [...prev, withStructuredTicket(ticket)]);
+  const addB2BLedgerEntry = (entry) => {
+    setB2BLedger((prev) => [...prev, normalizeB2BLedgerEntry(entry, prev.length)]);
+  };
+  const deleteB2BLedgerEntry = (entryId) => {
+    setB2BLedger((prev) => prev.filter((entry) => entry.id !== entryId));
+  };
   const deleteTicket = (ticketNo) => {
     setTickets((prev) => prev.filter((ticket) => ticket.ticketNo !== ticketNo));
   };
@@ -5168,6 +5752,27 @@ export default function CSCBilling() {
     if (!finalUrl) return;
     window.open(finalUrl, "_blank", "noopener,noreferrer");
   };
+  const openCscWhatsApp = () => {
+    if (typeof window === "undefined") return;
+    const appUrl = CSC_WHATSAPP_NUMBER
+      ? `whatsapp://send?phone=${CSC_WHATSAPP_NUMBER}`
+      : "whatsapp://";
+    const webUrl = CSC_WHATSAPP_NUMBER
+      ? `https://wa.me/${CSC_WHATSAPP_NUMBER}`
+      : "https://web.whatsapp.com";
+    let fallbackTimer = null;
+    const handleBlur = () => {
+      if (fallbackTimer) {
+        window.clearTimeout(fallbackTimer);
+      }
+    };
+    window.addEventListener("blur", handleBlur, { once: true });
+    fallbackTimer = window.setTimeout(() => {
+      window.removeEventListener("blur", handleBlur);
+      window.open(webUrl, "_blank", "noopener,noreferrer");
+    }, 900);
+    window.location.href = appUrl;
+  };
 
   useEffect(() => {
     updateBrowserState({ tab }, "replace");
@@ -5194,6 +5799,16 @@ export default function CSCBilling() {
   }, [sidePanelExpanded]);
 
   useEffect(() => {
+    writeStoredJSON(STORAGE_KEYS.sidebarCollapsed, sidebarCollapsed);
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    if (sidebarCollapsed && sidePanelExpanded) {
+      setSidePanelExpanded(false);
+    }
+  }, [sidebarCollapsed, sidePanelExpanded]);
+
+  useEffect(() => {
     let cancelled = false;
     async function loadFromSupabase() {
       if (!supabase) {
@@ -5205,21 +5820,24 @@ export default function CSCBilling() {
       }
 
       setCloudSyncState("connecting");
-      const [remoteTicketsResult, remoteServicesResult, remoteQuickLinksResult] = await Promise.all([
+      const [remoteTicketsResult, remoteServicesResult, remoteQuickLinksResult, remoteB2BLedgerResult] = await Promise.all([
         dbLoad("tickets"),
         dbLoad("services"),
         dbLoad("quick_links"),
+        dbLoad("b2b_ledger"),
       ]);
 
       if (cancelled) return;
-      let syncFailed = [remoteTicketsResult, remoteServicesResult, remoteQuickLinksResult].some((result) => !result?.ok);
+      let syncFailed = [remoteTicketsResult, remoteServicesResult, remoteQuickLinksResult, remoteB2BLedgerResult].some((result) => !result?.ok);
 
       const localTickets = readStoredJSON(STORAGE_KEYS.tickets, []);
       const localServices = readStoredJSON(STORAGE_KEYS.services, []);
       const localQuickLinks = getStoredQuickLinks();
+      const localB2BLedger = readStoredJSON(STORAGE_KEYS.b2bLedger, []);
       const remoteTickets = remoteTicketsResult?.value;
       const remoteServices = remoteServicesResult?.value;
       const remoteQuickLinks = remoteQuickLinksResult?.value;
+      const remoteB2BLedger = remoteB2BLedgerResult?.value;
 
       if (Array.isArray(remoteTickets) && remoteTickets.length > 0) {
         setTickets(hydrateTickets(remoteTickets));
@@ -5245,6 +5863,16 @@ export default function CSCBilling() {
         if (!seedQuickLinksResult?.ok) syncFailed = true;
       }
 
+      if (Array.isArray(remoteB2BLedger) && remoteB2BLedger.length > 0) {
+        const hydratedRemoteLedger = hydrateB2BLedger(remoteB2BLedger);
+        setB2BLedger(hydratedRemoteLedger);
+        writeStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(hydratedRemoteLedger));
+      } else if (Array.isArray(localB2BLedger) && localB2BLedger.length > 0) {
+        const hydratedLocalLedger = hydrateB2BLedger(localB2BLedger);
+        const seedB2BLedgerResult = await dbSave("b2b_ledger", serializeB2BLedger(hydratedLocalLedger));
+        if (!seedB2BLedgerResult?.ok) syncFailed = true;
+      }
+
       if (!cancelled) {
         dbSyncedRef.current = true;
         if (syncFailed) {
@@ -5263,6 +5891,7 @@ export default function CSCBilling() {
 
   useDebouncedStoredJSON(STORAGE_KEYS.services, services, 180);
   useDebouncedStoredJSON(STORAGE_KEYS.tickets, serializeTickets(tickets), 180);
+  useDebouncedStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(b2bLedger), 180);
   useDebouncedStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks, 180);
 
   useEffect(() => {
@@ -5325,6 +5954,26 @@ export default function CSCBilling() {
     };
   }, [customQuickLinks]);
 
+  useEffect(() => {
+    if (!dbSyncedRef.current || !supabase) return undefined;
+    let cancelled = false;
+    async function syncB2BLedger() {
+      setCloudSyncState("syncing");
+      const result = await dbSave("b2b_ledger", serializeB2BLedger(b2bLedger));
+      if (cancelled) return;
+      if (!result?.ok) {
+        setCloudSyncState("sync_failed");
+        return;
+      }
+      setCloudSyncState("synced");
+      setCloudLastSyncedAt(new Date());
+    }
+    syncB2BLedger();
+    return () => {
+      cancelled = true;
+    };
+  }, [b2bLedger]);
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -5363,15 +6012,15 @@ export default function CSCBilling() {
           to { opacity: 1; transform: translateX(0); }
         }
         @keyframes subtleGlow {
-          from { box-shadow: 0 0 0 0 rgba(143,47,47,0); }
-          to   { box-shadow: 0 0 22px 4px rgba(143,47,47,0.08); }
+          from { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+          to   { box-shadow: 0 0 22px 4px rgba(37,99,235,0.08); }
         }
         .csc-sidebar-nav::-webkit-scrollbar { width: 4px; }
         .csc-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
         .csc-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
         .csc-content-scroll::-webkit-scrollbar { width: 4px; }
         .csc-content-scroll::-webkit-scrollbar-track { background: transparent; }
-        .csc-content-scroll::-webkit-scrollbar-thumb { background: rgba(21,18,15,0.12); border-radius: 999px; }
+        .csc-content-scroll::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.12); border-radius: 999px; }
         input[type="checkbox"] { accent-color: ${DS.wine}; cursor: pointer; }
         @media print {
           @page { margin: 8mm; }
@@ -5399,15 +6048,16 @@ export default function CSCBilling() {
         }
       `}</style>
 
-      {/* ── App Shell: Sidebar + Main ── */}
-      <div style={{ display: "flex", minHeight: "100vh" }}>
+      {/* -- App Shell: Sidebar + Main -- */}
+      <div style={{ display: "flex", minHeight: "100vh", position: "relative" }}>
 
-        {/* ── Left Sidebar ── */}
+        {/* -- Left Sidebar -- */}
         <aside className="csc-sidebar" style={{
-          width: 260,
-          minWidth: 260,
-          background: `radial-gradient(circle at 110% -8%, rgba(184,148,63,0.12), transparent 38%), radial-gradient(circle at -10% 100%, rgba(143,47,47,0.07), transparent 36%), linear-gradient(180deg, #fdf8f0 0%, #f8f2e6 100%)`,
-          borderRight: `1px solid rgba(21,18,15,0.10)`,
+          width: sidebarWidth,
+          minWidth: sidebarWidth,
+          flex: "0 0 auto",
+          background: `radial-gradient(circle at 110% -8%, rgba(59,130,246,0.12), transparent 38%), radial-gradient(circle at -10% 100%, rgba(37,99,235,0.07), transparent 36%), linear-gradient(180deg, #ffffff 0%, #eff6ff 100%)`,
+          borderRight: `1px solid rgba(15,23,42,0.10)`,
           display: "flex",
           flexDirection: "column",
           position: "sticky",
@@ -5415,142 +6065,186 @@ export default function CSCBilling() {
           height: "100vh",
           overflow: "hidden",
           zIndex: 20,
+          contain: "layout paint",
+          willChange: "width",
+          transition: "width 0.18s cubic-bezier(0.2,0.8,0.2,1), min-width 0.18s cubic-bezier(0.2,0.8,0.2,1)",
         }}>
           {/* Sidebar Header / Logo */}
-          <div style={{ padding: "24px 20px 18px" }}>
-            {/* Icon mark + wordmark row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              {/* Icon mark: 2×2 dot grid */}
+          <div style={{ padding: sidebarCollapsed ? "14px 10px 12px" : "24px 20px 18px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: sidebarCollapsed ? 0 : 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                {/* Icon mark: 2x2 dot grid */}
+                <div style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  background: DS.wine,
+                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4,
+                  padding: 8, flexShrink: 0,
+                }}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} style={{ borderRadius: "50%", background: i < 2 ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)" }} />
+                  ))}
+                </div>
+                <div>
+                  <div style={{
+                    fontFamily: APP_BRAND_STACK, fontWeight: 800,
+                    fontSize: sidebarCollapsed ? "0.86rem" : "1.05rem", letterSpacing: "0.06em",
+                    color: "#0f172a", lineHeight: 1.1,
+                    display: "flex", alignItems: "baseline", gap: 5,
+                  }}>
+                    <span>CSC</span>
+                    {!sidebarCollapsed && (
+                      <span style={{ fontWeight: 400, color: "rgba(15,23,42,0.55)", fontSize: "1.0rem", letterSpacing: "0.02em" }}>Buddy</span>
+                    )}
+                  </div>
+                  {!sidebarCollapsed && (
+                    <div style={{
+                      fontSize: "0.60rem", fontWeight: 600, letterSpacing: "0.22em",
+                      textTransform: "uppercase", color: DS.wine,
+                      fontFamily: APP_BRAND_STACK, marginTop: 2,
+                    }}>
+                      Blue Sapphire Plaza
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setSidebarCollapsed((prev) => !prev)}
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  border: "1px solid rgba(15,23,42,0.14)",
+                  background: "rgba(255,255,255,0.78)",
+                  color: "rgba(15,23,42,0.62)",
+                  fontFamily: APP_BRAND_STACK,
+                  fontWeight: 700,
+                  fontSize: "0.62rem",
+                  cursor: "pointer",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                {sidebarCollapsed ? ">" : "<"}
+              </button>
+            </div>
+            {!sidebarCollapsed && (
               <div style={{
-                width: 32, height: 32, borderRadius: 9,
-                background: DS.wine,
-                display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4,
-                padding: 8, flexShrink: 0,
+                fontSize: "0.70rem", color: "rgba(15,23,42,0.38)",
+                fontFamily: APP_FONT_STACK, letterSpacing: "0.03em",
               }}>
-                {[0,1,2,3].map((i) => (
-                  <div key={i} style={{ borderRadius: "50%", background: i < 2 ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)" }} />
-                ))}
+                Operations Console
               </div>
-              {/* Wordmark */}
-              <div>
-                <div style={{
-                  fontFamily: APP_BRAND_STACK, fontWeight: 800,
-                  fontSize: "1.05rem", letterSpacing: "0.06em",
-                  color: "#15120f", lineHeight: 1.1,
-                  display: "flex", alignItems: "baseline", gap: 5,
-                }}>
-                  <span>CSC</span>
-                  <span style={{ fontWeight: 400, color: "rgba(21,18,15,0.55)", fontSize: "1.0rem", letterSpacing: "0.02em" }}>Buddy</span>
-                </div>
-                <div style={{
-                  fontSize: "0.60rem", fontWeight: 600, letterSpacing: "0.22em",
-                  textTransform: "uppercase", color: DS.wine,
-                  fontFamily: APP_BRAND_STACK, marginTop: 2,
-                }}>
-                  Blue Sapphire Plaza
-                </div>
-              </div>
-            </div>
-            <div style={{
-              fontSize: "0.70rem", color: "rgba(21,18,15,0.38)",
-              fontFamily: APP_FONT_STACK, letterSpacing: "0.03em",
-            }}>
-              Operations Console
-            </div>
+            )}
           </div>
 
           {/* Hairline divider */}
-          <div style={{ height: 1, background: "rgba(21,18,15,0.08)", margin: "0 20px" }} />
+          <div style={{ height: 1, background: "rgba(15,23,42,0.08)", margin: sidebarCollapsed ? "0 10px" : "0 20px" }} />
 
           {/* Date/Status block */}
-          <div style={{ padding: "12px 20px 14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
+          <div style={{ padding: sidebarCollapsed ? "10px 12px 12px" : "12px 20px 14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.18em",
-                  textTransform: "uppercase", color: "rgba(21,18,15,0.40)", fontFamily: APP_BRAND_STACK, marginBottom: 3,
+                  fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.16em",
+                  textTransform: "uppercase", color: "rgba(15,23,42,0.40)", fontFamily: APP_BRAND_STACK, marginBottom: 3,
                 }}>
                   Today
                 </div>
                 <div style={{
-                  fontFamily: APP_FONT_STACK, fontSize: "0.90rem", fontWeight: 600,
-                  color: "#15120f", letterSpacing: "-0.01em", lineHeight: 1.2,
+                  fontFamily: APP_FONT_STACK, fontSize: sidebarCollapsed ? "0.74rem" : "0.90rem", fontWeight: 600,
+                  color: "#0f172a", letterSpacing: "-0.01em", lineHeight: 1.2,
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 }}>
                   {todayStr()}
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(200,146,42,0.10)", border: "1px solid rgba(200,146,42,0.22)", borderRadius: 999, padding: "4px 9px" }}>
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#c8922a", display: "inline-block", boxShadow: "0 0 4px rgba(200,146,42,0.60)" }} />
-                <span style={{ fontSize: "0.58rem", color: "#c8922a", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Live</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.22)", borderRadius: 999, padding: sidebarCollapsed ? "3px 7px" : "4px 9px", flexShrink: 0 }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#2563eb", display: "inline-block", boxShadow: "0 0 4px rgba(59,130,246,0.60)" }} />
+                <span style={{ fontSize: sidebarCollapsed ? "0.54rem" : "0.58rem", color: "#2563eb", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Live</span>
               </div>
             </div>
           </div>
 
           {/* Hairline divider */}
-          <div style={{ height: 1, background: "rgba(21,18,15,0.08)", margin: "0 20px" }} />
+          <div style={{ height: 1, background: "rgba(15,23,42,0.08)", margin: sidebarCollapsed ? "0 10px" : "0 20px" }} />
 
           {/* Primary Nav */}
           <nav className="csc-sidebar-nav" style={{
             flex: 1, overflowY: "auto",
-            padding: "18px 10px 10px",
+            padding: sidebarCollapsed ? "14px 8px 10px" : "18px 10px 10px",
             display: "flex", flexDirection: "column", gap: 2,
           }}>
             {/* Section label */}
             <div style={{
-              fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.26em",
-              textTransform: "uppercase", color: "rgba(21,18,15,0.38)",
+              fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em",
+              textTransform: "uppercase", color: "rgba(15,23,42,0.38)",
               fontFamily: APP_BRAND_STACK, padding: "0 8px", marginBottom: 8,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>
-              Workspaces
+              {sidebarCollapsed ? "Main Menu" : "Workspaces"}
             </div>
             {PRIMARY_TAB_CONFIG.map((item) => (
               <TabBtn
                 key={item.id}
                 label={item.label}
                 description={item.description}
+                shortLabel={item.shortLabel}
+                expanded={!sidebarCollapsed}
                 active={tab === item.id}
                 onClick={() => navigateTab(item.id)}
               />
             ))}
 
             {/* Walk-in CTA */}
-            <div style={{ margin: "14px 8px 0", height: 1, background: "rgba(21,18,15,0.08)" }} />
+            <div style={{ margin: "14px 8px 0", height: 1, background: "rgba(15,23,42,0.08)" }} />
             <button
               onClick={() => setShowWalkIn(true)}
+              title={sidebarCollapsed ? "New Walk-in" : undefined}
               style={{
-                width: "100%", padding: "10px 18px", marginTop: 10,
+                width: "100%", padding: sidebarCollapsed ? "10px 8px" : "10px 18px", marginTop: 10,
                 border: "none", background: "transparent",
                 cursor: "pointer", textAlign: "left",
                 display: "flex", alignItems: "center", gap: 10,
+                justifyContent: sidebarCollapsed ? "center" : "flex-start",
                 borderRadius: 10, transition: DS.transStd,
               }}
             >
               <span style={{
                 width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                background: "rgba(143,47,47,0.10)", border: "1px solid rgba(143,47,47,0.22)",
+                background: "rgba(37,99,235,0.10)", border: "1px solid rgba(37,99,235,0.22)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "0.75rem", color: DS.wine,
-              }}>↗</span>
-              <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", fontFamily: APP_BRAND_STACK, color: DS.wine }}>New Walk-in</span>
-                <span style={{ fontSize: "0.70rem", color: "rgba(21,18,15,0.45)", fontFamily: APP_FONT_STACK }}>Start intake without WhatsApp</span>
+              }}>&#8599;</span>
+              <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: APP_BRAND_STACK, color: DS.wine, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {sidebarCollapsed ? "Walk-in" : "New Walk-in"}
+                </span>
+                {!sidebarCollapsed && (
+                  <span style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>Start intake without WhatsApp</span>
+                )}
               </span>
             </button>
 
             {/* Section label */}
-            <div style={{ margin: "14px 8px 8px", height: 1, background: "rgba(21,18,15,0.08)" }} />
+            <div style={{ margin: "14px 8px 8px", height: 1, background: "rgba(15,23,42,0.08)" }} />
             <div style={{
-              fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.26em",
-              textTransform: "uppercase", color: "rgba(21,18,15,0.38)",
+              fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em",
+              textTransform: "uppercase", color: "rgba(15,23,42,0.38)",
               fontFamily: APP_BRAND_STACK, padding: "0 8px", marginBottom: 8,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>
-              Tools &amp; Logs
+              {sidebarCollapsed ? "Tools" : "Tools & Logs"}
             </div>
             {PANEL_TAB_CONFIG.map((item) => (
               <TabBtn
                 key={item.id}
                 label={item.label}
                 description={item.description}
+                shortLabel={item.shortLabel}
+                expanded={!sidebarCollapsed}
                 active={tab === item.id}
                 onClick={() => navigateTab(item.id)}
                 badge={panelBadges[item.id]}
@@ -5559,29 +6253,33 @@ export default function CSCBilling() {
           </nav>
 
           {/* Sidebar footer */}
-          <div style={{ padding: "10px 10px 20px" }}>
-            <div style={{ height: 1, background: "rgba(21,18,15,0.08)", margin: "0 8px 12px" }} />
+          <div style={{ padding: sidebarCollapsed ? "8px 8px 14px" : "10px 10px 20px" }}>
+            <div style={{ height: 1, background: "rgba(15,23,42,0.08)", margin: "0 8px 12px" }} />
             <button
               onClick={() => setSidePanelExpanded((prev) => !prev)}
               aria-label={sidePanelExpanded ? "Close utility menu" : "Open utility menu"}
+              title={sidebarCollapsed ? "Quick Links & Tools" : undefined}
               style={{
                 width: "100%", display: "flex", alignItems: "center", gap: 12,
-                padding: "10px 18px", borderRadius: 10, border: "none",
-                background: sidePanelExpanded ? "rgba(143,47,47,0.08)" : "transparent",
+                justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                padding: sidebarCollapsed ? "10px 8px" : "10px 18px", borderRadius: 10, border: "none",
+                background: sidePanelExpanded ? "rgba(37,99,235,0.08)" : "transparent",
                 cursor: "pointer", transition: DS.transStd,
               }}
             >
               <span style={{ display: "flex", flexDirection: "column", gap: 3.5, flexShrink: 0 }}>
-                <span style={{ width: 14, height: 1.5, borderRadius: 999, background: "rgba(21,18,15,0.40)", display: "block" }} />
-                <span style={{ width: 14, height: 1.5, borderRadius: 999, background: "rgba(21,18,15,0.40)", display: "block" }} />
-                <span style={{ width: 9, height: 1.5, borderRadius: 999, background: "rgba(21,18,15,0.40)", display: "block" }} />
+                <span style={{ width: 14, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.40)", display: "block" }} />
+                <span style={{ width: 14, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.40)", display: "block" }} />
+                <span style={{ width: 9, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.40)", display: "block" }} />
               </span>
-              <span style={{ fontSize: "0.72rem", fontFamily: APP_FONT_STACK, fontWeight: 500, color: "rgba(21,18,15,0.50)" }}>Quick Links &amp; Tools</span>
+              <span style={{ fontSize: "0.72rem", fontFamily: APP_FONT_STACK, fontWeight: 500, color: "rgba(15,23,42,0.50)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {sidebarCollapsed ? "Tools" : "Quick Links & Tools"}
+              </span>
             </button>
           </div>
         </aside>
 
-        {/* ── Backdrop for utility drawer ── */}
+        {/* -- Backdrop for utility drawer -- */}
         <div
           aria-hidden={!sidePanelExpanded}
           onClick={() => setSidePanelExpanded(false)}
@@ -5596,7 +6294,7 @@ export default function CSCBilling() {
           }}
         />
 
-        {/* ── Utility Drawer (slides over sidebar) ── */}
+        {/* -- Utility Drawer (slides over sidebar) -- */}
         <aside
           aria-hidden={!sidePanelExpanded}
           style={{
@@ -5605,10 +6303,10 @@ export default function CSCBilling() {
             bottom: 0,
             left: 0,
             width: "min(340px, calc(100vw - 40px))",
-            background: `radial-gradient(circle at 92% -6%, rgba(184,148,63,0.14), transparent 38%), radial-gradient(circle at -8% 100%, rgba(143,47,47,0.07), transparent 34%), linear-gradient(180deg, #fdf8f0 0%, #f5ede0 100%)`,
+            background: `radial-gradient(circle at 92% -6%, rgba(59,130,246,0.14), transparent 38%), radial-gradient(circle at -8% 100%, rgba(37,99,235,0.07), transparent 34%), linear-gradient(180deg, #ffffff 0%, #eff6ff 100%)`,
             border: `none`,
-            borderRight: `1px solid rgba(21,18,15,0.12)`,
-            boxShadow: "8px 0 40px rgba(21,18,15,0.12)",
+            borderRight: `1px solid rgba(15,23,42,0.12)`,
+            boxShadow: "8px 0 40px rgba(15,23,42,0.12)",
             padding: "24px 16px",
             transform: sidePanelExpanded ? "translateX(0)" : "translateX(-100%)",
             transition: `transform 0.32s ${DS.ease}`,
@@ -5636,7 +6334,7 @@ export default function CSCBilling() {
                 fontFamily: APP_SERIF_STACK,
                 fontSize: "1.4rem",
                 fontWeight: 300,
-                color: "#15120f",
+                color: "#0f172a",
                 letterSpacing: "-0.01em",
               }}>
                 Workspace Tools
@@ -5645,11 +6343,11 @@ export default function CSCBilling() {
             <button
               onClick={() => setSidePanelExpanded(false)}
               style={{
-                border: "1px solid rgba(21,18,15,0.14)",
+                border: "1px solid rgba(15,23,42,0.14)",
                 borderRadius: 10,
                 padding: "8px 12px",
-                background: "rgba(21,18,15,0.05)",
-                color: "rgba(21,18,15,0.60)",
+                background: "rgba(15,23,42,0.05)",
+                color: "rgba(15,23,42,0.60)",
                 cursor: "pointer",
                 fontFamily: APP_BRAND_STACK,
                 fontSize: "0.65rem",
@@ -5667,11 +6365,11 @@ export default function CSCBilling() {
           <div style={{
             padding: "12px 14px",
             borderRadius: 12,
-            background: "rgba(21,18,15,0.04)",
-            border: "1px solid rgba(21,18,15,0.08)",
+            background: "rgba(15,23,42,0.04)",
+            border: "1px solid rgba(15,23,42,0.08)",
           }}>
-            <div style={{ fontSize: "0.8rem", color: "rgba(21,18,15,0.55)", lineHeight: 1.6, fontFamily: APP_FONT_STACK }}>
-              Monitoring, partner workflows, and quick-access portals — without crowding the main intake flow.
+            <div style={{ fontSize: "0.8rem", color: "rgba(15,23,42,0.55)", lineHeight: 1.6, fontFamily: APP_FONT_STACK }}>
+              Monitoring, partner workflows, and quick-access portals  -  without crowding the main intake flow.
             </div>
           </div>
 
@@ -5682,7 +6380,7 @@ export default function CSCBilling() {
               fontWeight: 700,
               letterSpacing: "0.30em",
               textTransform: "uppercase",
-              color: "rgba(21,18,15,0.38)",
+              color: "rgba(15,23,42,0.38)",
               fontFamily: APP_BRAND_STACK,
               padding: "0 4px",
               marginBottom: 4,
@@ -5707,7 +6405,7 @@ export default function CSCBilling() {
           {/* Quick links */}
           <div style={{
             borderRadius: 14,
-            border: "1px solid rgba(21,18,15,0.10)",
+            border: "1px solid rgba(15,23,42,0.10)",
             background: "rgba(255,255,255,0.55)",
             padding: 12,
             display: "grid",
@@ -5721,7 +6419,7 @@ export default function CSCBilling() {
                 fontWeight: 700,
                 letterSpacing: "0.30em",
                 textTransform: "uppercase",
-                color: "rgba(21,18,15,0.40)",
+                color: "rgba(15,23,42,0.40)",
                 fontFamily: APP_BRAND_STACK,
               }}>
                 Quick Links
@@ -5732,9 +6430,9 @@ export default function CSCBilling() {
                   setQuickLinkError("");
                 }}
                 style={{
-                  border: `1px solid rgba(211,166,90,0.28)`,
+                  border: `1px solid rgba(59,130,246,0.28)`,
                   borderRadius: 8,
-                  background: "rgba(211,166,90,0.08)",
+                  background: "rgba(59,130,246,0.08)",
                   color: DS.gold,
                   fontSize: "0.62rem",
                   fontWeight: 700,
@@ -5758,9 +6456,9 @@ export default function CSCBilling() {
                   style={{
                     padding: "9px 10px",
                     borderRadius: 8,
-                    border: "1px solid rgba(21,18,15,0.14)",
+                    border: "1px solid rgba(15,23,42,0.14)",
                     background: "rgba(255,255,255,0.80)",
-                    color: "#15120f",
+                    color: "#0f172a",
                     outline: "none",
                     fontSize: "0.82rem",
                     fontFamily: APP_FONT_STACK,
@@ -5774,9 +6472,9 @@ export default function CSCBilling() {
                     style={{
                       padding: "9px 10px",
                       borderRadius: 8,
-                      border: "1px solid rgba(21,18,15,0.14)",
+                      border: "1px solid rgba(15,23,42,0.14)",
                       background: "rgba(255,255,255,0.80)",
-                      color: "#15120f",
+                      color: "#0f172a",
                       outline: "none",
                       fontSize: "0.82rem",
                       fontFamily: APP_FONT_STACK,
@@ -5785,9 +6483,9 @@ export default function CSCBilling() {
                   <button
                     onClick={addQuickLink}
                     style={{
-                      border: "1px solid rgba(143,47,47,0.35)",
+                      border: "1px solid rgba(37,99,235,0.35)",
                       borderRadius: 8,
-                      background: "rgba(143,47,47,0.10)",
+                      background: "rgba(37,99,235,0.10)",
                       color: DS.wine,
                       fontWeight: 700,
                       padding: "0 12px",
@@ -5805,18 +6503,18 @@ export default function CSCBilling() {
               </div>
             )}
             {quickLinkError && (
-              <div style={{ fontSize: "0.75rem", color: "#8f1020", fontWeight: 600 }}>{quickLinkError}</div>
+              <div style={{ fontSize: "0.75rem", color: "#1d4ed8", fontWeight: 600 }}>{quickLinkError}</div>
             )}
             <div style={{ display: "grid", gap: 7, maxHeight: 260, overflowY: "auto", paddingRight: 2 }}>
               {quickLinks.map((link) => (
                 <div key={link.id} style={{
                   borderRadius: 10,
-                  border: "1px solid rgba(21,18,15,0.09)",
+                  border: "1px solid rgba(15,23,42,0.09)",
                   background: "rgba(255,255,255,0.65)",
                   padding: "9px 10px",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 5 }}>
-                    <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#15120f", lineHeight: 1.3, fontFamily: APP_FONT_STACK }}>{link.name}</div>
+                    <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#0f172a", lineHeight: 1.3, fontFamily: APP_FONT_STACK }}>{link.name}</div>
                     {!link.isDefault && (
                       <button
                         onClick={() => removeQuickLink(link.id)}
@@ -5824,7 +6522,7 @@ export default function CSCBilling() {
                           border: "none",
                           borderRadius: 6,
                           background: "rgba(214,5,43,0.08)",
-                          color: "#8f1020",
+                          color: "#1d4ed8",
                           fontSize: "0.65rem",
                           fontWeight: 700,
                           padding: "3px 6px",
@@ -5838,14 +6536,14 @@ export default function CSCBilling() {
                       </button>
                     )}
                   </div>
-                  <div style={{ fontSize: "0.7rem", color: "rgba(21,18,15,0.48)", lineHeight: 1.45, marginBottom: 7 }}>{link.description}</div>
+                  <div style={{ fontSize: "0.7rem", color: "rgba(15,23,42,0.48)", lineHeight: 1.45, marginBottom: 7 }}>{link.description}</div>
                   <button
                     onClick={() => openQuickLink(link.url)}
                     style={{
                       width: "100%",
-                      border: "1px solid rgba(143,47,47,0.28)",
+                      border: "1px solid rgba(37,99,235,0.28)",
                       borderRadius: 7,
-                      background: "rgba(143,47,47,0.07)",
+                      background: "rgba(37,99,235,0.07)",
                       color: DS.wine,
                       fontSize: "0.65rem",
                       fontWeight: 700,
@@ -5865,27 +6563,27 @@ export default function CSCBilling() {
           </div>
         </aside>
 
-        {/* ── Main Content Area ── */}
+        {/* -- Main Content Area -- */}
         <main style={{
           flex: 1,
           minWidth: 0,
           display: "flex",
           flexDirection: "column",
-          background: "#fffaf2",
+          background: "#ffffff",
           position: "relative",
         }}>
           {/* Subtle grid texture */}
-          <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.18, backgroundImage: "linear-gradient(90deg, rgba(21,18,15,0.04) 1px, transparent 1px), linear-gradient(rgba(21,18,15,0.04) 1px, transparent 1px)", backgroundSize: "72px 72px" }} />
+          <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.18, backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px)", backgroundSize: "72px 72px" }} />
 
           {/* Top bar */}
           <header style={{
             position: "sticky",
             top: 0,
             zIndex: 10,
-            background: `rgba(255,250,242,0.92)`,
+            background: `rgba(255,255,255,0.92)`,
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
-            borderBottom: `1px solid rgba(21,18,15,0.10)`,
+            borderBottom: `1px solid rgba(15,23,42,0.10)`,
             padding: "0 28px",
             height: 60,
             display: "flex",
@@ -5897,61 +6595,61 @@ export default function CSCBilling() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
                 width: 6, height: 6, borderRadius: "50%",
-                background: "#8f2f2f", opacity: 0.7, flexShrink: 0,
+                background: "#2563eb", opacity: 0.7, flexShrink: 0,
               }} />
               <div style={{
                 fontFamily: APP_BRAND_STACK,
                 fontSize: "0.80rem",
                 fontWeight: 700,
-                color: "#15120f",
+                color: "#0f172a",
                 letterSpacing: "0.04em",
               }}>
                 {TAB_CONFIG.find((item) => item.id === tab)?.label}
               </div>
               <div style={{
-                fontSize: "0.68rem", color: "rgba(21,18,15,0.38)",
+                fontSize: "0.68rem", color: "rgba(15,23,42,0.38)",
                 fontFamily: APP_FONT_STACK, fontWeight: 400,
               }}>
                 {TAB_CONFIG.find((item) => item.id === tab)?.description}
               </div>
             </div>
 
-            {/* Stats strip + Walk-in CTA */}
+            {/* Stats strip + WhatsApp CTA */}
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               {headerStats.map((stat) => (
                 <div key={stat.label} style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
+                  <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
                     {stat.label}
                   </div>
-                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: stat.accent || "#15120f", fontFamily: APP_MONO_STACK, letterSpacing: "-0.01em" }}>
+                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: stat.accent || "#0f172a", fontFamily: APP_MONO_STACK, letterSpacing: "-0.01em" }}>
                     {stat.value}
                   </div>
                 </div>
               ))}
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(21,18,15,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
+                <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
                   Data Sync
                 </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, padding: "5px 10px", border: `1px solid ${cloudSyncState === "sync_failed" ? "rgba(214,5,43,0.30)" : cloudSyncState === "synced" ? "rgba(42,102,71,0.30)" : "rgba(21,18,15,0.16)"}`, background: cloudSyncState === "sync_failed" ? "rgba(214,5,43,0.08)" : cloudSyncState === "synced" ? "rgba(42,102,71,0.10)" : "rgba(21,18,15,0.05)" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, padding: "5px 10px", border: `1px solid ${cloudSyncState === "sync_failed" ? "rgba(214,5,43,0.30)" : cloudSyncState === "synced" ? "rgba(42,102,71,0.30)" : "rgba(15,23,42,0.16)"}`, background: cloudSyncState === "sync_failed" ? "rgba(214,5,43,0.08)" : cloudSyncState === "synced" ? "rgba(42,102,71,0.10)" : "rgba(15,23,42,0.05)" }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: cloudSyncAccent, display: "inline-block" }} />
                   <span style={{ fontSize: "0.62rem", fontWeight: 700, color: cloudSyncAccent, fontFamily: APP_BRAND_STACK, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                     {cloudSyncLabel}
                   </span>
                   {cloudSyncState === "synced" && cloudLastSyncedAt && (
-                    <span style={{ fontSize: "0.68rem", color: "rgba(21,18,15,0.40)", fontFamily: APP_MONO_STACK }}>
+                    <span style={{ fontSize: "0.68rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_MONO_STACK }}>
                       {formatSyncTime(cloudLastSyncedAt)}
                     </span>
                   )}
                 </div>
               </div>
               <button
-                onClick={() => setShowWalkIn(true)}
+                onClick={openCscWhatsApp}
                 style={{
-                  border: "1px solid rgba(143,47,47,0.42)",
+                  border: "1px solid rgba(22,163,74,0.40)",
                   borderRadius: 999,
                   padding: "10px 18px",
-                  background: "rgba(143,47,47,0.11)",
-                  color: "#6b1f1f",
+                  background: "rgba(22,163,74,0.11)",
+                  color: "#166534",
                   fontFamily: APP_BRAND_STACK,
                   fontWeight: 700,
                   fontSize: "0.56rem",
@@ -5962,7 +6660,7 @@ export default function CSCBilling() {
                   transition: "all 0.22s ease",
                 }}
               >
-                + Walk-in
+                Open WhatsApp
               </button>
             </div>
           </header>
@@ -5970,8 +6668,8 @@ export default function CSCBilling() {
           {/* Page title / hero area */}
           <div style={{
             padding: "28px 32px 22px",
-            borderBottom: `1px solid rgba(21,18,15,0.09)`,
-            backgroundImage: `radial-gradient(circle at 8% 8%, rgba(184,148,63,0.20), transparent 32%), radial-gradient(circle at 90% 90%, rgba(143,47,47,0.10), transparent 30%)`,
+            borderBottom: `1px solid rgba(15,23,42,0.09)`,
+            backgroundImage: `radial-gradient(circle at 8% 8%, rgba(59,130,246,0.20), transparent 32%), radial-gradient(circle at 90% 90%, rgba(37,99,235,0.10), transparent 30%)`,
             position: "relative",
             zIndex: 1,
           }}>
@@ -5993,7 +6691,7 @@ export default function CSCBilling() {
               fontWeight: 800,
               lineHeight: 1.0,
               letterSpacing: "-0.03em",
-              color: "#15120f",
+              color: "#0f172a",
             }}>
               {TAB_CONFIG.find((item) => item.id === tab)?.label}
             </h1>
@@ -6001,7 +6699,7 @@ export default function CSCBilling() {
               margin: "10px 0 0",
               fontSize: "0.86rem",
               lineHeight: 1.72,
-              color: "rgba(21,18,15,0.60)",
+              color: "rgba(15,23,42,0.60)",
               maxWidth: 520,
               fontFamily: APP_FONT_STACK,
               fontWeight: 400,
@@ -6034,7 +6732,11 @@ export default function CSCBilling() {
               />
             </TabPanel>
             <TabPanel active={tab === "b2b"}>
-              <B2BWorkspace />
+              <B2BWorkspace
+                ledger={b2bLedger}
+                onAddLedgerEntry={addB2BLedgerEntry}
+                onDeleteLedgerEntry={deleteB2BLedgerEntry}
+              />
             </TabPanel>
             <TabPanel active={tab === "monthly"}>
               <MonthlyOverview tickets={tickets} />
@@ -6049,6 +6751,9 @@ export default function CSCBilling() {
     </div>
   );
 }
+
+
+
 
 
 

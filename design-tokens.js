@@ -1,6 +1,6 @@
 /**
- * CSC Buddy Design Tokens — IMxplorer Design System
- * Variation 5: Dark (#0f1116) + Cream (#f6f2e9) + Wine-Red + Champagne Gold
+ * CSC Buddy Design Tokens - IMxplorer Design System
+ * Variation 5: White and Blue Ops Theme
  */
 
 export const DS = {
@@ -8,22 +8,22 @@ export const DS = {
   dark:        "#0f1116",
   darkDeep:    "#080809",
   darkSoft:    "#0d0b08",
-  cream:       "#f6f2e9",
-  creamSoft:   "#f0ece9",
-  creamText:   "#fcf9f8",
-  wine:        "#8f2f2f",
-  gold:        "#d3a65a",
-  goldDark:    "#c9a84c",
+  cream:       "#ffffff",
+  creamSoft:   "#f1f5f9",
+  creamText:   "#f8fbff",
+  wine:        "#2563eb",
+  gold:        "#3b82f6",
+  goldDark:    "#2563eb",
   redBright:   "#d6052b",
   inkBlack:    "#0a0a0a",
 
   // Category semantic accents
   cat: {
-    "Government ID":        "#4a82c0",
-    "Certificates":         "#3a9e78",
-    "Legal & Docs":         "#c0414a",
-    "Government Services":  "#c8922a",
-    "Typing & Print":       "#8b6fc0",
+    "Government ID":        "#2563eb",
+    "Certificates":         "#0ea5e9",
+    "Legal & Docs":         "#1d4ed8",
+    "Government Services":  "#3b82f6",
+    "Typing & Print":       "#60a5fa",
   },
 
   // Foreground tiers on dark
