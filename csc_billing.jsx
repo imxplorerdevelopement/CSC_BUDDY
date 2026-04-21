@@ -258,7 +258,7 @@ const TAB_CONFIG = [
   { id: "rates", label: "Rate List", description: "Manage service rates and categories.", shortLabel: "RL", navGroup: "primary" },
   { id: "b2b", label: "Vendor Dashboard", description: "Track vendor purchases, sales, and payments.", shortLabel: "VD", navGroup: "primary" },
   { id: "monthly", label: "Analytics", description: "View revenue and ticket trends.", shortLabel: "AN", navGroup: "primary" },
-  { id: "database", label: "Database", description: "Highly confidential records with two-step verification.", shortLabel: "DB", navGroup: "panel" },
+  { id: "database", label: "Database", description: "Secure records protected with two-step verification.", shortLabel: "DB", navGroup: "panel" },
   { id: "log", label: "Ticket Dashboard", description: "Track payment, status, and service flow.", shortLabel: "TD", navGroup: "panel" },
   { id: "quick_links", label: "Quick Website Links", description: "Open frequently used government portals.", shortLabel: "QL", navGroup: "panel" },
   { id: "doc_tools", label: "Document Tools", description: "Review document intake and pending document status.", shortLabel: "DT", navGroup: "panel" },
@@ -271,7 +271,7 @@ const HOME_NAV_BUTTONS = [
   { id: "rates", label: "Rate List", helper: "Update and review service pricing." },
   { id: "b2b", label: "Vendor Dashboard", helper: "Manage B2B entries, services, and payments." },
   { id: "monthly", label: "Analytics", helper: "Open monthly revenue and category trends." },
-  { id: "database", label: "Database (Highly Confidential)", helper: "Two-factor required: one security code and one Google Authenticator code." },
+  { id: "database", label: "Database", helper: "Two-factor required: one security code and one Google Authenticator code." },
   { id: "log", label: "Ticket Dashboard", helper: "Track open/closed tickets and payment status." },
   { id: "quick_links", label: "Quick Website Links", helper: "Open core portal links in one click." },
   { id: "doc_tools", label: "Document Tools", helper: "View required, received, and pending documents." },
@@ -1173,6 +1173,15 @@ function createEmptyDatabaseRecordValues(sectionId) {
   }, {});
 }
 
+function normalizeDatabaseFieldInput(fieldKey, value) {
+  const rawValue = String(value ?? "");
+  if (fieldKey === "aadhaarNumber") return rawValue.replace(/\D/g, "").slice(0, 12);
+  if (fieldKey === "linkedMobileNumber" || fieldKey === "mobileNumber") return rawValue.replace(/\D/g, "").slice(0, 10);
+  if (fieldKey === "panNumber") return rawValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10);
+  if (fieldKey === "passportNumber") return rawValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 15);
+  return rawValue;
+}
+
 function sanitizeDatabaseFieldValue(fieldKey, value) {
   const textValue = String(value ?? "").trim();
   if (!textValue) return "";
@@ -1374,6 +1383,11 @@ function BootLoadingScreen() {
           50% { transform: scale(1); opacity: 1; }
           100% { transform: scale(0.9); opacity: 0.45; }
         }
+        @keyframes cscDiceTilt {
+          0% { transform: rotate(0deg) scale(1); }
+          50% { transform: rotate(10deg) scale(1.05); }
+          100% { transform: rotate(0deg) scale(1); }
+        }
         @keyframes cscBootSweep {
           0% { transform: translateX(-120%); }
           100% { transform: translateX(120%); }
@@ -1388,20 +1402,29 @@ function BootLoadingScreen() {
         gap: 10,
       }}>
         <div style={{
-          width: 30,
-          height: 30,
-          borderRadius: 9,
-          background: "rgba(37,99,235,0.12)",
-          border: "1px solid rgba(37,99,235,0.24)",
+          width: 34,
+          height: 34,
+          borderRadius: 10,
+          background: "rgba(37,99,235,0.13)",
+          border: "1px solid rgba(37,99,235,0.28)",
           display: "grid",
           placeItems: "center",
-          color: "#1d4ed8",
-          fontFamily: APP_BRAND_STACK,
-          fontWeight: 800,
-          fontSize: "0.72rem",
-          letterSpacing: "0.12em",
+          animation: "cscDiceTilt 1.2s ease-in-out infinite",
         }}>
-          D
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 3 }}>
+            {[0, 1, 2, 3].map((dot) => (
+              <span
+                key={dot}
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  background: "#1d4ed8",
+                  display: "inline-block",
+                }}
+              />
+            ))}
+          </div>
         </div>
         <div style={{
           fontFamily: APP_BRAND_STACK,
@@ -1411,7 +1434,7 @@ function BootLoadingScreen() {
           fontWeight: 700,
           color: "#1d4ed8",
         }}>
-          DICE monologue
+          CSC Buddy
         </div>
       </div>
       <div style={{
@@ -1864,7 +1887,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
   const handleFieldChange = (fieldKey, rawValue) => {
     setFormValues((prev) => ({
       ...prev,
-      [fieldKey]: sanitizeDatabaseFieldValue(fieldKey, rawValue),
+      [fieldKey]: normalizeDatabaseFieldInput(fieldKey, rawValue),
     }));
   };
 
@@ -2304,9 +2327,19 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
   );
 }
 
-function WorkspaceSidebar({ activeTab, onNavigate, onOpenWhatsApp, badgeMap = {} }) {
+function WorkspaceSidebar({
+  activeTab,
+  onNavigate,
+  onOpenWhatsApp,
+  badgeMap = {},
+  isOpen = false,
+  onClose,
+}) {
   const coreItems = TAB_CONFIG.filter((item) => CORE_WORKSPACE_TAB_IDS.includes(item.id));
   const toolItems = TAB_CONFIG.filter((item) => TOOL_WORKSPACE_TAB_IDS.includes(item.id));
+  const handleClose = () => {
+    onClose?.();
+  };
   const menuButtonStyle = (active) => ({
     width: "100%",
     border: active ? "1px solid rgba(37,99,235,0.34)" : "1px solid rgba(15,23,42,0.11)",
@@ -2407,44 +2440,73 @@ function WorkspaceSidebar({ activeTab, onNavigate, onOpenWhatsApp, badgeMap = {}
     <aside className="csc-sidebar" style={{
       width: 320,
       minWidth: 320,
-      flex: "0 0 auto",
       background: "linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%)",
       borderRight: "1px solid rgba(15,23,42,0.12)",
       display: "flex",
       flexDirection: "column",
-      position: "sticky",
+      position: "fixed",
+      left: 0,
       top: 0,
+      bottom: 0,
       height: "100vh",
       overflow: "hidden",
-      zIndex: 20,
-      boxShadow: "2px 0 24px rgba(15,23,42,0.06)",
+      zIndex: 40,
+      boxShadow: "12px 0 30px rgba(15,23,42,0.18)",
+      transform: isOpen ? "translateX(0)" : "translateX(-108%)",
+      opacity: isOpen ? 1 : 0,
+      pointerEvents: isOpen ? "auto" : "none",
+      transition: "transform 0.22s ease, opacity 0.18s ease",
+      willChange: "transform",
     }}>
       <div style={{ padding: "22px 18px 14px", borderBottom: "1px solid rgba(15,23,42,0.10)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            background: "rgba(37,99,235,0.12)",
-            border: "1px solid rgba(37,99,235,0.26)",
-            display: "grid",
-            placeItems: "center",
-            color: "#1d4ed8",
-            fontFamily: APP_BRAND_STACK,
-            fontWeight: 800,
-            fontSize: "0.66rem",
-            letterSpacing: "0.08em",
-          }}>
-            CSC
-          </div>
-          <div>
-            <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.96rem", fontWeight: 800, color: "#0f172a", letterSpacing: "0.06em" }}>
-              Partner Desk
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: "rgba(37,99,235,0.12)",
+              border: "1px solid rgba(37,99,235,0.26)",
+              display: "grid",
+              placeItems: "center",
+              color: "#1d4ed8",
+              fontFamily: APP_BRAND_STACK,
+              fontWeight: 800,
+              fontSize: "0.66rem",
+              letterSpacing: "0.08em",
+            }}>
+              CSC
             </div>
-            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.74rem", color: "rgba(15,23,42,0.52)" }}>
-              Clear workflow menu for daily staff use
+            <div>
+              <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.96rem", fontWeight: 800, color: "#0f172a", letterSpacing: "0.06em" }}>
+                Partner Desk
+              </div>
+              <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.74rem", color: "rgba(15,23,42,0.52)" }}>
+                Clear workflow menu for daily staff use
+              </div>
             </div>
           </div>
+          <button
+            onClick={handleClose}
+            style={{
+              border: "1px solid rgba(15,23,42,0.14)",
+              borderRadius: 9,
+              background: "rgba(255,255,255,0.84)",
+              color: "rgba(15,23,42,0.70)",
+              fontFamily: APP_BRAND_STACK,
+              fontWeight: 700,
+              fontSize: "0.52rem",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              padding: "6px 9px",
+              flexShrink: 0,
+            }}
+            aria-label="Hide navigation menu"
+            title="Hide navigation menu"
+          >
+            {"<"} Hide
+          </button>
         </div>
         <button
           onClick={() => onNavigate("home")}
@@ -6825,6 +6887,7 @@ function WalkInModal({ onClose, onStart }) {
 export default function CSCBilling() {
   const [tab, setTab] = useState(() => getInitialActiveTab());
   const [isBootLoading, setIsBootLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => getStoredSidePanelExpanded());
   const [showDatabaseGate, setShowDatabaseGate] = useState(false);
   const [databaseUnlocked, setDatabaseUnlocked] = useState(false);
   const [services, setServices] = useState(() => (
@@ -6908,7 +6971,14 @@ export default function CSCBilling() {
       setShowDatabaseGate(true);
       return;
     }
-    if (nextTab === tab) return;
+    if (nextTab === tab) {
+      if (nextTab === "home") setIsSidebarOpen(false);
+      return;
+    }
+    const navigatingFromHome = tab === "home" && nextTab !== "home";
+    if (nextTab === "home" || navigatingFromHome) {
+      setIsSidebarOpen(false);
+    }
     updateBrowserState({ tab: nextTab }, mode);
     setTab(nextTab);
   };
@@ -7113,7 +7183,23 @@ export default function CSCBilling() {
   useEffect(() => {
     if (!isHomeTab) return;
     setShowWalkIn(false);
+    setIsSidebarOpen(false);
   }, [isHomeTab]);
+
+  useEffect(() => {
+    writeStoredJSON(STORAGE_KEYS.sidePanelExpanded, isSidebarOpen);
+  }, [isSidebarOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !isSidebarOpen || isHomeTab) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isSidebarOpen, isHomeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -7414,12 +7500,30 @@ export default function CSCBilling() {
       {/* -- App Shell: Sidebar + Main -- */}
       <div style={{ display: "flex", minHeight: "100vh", position: "relative" }}>
 
+        {!isHomeTab && isSidebarOpen && (
+          <div
+            onClick={() => setIsSidebarOpen(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15,23,42,0.28)",
+              zIndex: 30,
+            }}
+            aria-label="Close navigation menu overlay"
+          />
+        )}
+
         {!isHomeTab && (
           <WorkspaceSidebar
             activeTab={tab}
-            onNavigate={(nextTab) => navigateTab(nextTab)}
+            onNavigate={(nextTab) => {
+              navigateTab(nextTab);
+              setIsSidebarOpen(false);
+            }}
             onOpenWhatsApp={openCscWhatsApp}
             badgeMap={navBadges}
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
           />
         )}
 
@@ -7455,6 +7559,39 @@ export default function CSCBilling() {
           }}>
             {/* Active view label */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
+                style={{
+                  border: "1px solid rgba(15,23,42,0.16)",
+                  borderRadius: 999,
+                  padding: "6px 11px",
+                  background: "rgba(255,255,255,0.86)",
+                  color: "rgba(15,23,42,0.78)",
+                  fontFamily: APP_BRAND_STACK,
+                  fontWeight: 700,
+                  fontSize: "0.56rem",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                }}
+                aria-label={isSidebarOpen ? "Hide navigation menu" : "Open navigation menu"}
+                title={isSidebarOpen ? "Hide navigation menu" : "Open navigation menu"}
+              >
+                {isSidebarOpen ? (
+                  <span style={{ fontSize: "0.7rem", lineHeight: 1 }}>{"<"}</span>
+                ) : (
+                  <span style={{ display: "grid", gap: 2 }}>
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.72)", display: "block" }} />
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.72)", display: "block" }} />
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.72)", display: "block" }} />
+                  </span>
+                )}
+                {isSidebarOpen ? "Hide Menu" : "Menu"}
+              </button>
               <button
                 onClick={() => navigateTab("home")}
                 style={{
