@@ -5049,7 +5049,8 @@ function MonthlyOverview({ tickets }) {
 
   const byMonth = {};
   normalized.forEach((t) => {
-    const key = (t.structured?.meta?.createdDate || t.date || "").slice(0, 7) || "Unknown";
+    const normalizedDateKey = toIsoDateKey(t.entryDateKey || t.structured?.meta?.createdDate || t.date || "");
+    const key = normalizedDateKey ? normalizedDateKey.slice(0, 7) : "Unknown";
     if (!byMonth[key]) byMonth[key] = [];
     byMonth[key].push(t);
   });
@@ -5145,9 +5146,12 @@ function MonthlyOverview({ tickets }) {
         const catCounts = {};
         mTickets.forEach((t) => (t.structured?.meta?.serviceTypes || []).forEach((cat) => { catCounts[cat] = (catCounts[cat] || 0) + 1; }));
 
-        const label = month === "Unknown" ? "Undated" : (() => {
+        const label = (() => {
+          if (!/^\d{4}-\d{2}$/.test(month)) return "Undated";
           const [y, m] = month.split("-");
-          return new Date(Number(y), Number(m) - 1).toLocaleString("en-IN", { month: "long", year: "numeric" });
+          const parsedMonth = new Date(Number(y), Number(m) - 1, 1);
+          if (Number.isNaN(parsedMonth.getTime())) return "Undated";
+          return parsedMonth.toLocaleString("en-IN", { month: "long", year: "numeric" });
         })();
 
         return (
