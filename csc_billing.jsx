@@ -1198,6 +1198,74 @@ function formatDobValue(value) {
 
 const DATABASE_OCR_ENABLED_SECTION_IDS = new Set(["aadhaar", "pan_card", "passport"]);
 let tesseractModulePromise = null;
+const OCR_DIGIT_TO_LETTER_MAP = {
+  "0": "O",
+  "1": "I",
+  "2": "Z",
+  "5": "S",
+  "6": "G",
+  "8": "B",
+};
+const OCR_LETTER_TO_DIGIT_MAP = {
+  O: "0",
+  Q: "0",
+  D: "0",
+  I: "1",
+  L: "1",
+  Z: "2",
+  S: "5",
+  B: "8",
+  G: "6",
+  T: "7",
+};
+
+function coerceOcrAlpha(char) {
+  if (/^[A-Z]$/.test(char)) return char;
+  return OCR_DIGIT_TO_LETTER_MAP[char] || "";
+}
+
+function coerceOcrDigit(char) {
+  if (/^\d$/.test(char)) return char;
+  return OCR_LETTER_TO_DIGIT_MAP[char] || "";
+}
+
+function normalizeAadhaarDigits(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[OQD]/g, "0")
+    .replace(/\D/g, "")
+    .slice(0, 12);
+}
+
+function normalizePanNumberCandidate(value) {
+  const raw = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (raw.length < 10) return "";
+  const candidate = raw.slice(0, 10);
+  const chars = candidate.split("");
+  const normalized = [
+    coerceOcrAlpha(chars[0]),
+    coerceOcrAlpha(chars[1]),
+    coerceOcrAlpha(chars[2]),
+    coerceOcrAlpha(chars[3]),
+    coerceOcrAlpha(chars[4]),
+    coerceOcrDigit(chars[5]),
+    coerceOcrDigit(chars[6]),
+    coerceOcrDigit(chars[7]),
+    coerceOcrDigit(chars[8]),
+    coerceOcrAlpha(chars[9]),
+  ].join("");
+  if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(normalized)) return "";
+  return normalized;
+}
+
+function normalizePassportNumberCandidate(value) {
+  const raw = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (raw.length < 8) return "";
+  const candidate = raw.slice(0, 8);
+  const normalized = `${coerceOcrAlpha(candidate[0])}${coerceOcrDigit(candidate[1])}${coerceOcrDigit(candidate[2])}${coerceOcrDigit(candidate[3])}${coerceOcrDigit(candidate[4])}${coerceOcrDigit(candidate[5])}${coerceOcrDigit(candidate[6])}${coerceOcrDigit(candidate[7])}`;
+  if (!/^[A-Z][0-9]{7}$/.test(normalized)) return "";
+  return normalized;
+}
 
 function toOcrLines(rawText) {
   return String(rawText || "")
@@ -1230,7 +1298,10 @@ function extractDateFromOcrText(rawText) {
 function parseAadhaarFromOcrText(rawText) {
   const lines = toOcrLines(rawText);
   const joined = lines.join("\n");
-  const aadhaarNumber = (joined.match(/\b\d{4}\s?\d{4}\s?\d{4}\b/) || [])[0] || "";
+  const aadhaarRawMatch = (joined.match(/\b[0-9OQD]{4}\s?[0-9OQD]{4}\s?[0-9OQD]{4}\b/i) || [])[0]
+    || (joined.match(/\b[0-9OQD]{12}\b/i) || [])[0]
+    || "";
+  const aadhaarNumber = formatAadhaarNumber(normalizeAadhaarDigits(aadhaarRawMatch));
   const dateOfBirth = extractDateFromOcrText(joined);
   const dobLineIndex = lines.findIndex((line) => /(dob|date of birth|year of birth)/i.test(line));
   let name = "";
@@ -1264,7 +1335,11 @@ function parsePanFromOcrText(rawText) {
   const lines = toOcrLines(rawText);
   const joined = lines.join("\n");
   const joinedUpper = joined.toUpperCase();
-  const panNumber = (joinedUpper.match(/\b[A-Z]{5}[0-9]{4}[A-Z]\b/) || [])[0] || "";
+  const directPan = (joinedUpper.match(/\b[A-Z0-9]{10}\b/g) || [])
+    .map((candidate) => normalizePanNumberCandidate(candidate))
+    .find(Boolean) || "";
+  const labelPanRaw = ((joinedUpper.match(/(?:PAN|PERMANENT ACCOUNT NUMBER|NUMBER)[^A-Z0-9]{0,8}([A-Z0-9]{10})/i) || [])[1] || "");
+  const panNumber = directPan || normalizePanNumberCandidate(labelPanRaw);
   const dateOfBirth = extractDateFromOcrText(joined);
   const fatherLabelIndex = lines.findIndex((line) => /father/i.test(line));
   let fatherName = "";
@@ -1296,7 +1371,9 @@ function parsePassportFromOcrText(rawText) {
   const lines = toOcrLines(rawText);
   const joined = lines.join("\n");
   const joinedUpper = joined.toUpperCase();
-  const passportNumber = (joinedUpper.match(/\b[A-Z][0-9]{7}\b/) || [])[0] || "";
+  const passportNumber = (joinedUpper.match(/\b[A-Z0-9][0-9OILSBGT]{7}\b/g) || [])
+    .map((candidate) => normalizePassportNumberCandidate(candidate))
+    .find(Boolean) || "";
   const dateOfBirth = extractDateFromOcrText(joined);
   const surnameIndex = lines.findIndex((line) => /\bsurname\b/i.test(line));
   const givenNameIndex = lines.findIndex((line) => /\bgiven name\b/i.test(line));
@@ -1366,11 +1443,92 @@ function normalizeOcrValuesForDatabaseSection(sectionId, extractedValues) {
   return nextValues;
 }
 
-async function runOcrOnDatabaseDocument(file, onProgress) {
+function scoreOcrExtractionForSection(sectionId, rawText) {
+  const extractedValues = getDatabaseValuesFromOcrText(sectionId, rawText);
+  let score = 0;
+  Object.entries(extractedValues).forEach(([key, value]) => {
+    const trimmed = String(value || "").trim();
+    if (!trimmed) return;
+    score += key.toLowerCase().includes("number") ? 4 : 2;
+  });
+  if (sectionId === "aadhaar") {
+    const aadhaarDigits = String(extractedValues.aadhaarNumber || "").replace(/\D/g, "");
+    if (aadhaarDigits.length === 12) score += 12;
+  }
+  if (sectionId === "pan_card" && /^[A-Z]{5}\d{4}[A-Z]$/.test(String(extractedValues.panNumber || ""))) {
+    score += 12;
+  }
+  if (sectionId === "passport" && /^[A-Z][0-9]{7}$/.test(String(extractedValues.passportNumber || ""))) {
+    score += 12;
+  }
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(String(extractedValues.dateOfBirth || ""))) {
+    score += 6;
+  }
+  return score;
+}
+
+async function preprocessImageForOcr(file) {
+  if (typeof document === "undefined" || !file) return null;
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Unable to read image file."));
+    reader.readAsDataURL(file);
+  });
+  const image = await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Unable to load image for OCR."));
+    img.src = dataUrl;
+  });
+  const baseW = Math.max(1, Number(image.naturalWidth || image.width || 1));
+  const baseH = Math.max(1, Number(image.naturalHeight || image.height || 1));
+  const maxDimension = 2300;
+  const scale = Math.min(2.8, Math.max(1.35, maxDimension / Math.max(baseW, baseH)));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(baseW * scale));
+  canvas.height = Math.max(1, Math.round(baseH * scale));
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = imageData.data;
+  for (let idx = 0; idx < pixels.length; idx += 4) {
+    const r = pixels[idx];
+    const g = pixels[idx + 1];
+    const b = pixels[idx + 2];
+    const luminance = (0.299 * r) + (0.587 * g) + (0.114 * b);
+    const boosted = Math.max(0, Math.min(255, ((luminance - 128) * 1.55) + 128));
+    const sharpened = boosted > 168 ? 255 : boosted < 72 ? 0 : boosted;
+    pixels[idx] = sharpened;
+    pixels[idx + 1] = sharpened;
+    pixels[idx + 2] = sharpened;
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob || null), "image/png", 1);
+  });
+}
+
+async function runOcrOnDatabaseDocument(file, sectionId, onProgress) {
   if (!file) throw new Error("Select a document image first.");
   if (!file.type || !file.type.startsWith("image/")) {
     throw new Error("Only image files are supported right now (JPG, PNG, WEBP).");
   }
+  onProgress?.(4);
+  const preprocessedBlob = await preprocessImageForOcr(file).catch(() => null);
+  const attempts = [
+    { source: file, psm: 6 },
+    { source: file, psm: 11 },
+  ];
+  if (preprocessedBlob) {
+    attempts.push({ source: preprocessedBlob, psm: 6 });
+    attempts.push({ source: preprocessedBlob, psm: 11 });
+  }
+  let activeAttemptIndex = 0;
+  const totalAttempts = attempts.length;
   if (!tesseractModulePromise) {
     tesseractModulePromise = import("tesseract.js");
   }
@@ -1378,15 +1536,34 @@ async function runOcrOnDatabaseDocument(file, onProgress) {
   const worker = await createWorker("eng", 1, {
     logger: (message) => {
       if (message?.status === "recognizing text" && typeof message.progress === "number") {
-        onProgress?.(Math.max(1, Math.round(message.progress * 100)));
+        const completed = activeAttemptIndex / totalAttempts;
+        const running = (message.progress / totalAttempts);
+        onProgress?.(Math.max(5, Math.min(98, Math.round((completed + running) * 100))));
       }
     },
   });
   try {
-    onProgress?.(5);
-    const result = await worker.recognize(file);
+    let bestText = "";
+    let bestScore = -1;
+    for (let idx = 0; idx < attempts.length; idx += 1) {
+      activeAttemptIndex = idx;
+      const attempt = attempts[idx];
+      await worker.setParameters({
+        tessedit_pageseg_mode: attempt.psm,
+        preserve_interword_spaces: "1",
+      });
+      const result = await worker.recognize(attempt.source);
+      const text = String(result?.data?.text || "");
+      const confidence = Number(result?.data?.confidence || 0);
+      const extractionScore = scoreOcrExtractionForSection(sectionId, text);
+      const finalScore = (extractionScore * 100) + confidence;
+      if (finalScore > bestScore) {
+        bestScore = finalScore;
+        bestText = text;
+      }
+    }
     onProgress?.(100);
-    return String(result?.data?.text || "");
+    return bestText;
   } finally {
     await worker.terminate();
   }
@@ -2172,7 +2349,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
     setOcrProgress(0);
     setFormError("");
     try {
-      const extractedText = await runOcrOnDatabaseDocument(ocrFile, setOcrProgress);
+      const extractedText = await runOcrOnDatabaseDocument(ocrFile, activeSectionId, setOcrProgress);
       const extractedValues = getDatabaseValuesFromOcrText(activeSectionId, extractedText);
       const normalizedValues = normalizeOcrValuesForDatabaseSection(activeSectionId, extractedValues);
       if (!hasAnyDatabaseFieldValue(normalizedValues)) {
@@ -4938,23 +5115,39 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       </span>
                     )}
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 10, background: "rgba(255,255,255,0.60)", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={hasReference}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setHasReference(checked);
-                        if (!checked) {
-                          setReferenceName("");
-                          setReferenceLabel("");
-                          setIntakeFieldErrors((prev) => ({ ...prev, referenceName: "", referencePhone: "" }));
-                        }
-                        setError("");
-                      }}
-                    />
-                    <span style={{ fontSize: "0.82rem", color: "rgba(15,23,42,0.70)", fontWeight: 500, fontFamily: APP_FONT_STACK }}>
-                      Add reference person
+                  <label style={{ display: "grid", gap: 8 }}>
+                    <span style={sectionEyebrowStyle}>Reference (optional)</span>
+                    <span style={{
+                      ...inputStyle,
+                      fontSize: "1rem",
+                      padding: "13px 16px",
+                      minHeight: 54,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 10,
+                      cursor: "pointer",
+                      border: hasReference ? "1px solid rgba(37,99,235,0.38)" : inputStyle.border,
+                      boxShadow: hasReference ? "0 0 0 2px rgba(37,99,235,0.08)" : inputStyle.boxShadow,
+                      background: hasReference ? "rgba(37,99,235,0.08)" : inputStyle.background,
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={hasReference}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setHasReference(checked);
+                          if (!checked) {
+                            setReferenceName("");
+                            setReferenceLabel("");
+                            setIntakeFieldErrors((prev) => ({ ...prev, referenceName: "", referencePhone: "" }));
+                          }
+                          setError("");
+                        }}
+                        style={{ width: 18, height: 18, flexShrink: 0 }}
+                      />
+                      <span style={{ fontSize: "0.96rem", color: "#475569", fontWeight: 500, fontFamily: APP_FONT_STACK }}>
+                        Add reference person
+                      </span>
                     </span>
                   </label>
                   {hasReference && (
