@@ -278,9 +278,6 @@ const HOME_NAV_BUTTONS = [
 ];
 const CORE_WORKSPACE_TAB_IDS = ["entry", "rates", "b2b", "monthly"];
 const TOOL_WORKSPACE_TAB_IDS = ["database", "log", "quick_links", "doc_tools", "services_dashboard"];
-const DATABASE_SECURITY_CODE = String(import.meta.env.VITE_DB_SECURITY_CODE || "CSC123").trim();
-const DATABASE_TOTP_SECRET = String(import.meta.env.VITE_DB_AUTH_TOTP_SECRET || "").trim();
-const DATABASE_BACKUP_AUTH_CODE = String(import.meta.env.VITE_DB_AUTH_BACKUP_CODE || "000000").trim();
 const QUICK_LINK_DEFAULTS = [
   { id: "default_esathi", name: "e-Saathi", description: "UP state citizen services portal.", url: "https://edistrict.up.gov.in", isDefault: true },
   { id: "default_digitalseva", name: "Digital Seva Portal", description: "CSC services and transaction desk.", url: "https://digitalseva.csc.gov.in", isDefault: true },
@@ -309,68 +306,48 @@ function normalizeOtpInput(value) {
   return String(value || "").replace(/\D/g, "").slice(0, 6);
 }
 
-function decodeBase32Secret(secret) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  const cleaned = String(secret || "").toUpperCase().replace(/[^A-Z2-7]/g, "");
-  if (!cleaned) return new Uint8Array();
-  let bits = "";
-  for (let i = 0; i < cleaned.length; i += 1) {
-    const value = alphabet.indexOf(cleaned[i]);
-    if (value < 0) continue;
-    bits += value.toString(2).padStart(5, "0");
+async function fetchDatabaseSessionStatus() {
+  try {
+    const response = await fetch("/api/database-auth/session", {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { ok: false, authenticated: false, message: "Security API is not available in this environment." };
+      }
+      return { ok: false, authenticated: false, message: payload?.message || "Session check failed." };
+    }
+    return { ok: true, authenticated: Boolean(payload?.authenticated), expiresAt: payload?.expiresAt || "" };
+  } catch (_error) {
+    return { ok: false, authenticated: false, message: "Unable to reach security server." };
   }
-  const byteCount = Math.floor(bits.length / 8);
-  const bytes = new Uint8Array(byteCount);
-  for (let i = 0; i < byteCount; i += 1) {
-    bytes[i] = Number.parseInt(bits.slice(i * 8, i * 8 + 8), 2);
-  }
-  return bytes;
 }
 
-async function getTotpCode(secret, counter) {
-  if (typeof crypto === "undefined" || !crypto.subtle) return "";
-  const secretBytes = decodeBase32Secret(secret);
-  if (!secretBytes.length) return "";
-  const counterBytes = new ArrayBuffer(8);
-  const view = new DataView(counterBytes);
-  const high = Math.floor(counter / 0x100000000);
-  const low = counter >>> 0;
-  view.setUint32(0, high, false);
-  view.setUint32(4, low, false);
-  const key = await crypto.subtle.importKey(
-    "raw",
-    secretBytes,
-    { name: "HMAC", hash: "SHA-1" },
-    false,
-    ["sign"],
-  );
-  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", key, counterBytes));
-  const offset = signature[signature.length - 1] & 0x0f;
-  const code = (
-    ((signature[offset] & 0x7f) << 24)
-    | ((signature[offset + 1] & 0xff) << 16)
-    | ((signature[offset + 2] & 0xff) << 8)
-    | (signature[offset + 3] & 0xff)
-  ) % 1000000;
-  return String(code).padStart(6, "0");
-}
-
-async function verifyAuthenticatorCode(codeInput) {
-  const normalizedCode = normalizeOtpInput(codeInput);
-  if (normalizedCode.length !== 6) return false;
-  if (DATABASE_TOTP_SECRET) {
-    const nowCounter = Math.floor(Date.now() / 30000);
-    const candidates = await Promise.all([
-      getTotpCode(DATABASE_TOTP_SECRET, nowCounter - 1),
-      getTotpCode(DATABASE_TOTP_SECRET, nowCounter),
-      getTotpCode(DATABASE_TOTP_SECRET, nowCounter + 1),
-    ]);
-    return candidates.includes(normalizedCode);
+async function verifyDatabaseAccessOnServer({ securityCode, authenticatorCode }) {
+  try {
+    const response = await fetch("/api/database-auth/verify", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        securityCode: String(securityCode || "").trim(),
+        authenticatorCode: normalizeOtpInput(authenticatorCode),
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { ok: false, message: "Security API not available. Deploy on Vercel or run a server with /api routes." };
+      }
+      return { ok: false, message: payload?.message || "Verification failed." };
+    }
+    return { ok: true, expiresAt: payload?.expiresAt || "" };
+  } catch (_error) {
+    return { ok: false, message: "Unable to reach security server. Try again." };
   }
-  if (DATABASE_BACKUP_AUTH_CODE) {
-    return normalizedCode === normalizeOtpInput(DATABASE_BACKUP_AUTH_CODE);
-  }
-  return false;
 }
 
 function verifyDeleteAccess(actionLabel) {
@@ -1795,34 +1772,34 @@ function DatabaseWorkspace({ tickets, services, b2bLedger }) {
   );
 }
 
-function DatabaseAccessModal({ onClose, onUnlock }) {
+function DatabaseAccessModal({ onClose, onVerify }) {
   const [securityCode, setSecurityCode] = useState("");
   const [authCode, setAuthCode] = useState("");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
 
-  const hasAuthenticatorConfig = Boolean(DATABASE_TOTP_SECRET || DATABASE_BACKUP_AUTH_CODE);
-  const hasSecurityConfig = Boolean(DATABASE_SECURITY_CODE);
-
   const handleVerify = async () => {
     if (checking) return;
-    if (!hasSecurityConfig || !hasAuthenticatorConfig) {
-      setError("Database security is not configured yet. Set env keys before opening this section.");
+    if (!String(securityCode || "").trim()) {
+      setError("Enter security code.");
       return;
     }
-    if (String(securityCode || "").trim() !== DATABASE_SECURITY_CODE) {
-      setError("Security code is invalid.");
+    if (normalizeOtpInput(authCode).length !== 6) {
+      setError("Enter valid 6-digit authenticator code.");
       return;
     }
     setChecking(true);
     setError("");
     try {
-      const isAuthValid = await verifyAuthenticatorCode(authCode);
-      if (!isAuthValid) {
-        setError("Authenticator code is invalid or expired.");
+      const result = await onVerify?.({
+        securityCode: String(securityCode || "").trim(),
+        authenticatorCode: normalizeOtpInput(authCode),
+      });
+      if (!result?.ok) {
+        setError(result?.message || "Verification failed.");
         return;
       }
-      onUnlock();
+      onClose?.();
     } finally {
       setChecking(false);
     }
@@ -6684,15 +6661,44 @@ export default function CSCBilling() {
     }, 900);
     window.location.href = appUrl;
   };
-  const unlockDatabaseAndOpen = () => {
+  const handleDatabaseVerification = async ({ securityCode, authenticatorCode }) => {
+    const result = await verifyDatabaseAccessOnServer({ securityCode, authenticatorCode });
+    if (!result?.ok) return result;
     setDatabaseUnlocked(true);
     setShowDatabaseGate(false);
     navigateTab("database", "push", { bypassDatabaseGate: true });
+    return { ok: true };
+  };
+  const lockDatabaseAccess = async () => {
+    try {
+      await fetch("/api/database-auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (_error) {
+      // Ignore network errors and still clear local lock state.
+    }
+    setDatabaseUnlocked(false);
+    setShowDatabaseGate(false);
+    navigateTab("home", "replace");
   };
 
   useEffect(() => {
     const timer = window.setTimeout(() => setIsBootLoading(false), 1350);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function syncDatabaseSession() {
+      const session = await fetchDatabaseSessionStatus();
+      if (cancelled) return;
+      setDatabaseUnlocked(Boolean(session?.authenticated));
+    }
+    syncDatabaseSession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -6908,7 +6914,7 @@ export default function CSCBilling() {
       {showDatabaseGate && (
         <DatabaseAccessModal
           onClose={() => setShowDatabaseGate(false)}
-          onUnlock={unlockDatabaseAndOpen}
+          onVerify={handleDatabaseVerification}
         />
       )}
       <style>{`
@@ -7087,6 +7093,28 @@ export default function CSCBilling() {
                   )}
                 </div>
               </div>
+              {tab === "database" && databaseUnlocked && (
+                <button
+                  onClick={lockDatabaseAccess}
+                  style={{
+                    border: "1px solid rgba(220,38,38,0.34)",
+                    borderRadius: 999,
+                    padding: "10px 16px",
+                    background: "rgba(220,38,38,0.10)",
+                    color: "#991b1b",
+                    fontFamily: APP_BRAND_STACK,
+                    fontWeight: 700,
+                    fontSize: "0.56rem",
+                    letterSpacing: "0.20em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.22s ease",
+                  }}
+                >
+                  Lock Database
+                </button>
+              )}
               <button
                 onClick={openCscWhatsApp}
                 style={{
