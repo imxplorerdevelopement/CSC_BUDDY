@@ -270,12 +270,14 @@ const HOME_NAV_BUTTONS = [
   { id: "rates", label: "Rate List", helper: "Update and review service pricing." },
   { id: "b2b", label: "Vendor Dashboard", helper: "Manage B2B entries, services, and payments." },
   { id: "monthly", label: "Analytics", helper: "Open monthly revenue and category trends." },
-  { id: "database", label: "Database", helper: "Highly confidential workspace with 2FA access." },
+  { id: "database", label: "Database (Highly Confidential)", helper: "Two-factor required: one security code and one Google Authenticator code." },
   { id: "log", label: "Ticket Dashboard", helper: "Track open/closed tickets and payment status." },
   { id: "quick_links", label: "Quick Website Links", helper: "Open core portal links in one click." },
   { id: "doc_tools", label: "Document Tools", helper: "View required, received, and pending documents." },
   { id: "services_dashboard", label: "Services Dashboard", helper: "Review service-wise totals and volume." },
 ];
+const CORE_WORKSPACE_TAB_IDS = ["entry", "rates", "b2b", "monthly"];
+const TOOL_WORKSPACE_TAB_IDS = ["database", "log", "quick_links", "doc_tools", "services_dashboard"];
 const DATABASE_SECURITY_CODE = String(import.meta.env.VITE_DB_SECURITY_CODE || "CSC123").trim();
 const DATABASE_TOTP_SECRET = String(import.meta.env.VITE_DB_AUTH_TOTP_SECRET || "").trim();
 const DATABASE_BACKUP_AUTH_CODE = String(import.meta.env.VITE_DB_AUTH_BACKUP_CODE || "000000").trim();
@@ -397,10 +399,6 @@ function getOperatorConfig(operatorName) {
 }
 
 function getInitialActiveTab() {
-  if (canUseBrowserHistory()) {
-    const historyTab = window.history.state?.tab;
-    if (TAB_CONFIG.some((item) => item.id === historyTab)) return historyTab;
-  }
   return "home";
 }
 
@@ -1416,107 +1414,34 @@ function BootLoadingScreen() {
   );
 }
 
-function HomeLaunchpad({ onOpenSection, openTicketCount, dailyRevenueTotal, b2bPendingCount, cloudSyncLabel }) {
+function HomeLaunchpad({ onOpenSection }) {
   return (
     <div style={{
       minHeight: "100vh",
-      padding: "28px",
-      display: "grid",
-      gridTemplateRows: "auto auto 1fr",
-      gap: 18,
+      padding: "24px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       background: "radial-gradient(circle at 14% 6%, rgba(59,130,246,0.16), transparent 32%), radial-gradient(circle at 85% 85%, rgba(14,165,233,0.12), transparent 28%), #f8fbff",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-        <div>
-          <div style={{
-            fontFamily: APP_BRAND_STACK,
-            fontSize: "0.62rem",
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            fontWeight: 700,
-            color: "#1d4ed8",
-            marginBottom: 10,
-          }}>
-            CSC Dashboard Home
-          </div>
-          <h1 style={{
-            margin: 0,
-            fontFamily: APP_FONT_STACK,
-            fontSize: "clamp(1.45rem, 3vw, 2.15rem)",
-            color: "#0f172a",
-            lineHeight: 1.15,
-            letterSpacing: "-0.02em",
-          }}>
-            Pick a workspace and start immediately
-          </h1>
-          <p style={{
-            margin: "10px 0 0",
-            fontFamily: APP_FONT_STACK,
-            fontSize: "0.96rem",
-            lineHeight: 1.65,
-            color: "rgba(15,23,42,0.62)",
-            maxWidth: 720,
-          }}>
-            This home screen keeps navigation simple and clear for daily staff operations.
-          </p>
-        </div>
-        <div style={{
-          borderRadius: 14,
-          border: "1px solid rgba(15,23,42,0.12)",
-          background: "rgba(255,255,255,0.86)",
-          padding: "12px 14px",
-          minWidth: 210,
-        }}>
-          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
-            Sync Status
-          </div>
-          <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#0f172a" }}>{cloudSyncLabel}</div>
-        </div>
-      </div>
-
-      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-        <div style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.88)", padding: "12px 14px" }}>
-          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>Open Tickets</div>
-          <div style={{ marginTop: 5, fontFamily: APP_MONO_STACK, fontSize: "1.15rem", fontWeight: 700, color: "#1e3a8a" }}>{openTicketCount}</div>
-        </div>
-        <div style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.88)", padding: "12px 14px" }}>
-          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>Daily Revenue</div>
-          <div style={{ marginTop: 5, fontFamily: APP_MONO_STACK, fontSize: "1.15rem", fontWeight: 700, color: "#1e3a8a" }}>Rs. {Math.round(dailyRevenueTotal).toLocaleString("en-IN")}</div>
-        </div>
-        <div style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.88)", padding: "12px 14px" }}>
-          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>B2B Pending</div>
-          <div style={{ marginTop: 5, fontFamily: APP_MONO_STACK, fontSize: "1.15rem", fontWeight: 700, color: "#1e3a8a" }}>{b2bPendingCount}</div>
-        </div>
-      </div>
-
       <div style={{
+        width: "min(1120px, 100%)",
         borderRadius: 18,
         border: "1px solid rgba(15,23,42,0.12)",
         background: "rgba(255,255,255,0.90)",
-        boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-        padding: 16,
+        boxShadow: "0 14px 34px rgba(15,23,42,0.10)",
+        padding: 18,
       }}>
-        <div style={{
-          fontSize: "0.62rem",
-          fontWeight: 700,
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          color: "rgba(15,23,42,0.45)",
-          fontFamily: APP_BRAND_STACK,
-          marginBottom: 12,
-        }}>
-          Navigation
-        </div>
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
           {HOME_NAV_BUTTONS.map((item) => (
             <button
               key={item.id}
               onClick={() => onOpenSection(item.id)}
               style={{
                 borderRadius: 14,
-                border: "1px solid rgba(37,99,235,0.24)",
+                border: item.id === "database" ? "1px solid rgba(220,38,38,0.28)" : "1px solid rgba(37,99,235,0.24)",
                 background: item.id === "database" ? "linear-gradient(160deg, rgba(220,38,38,0.08), rgba(248,113,113,0.03))" : "rgba(239,246,255,0.64)",
-                padding: "14px 14px",
+                padding: "16px 16px",
                 textAlign: "left",
                 display: "grid",
                 gap: 6,
@@ -2033,6 +1958,200 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
         </div>
       )}
     </button>
+  );
+}
+
+function WorkspaceSidebar({ activeTab, onNavigate, onOpenWhatsApp, badgeMap = {} }) {
+  const coreItems = TAB_CONFIG.filter((item) => CORE_WORKSPACE_TAB_IDS.includes(item.id));
+  const toolItems = TAB_CONFIG.filter((item) => TOOL_WORKSPACE_TAB_IDS.includes(item.id));
+  const menuButtonStyle = (active) => ({
+    width: "100%",
+    border: active ? "1px solid rgba(37,99,235,0.34)" : "1px solid rgba(15,23,42,0.11)",
+    borderRadius: 12,
+    background: active ? "rgba(37,99,235,0.10)" : "rgba(255,255,255,0.72)",
+    cursor: "pointer",
+    padding: "11px 12px",
+    textAlign: "left",
+    display: "grid",
+    gap: 4,
+    transition: "all 0.18s ease",
+  });
+
+  const renderMenuGroup = (items, heading) => (
+    <div style={{ display: "grid", gap: 8 }}>
+      <div style={{
+        fontSize: "0.56rem",
+        fontWeight: 700,
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
+        color: "rgba(15,23,42,0.45)",
+        fontFamily: APP_BRAND_STACK,
+      }}>
+        {heading}
+      </div>
+      {items.map((item) => {
+        const active = activeTab === item.id;
+        const badge = badgeMap[item.id];
+        return (
+          <button
+            key={item.id}
+            onClick={() => onNavigate(item.id)}
+            style={menuButtonStyle(active)}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <span style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 9,
+                  display: "grid",
+                  placeItems: "center",
+                  background: active ? "rgba(37,99,235,0.18)" : "rgba(15,23,42,0.07)",
+                  color: active ? "#1d4ed8" : "rgba(15,23,42,0.68)",
+                  fontSize: "0.60rem",
+                  fontWeight: 800,
+                  fontFamily: APP_BRAND_STACK,
+                  letterSpacing: "0.06em",
+                  flexShrink: 0,
+                }}>
+                  {item.shortLabel}
+                </span>
+                <span style={{
+                  fontFamily: APP_FONT_STACK,
+                  fontSize: "0.88rem",
+                  fontWeight: 700,
+                  color: active ? "#1e3a8a" : "#0f172a",
+                  lineHeight: 1.2,
+                  letterSpacing: "-0.01em",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}>
+                  {item.label}
+                </span>
+              </div>
+              {badge && (
+                <span style={{
+                  borderRadius: 999,
+                  padding: "3px 7px",
+                  border: "1px solid rgba(37,99,235,0.22)",
+                  background: "rgba(37,99,235,0.08)",
+                  color: "#1d4ed8",
+                  fontFamily: APP_MONO_STACK,
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}>
+                  {badge}
+                </span>
+              )}
+            </div>
+            <span style={{
+              fontFamily: APP_FONT_STACK,
+              fontSize: "0.76rem",
+              color: "rgba(15,23,42,0.58)",
+              lineHeight: 1.45,
+            }}>
+              {item.description}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <aside className="csc-sidebar" style={{
+      width: 320,
+      minWidth: 320,
+      flex: "0 0 auto",
+      background: "linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%)",
+      borderRight: "1px solid rgba(15,23,42,0.12)",
+      display: "flex",
+      flexDirection: "column",
+      position: "sticky",
+      top: 0,
+      height: "100vh",
+      overflow: "hidden",
+      zIndex: 20,
+      boxShadow: "2px 0 24px rgba(15,23,42,0.06)",
+    }}>
+      <div style={{ padding: "22px 18px 14px", borderBottom: "1px solid rgba(15,23,42,0.10)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <div style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            background: "rgba(37,99,235,0.12)",
+            border: "1px solid rgba(37,99,235,0.26)",
+            display: "grid",
+            placeItems: "center",
+            color: "#1d4ed8",
+            fontFamily: APP_BRAND_STACK,
+            fontWeight: 800,
+            fontSize: "0.66rem",
+            letterSpacing: "0.08em",
+          }}>
+            CSC
+          </div>
+          <div>
+            <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.96rem", fontWeight: 800, color: "#0f172a", letterSpacing: "0.06em" }}>
+              Partner Desk
+            </div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.74rem", color: "rgba(15,23,42,0.52)" }}>
+              Clear workflow menu for daily staff use
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => onNavigate("home")}
+          style={{
+            width: "100%",
+            border: "1px solid rgba(37,99,235,0.30)",
+            borderRadius: 10,
+            background: "rgba(37,99,235,0.10)",
+            color: "#1d4ed8",
+            fontFamily: APP_BRAND_STACK,
+            fontSize: "0.62rem",
+            fontWeight: 700,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            padding: "9px 12px",
+            textAlign: "center",
+          }}
+        >
+          Dashboard Home
+        </button>
+      </div>
+
+      <div className="csc-sidebar-nav" style={{ flex: 1, overflowY: "auto", padding: "14px 14px 10px", display: "grid", gap: 14, alignContent: "start" }}>
+        {renderMenuGroup(coreItems, "Core Workflows")}
+        {renderMenuGroup(toolItems, "Dashboards & Tools")}
+      </div>
+
+      <div style={{ borderTop: "1px solid rgba(15,23,42,0.10)", padding: "12px 14px 16px", display: "grid", gap: 8 }}>
+        <button
+          onClick={onOpenWhatsApp}
+          style={{
+            width: "100%",
+            border: "1px solid rgba(22,163,74,0.34)",
+            borderRadius: 10,
+            background: "rgba(22,163,74,0.12)",
+            color: "#166534",
+            fontFamily: APP_BRAND_STACK,
+            fontSize: "0.62rem",
+            fontWeight: 700,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            padding: "9px 10px",
+          }}
+        >
+          Open WhatsApp
+        </button>
+      </div>
+    </aside>
   );
 }
 
@@ -6362,8 +6481,6 @@ function WalkInModal({ onClose, onStart }) {
 // --- MAIN APP ---
 export default function CSCBilling() {
   const [tab, setTab] = useState(() => getInitialActiveTab());
-  const [sidePanelExpanded, setSidePanelExpanded] = useState(() => getStoredSidePanelExpanded());
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => getStoredSidebarCollapsed());
   const [isBootLoading, setIsBootLoading] = useState(true);
   const [showDatabaseGate, setShowDatabaseGate] = useState(false);
   const [databaseUnlocked, setDatabaseUnlocked] = useState(false);
@@ -6407,14 +6524,15 @@ export default function CSCBilling() {
   ), [b2bLedger, todayDateKey]);
   const dailyRevenueTotal = ticketRevenueToday + b2bRevenueToday;
   const b2bPendingCount = b2bLedger.filter((entry) => (Number(entry.pendingAmount) || 0) > 0).length;
-  const panelBadges = {
+  const navBadges = {
+    b2b: b2bPendingCount > 0 ? String(b2bPendingCount) : "",
+    monthly: `${Math.max(1, tickets.length)}`,
     database: databaseUnlocked ? "Unlocked" : "2FA",
     log: openTicketCount > 0 ? String(openTicketCount) : String(tickets.length),
     quick_links: String(customQuickLinks.length + QUICK_LINK_DEFAULTS.length),
     doc_tools: String(Math.max(0, tickets.length)),
     services_dashboard: String(Math.max(0, services.length)),
   };
-  const sidebarWidth = sidebarCollapsed ? 168 : 260;
   const isHomeTab = tab === "home";
   const activeTabConfig = TAB_CONFIG.find((item) => item.id === tab) || TAB_CONFIG[0];
   const headerStats = [
@@ -6603,22 +6721,7 @@ export default function CSCBilling() {
   }, [tab]);
 
   useEffect(() => {
-    writeStoredJSON(STORAGE_KEYS.sidePanelExpanded, sidePanelExpanded);
-  }, [sidePanelExpanded]);
-
-  useEffect(() => {
-    writeStoredJSON(STORAGE_KEYS.sidebarCollapsed, sidebarCollapsed);
-  }, [sidebarCollapsed]);
-
-  useEffect(() => {
-    if (sidebarCollapsed && sidePanelExpanded) {
-      setSidePanelExpanded(false);
-    }
-  }, [sidebarCollapsed, sidePanelExpanded]);
-
-  useEffect(() => {
     if (!isHomeTab) return;
-    setSidePanelExpanded(false);
     setShowWalkIn(false);
   }, [isHomeTab]);
 
@@ -6875,518 +6978,14 @@ export default function CSCBilling() {
       {/* -- App Shell: Sidebar + Main -- */}
       <div style={{ display: "flex", minHeight: "100vh", position: "relative" }}>
 
-        {/* -- Left Sidebar -- */}
-        <aside className="csc-sidebar" style={{
-          width: sidebarWidth,
-          minWidth: sidebarWidth,
-          flex: "0 0 auto",
-          background: `radial-gradient(circle at 110% -8%, rgba(59,130,246,0.12), transparent 38%), radial-gradient(circle at -10% 100%, rgba(37,99,235,0.07), transparent 36%), linear-gradient(180deg, #ffffff 0%, #eff6ff 100%)`,
-          borderRight: `1px solid rgba(15,23,42,0.10)`,
-          display: isHomeTab ? "none" : "flex",
-          flexDirection: "column",
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflow: "hidden",
-          zIndex: 20,
-          contain: "layout paint",
-          willChange: "width",
-          transition: "width 0.18s cubic-bezier(0.2,0.8,0.2,1), min-width 0.18s cubic-bezier(0.2,0.8,0.2,1)",
-        }}>
-          {/* Sidebar Header / Logo */}
-          <div style={{ padding: sidebarCollapsed ? "14px 10px 12px" : "24px 20px 18px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: sidebarCollapsed ? 0 : 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                {/* Icon mark: 2x2 dot grid */}
-                <div style={{
-                  width: 32, height: 32, borderRadius: 9,
-                  background: DS.wine,
-                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4,
-                  padding: 8, flexShrink: 0,
-                }}>
-                  {[0, 1, 2, 3].map((i) => (
-                    <div key={i} style={{ borderRadius: "50%", background: i < 2 ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)" }} />
-                  ))}
-                </div>
-                <div>
-                  <div style={{
-                    fontFamily: APP_BRAND_STACK, fontWeight: 800,
-                    fontSize: sidebarCollapsed ? "0.86rem" : "1.05rem", letterSpacing: "0.06em",
-                    color: "#0f172a", lineHeight: 1.1,
-                    display: "flex", alignItems: "baseline", gap: 5,
-                  }}>
-                    <span>CSC</span>
-                    {!sidebarCollapsed && (
-                      <span style={{ fontWeight: 400, color: "rgba(15,23,42,0.55)", fontSize: "1.0rem", letterSpacing: "0.02em" }}>Buddy</span>
-                    )}
-                  </div>
-                  {!sidebarCollapsed && (
-                    <div style={{
-                      fontSize: "0.60rem", fontWeight: 600, letterSpacing: "0.22em",
-                      textTransform: "uppercase", color: DS.wine,
-                      fontFamily: APP_BRAND_STACK, marginTop: 2,
-                    }}>
-                      Blue Sapphire Plaza
-                    </div>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setSidebarCollapsed((prev) => !prev)}
-                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
-                  border: "1px solid rgba(15,23,42,0.14)",
-                  background: "rgba(255,255,255,0.78)",
-                  color: "rgba(15,23,42,0.62)",
-                  fontFamily: APP_BRAND_STACK,
-                  fontWeight: 700,
-                  fontSize: "0.62rem",
-                  cursor: "pointer",
-                  display: "grid",
-                  placeItems: "center",
-                  flexShrink: 0,
-                }}
-              >
-                {sidebarCollapsed ? ">" : "<"}
-              </button>
-            </div>
-            {!sidebarCollapsed && (
-              <div style={{
-                fontSize: "0.70rem", color: "rgba(15,23,42,0.38)",
-                fontFamily: APP_FONT_STACK, letterSpacing: "0.03em",
-              }}>
-                Operations Console
-              </div>
-            )}
-          </div>
-
-          {/* Hairline divider */}
-          <div style={{ height: 1, background: "rgba(15,23,42,0.08)", margin: sidebarCollapsed ? "0 10px" : "0 20px" }} />
-
-          {/* Date/Status block */}
-          <div style={{ padding: sidebarCollapsed ? "10px 12px 12px" : "12px 20px 14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.16em",
-                  textTransform: "uppercase", color: "rgba(15,23,42,0.40)", fontFamily: APP_BRAND_STACK, marginBottom: 3,
-                }}>
-                  Today
-                </div>
-                <div style={{
-                  fontFamily: APP_FONT_STACK, fontSize: sidebarCollapsed ? "0.74rem" : "0.90rem", fontWeight: 600,
-                  color: "#0f172a", letterSpacing: "-0.01em", lineHeight: 1.2,
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                }}>
-                  {todayStr()}
-                </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.22)", borderRadius: 999, padding: sidebarCollapsed ? "3px 7px" : "4px 9px", flexShrink: 0 }}>
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#2563eb", display: "inline-block", boxShadow: "0 0 4px rgba(59,130,246,0.60)" }} />
-                <span style={{ fontSize: sidebarCollapsed ? "0.54rem" : "0.58rem", color: "#2563eb", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Live</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Hairline divider */}
-          <div style={{ height: 1, background: "rgba(15,23,42,0.08)", margin: sidebarCollapsed ? "0 10px" : "0 20px" }} />
-
-          {/* Primary Nav */}
-          <nav className="csc-sidebar-nav" style={{
-            flex: 1, overflowY: "auto",
-            padding: sidebarCollapsed ? "14px 8px 10px" : "18px 10px 10px",
-            display: "flex", flexDirection: "column", gap: 2,
-          }}>
-            {/* Section label */}
-            <div style={{
-              fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em",
-              textTransform: "uppercase", color: "rgba(15,23,42,0.38)",
-              fontFamily: APP_BRAND_STACK, padding: "0 8px", marginBottom: 8,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            }}>
-              {sidebarCollapsed ? "Main Menu" : "Workspaces"}
-            </div>
-            {PRIMARY_TAB_CONFIG.map((item) => (
-              <TabBtn
-                key={item.id}
-                label={item.label}
-                description={item.description}
-                shortLabel={item.shortLabel}
-                expanded={!sidebarCollapsed}
-                active={tab === item.id}
-                onClick={() => navigateTab(item.id)}
-              />
-            ))}
-
-            {/* Walk-in CTA */}
-            <div style={{ margin: "14px 8px 0", height: 1, background: "rgba(15,23,42,0.08)" }} />
-            <button
-              onClick={() => setShowWalkIn(true)}
-              title={sidebarCollapsed ? "New Walk-in" : undefined}
-              style={{
-                width: "100%", padding: sidebarCollapsed ? "10px 8px" : "10px 18px", marginTop: 10,
-                border: "none", background: "transparent",
-                cursor: "pointer", textAlign: "left",
-                display: "flex", alignItems: "center", gap: 10,
-                justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                borderRadius: 10, transition: DS.transStd,
-              }}
-            >
-              <span style={{
-                width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                background: "rgba(37,99,235,0.10)", border: "1px solid rgba(37,99,235,0.22)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "0.75rem", color: DS.wine,
-              }}>&#8599;</span>
-              <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: APP_BRAND_STACK, color: DS.wine, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {sidebarCollapsed ? "Walk-in" : "New Walk-in"}
-                </span>
-                {!sidebarCollapsed && (
-                  <span style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>Start intake without WhatsApp</span>
-                )}
-              </span>
-            </button>
-
-            {/* Section label */}
-            <div style={{ margin: "14px 8px 8px", height: 1, background: "rgba(15,23,42,0.08)" }} />
-            <div style={{
-              fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.18em",
-              textTransform: "uppercase", color: "rgba(15,23,42,0.38)",
-              fontFamily: APP_BRAND_STACK, padding: "0 8px", marginBottom: 8,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            }}>
-              {sidebarCollapsed ? "Tools" : "Tools & Logs"}
-            </div>
-            {PANEL_TAB_CONFIG.map((item) => (
-              <TabBtn
-                key={item.id}
-                label={item.label}
-                description={item.description}
-                shortLabel={item.shortLabel}
-                expanded={!sidebarCollapsed}
-                active={tab === item.id}
-                onClick={() => navigateTab(item.id)}
-                badge={panelBadges[item.id]}
-              />
-            ))}
-          </nav>
-
-          {/* Sidebar footer */}
-          <div style={{ padding: sidebarCollapsed ? "8px 8px 14px" : "10px 10px 20px" }}>
-            <div style={{ height: 1, background: "rgba(15,23,42,0.08)", margin: "0 8px 12px" }} />
-            <button
-              onClick={() => setSidePanelExpanded((prev) => !prev)}
-              aria-label={sidePanelExpanded ? "Close utility menu" : "Open utility menu"}
-              title={sidebarCollapsed ? "Quick Links & Tools" : undefined}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 12,
-                justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                padding: sidebarCollapsed ? "10px 8px" : "10px 18px", borderRadius: 10, border: "none",
-                background: sidePanelExpanded ? "rgba(37,99,235,0.08)" : "transparent",
-                cursor: "pointer", transition: DS.transStd,
-              }}
-            >
-              <span style={{ display: "flex", flexDirection: "column", gap: 3.5, flexShrink: 0 }}>
-                <span style={{ width: 14, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.40)", display: "block" }} />
-                <span style={{ width: 14, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.40)", display: "block" }} />
-                <span style={{ width: 9, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.40)", display: "block" }} />
-              </span>
-              <span style={{ fontSize: "0.72rem", fontFamily: APP_FONT_STACK, fontWeight: 500, color: "rgba(15,23,42,0.50)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {sidebarCollapsed ? "Tools" : "Quick Links & Tools"}
-              </span>
-            </button>
-          </div>
-        </aside>
-
-        {/* -- Backdrop for utility drawer -- */}
-        <div
-          aria-hidden={!sidePanelExpanded}
-          onClick={() => setSidePanelExpanded(false)}
-          style={{
-            display: isHomeTab ? "none" : "block",
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.55)",
-            opacity: sidePanelExpanded ? 1 : 0,
-            pointerEvents: sidePanelExpanded ? "auto" : "none",
-            transition: "opacity 0.25s ease",
-            zIndex: 40,
-          }}
-        />
-
-        {/* -- Utility Drawer (slides over sidebar) -- */}
-        <aside
-          aria-hidden={!sidePanelExpanded}
-          style={{
-            display: isHomeTab ? "none" : "grid",
-            position: "fixed",
-            top: 0,
-            bottom: 0,
-            left: 0,
-            width: "min(340px, calc(100vw - 40px))",
-            background: `radial-gradient(circle at 92% -6%, rgba(59,130,246,0.14), transparent 38%), radial-gradient(circle at -8% 100%, rgba(37,99,235,0.07), transparent 34%), linear-gradient(180deg, #ffffff 0%, #eff6ff 100%)`,
-            border: `none`,
-            borderRight: `1px solid rgba(15,23,42,0.12)`,
-            boxShadow: "8px 0 40px rgba(15,23,42,0.12)",
-            padding: "24px 16px",
-            transform: sidePanelExpanded ? "translateX(0)" : "translateX(-100%)",
-            transition: `transform 0.32s ${DS.ease}`,
-            zIndex: 50,
-            gridTemplateRows: "auto auto minmax(0,1fr) minmax(0,1.2fr)",
-            gap: 16,
-          }}
-        >
-          {/* Drawer header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-            <div>
-              <div style={{
-                fontSize: "0.58rem",
-                fontWeight: 700,
-                letterSpacing: "0.32em",
-                textTransform: "uppercase",
-                color: DS.wine,
-                fontFamily: APP_BRAND_STACK,
-                marginBottom: 8,
-              }}>
-                Utility Menu
-              </div>
-              <div style={{
-                fontFamily: APP_SERIF_STACK,
-                fontSize: "1.4rem",
-                fontWeight: 300,
-                color: "#0f172a",
-                letterSpacing: "-0.01em",
-              }}>
-                Workspace Tools
-              </div>
-            </div>
-            <button
-              onClick={() => setSidePanelExpanded(false)}
-              style={{
-                border: "1px solid rgba(15,23,42,0.14)",
-                borderRadius: 10,
-                padding: "8px 12px",
-                background: "rgba(15,23,42,0.05)",
-                color: "rgba(15,23,42,0.60)",
-                cursor: "pointer",
-                fontFamily: APP_BRAND_STACK,
-                fontSize: "0.65rem",
-                fontWeight: 700,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                transition: DS.transColor,
-              }}
-            >
-              Close
-            </button>
-          </div>
-
-          {/* Drawer info note */}
-          <div style={{
-            padding: "12px 14px",
-            borderRadius: 12,
-            background: "rgba(15,23,42,0.04)",
-            border: "1px solid rgba(15,23,42,0.08)",
-          }}>
-            <div style={{ fontSize: "0.8rem", color: "rgba(15,23,42,0.55)", lineHeight: 1.6, fontFamily: APP_FONT_STACK }}>
-              Monitoring, partner workflows, and quick-access portals  -  without crowding the main intake flow.
-            </div>
-          </div>
-
-          {/* Utility views */}
-          <div style={{ display: "grid", gap: 8, alignContent: "start", overflow: "hidden" }}>
-            <div style={{
-              fontSize: "0.58rem",
-              fontWeight: 700,
-              letterSpacing: "0.30em",
-              textTransform: "uppercase",
-              color: "rgba(15,23,42,0.38)",
-              fontFamily: APP_BRAND_STACK,
-              padding: "0 4px",
-              marginBottom: 4,
-            }}>
-              Utility Views
-            </div>
-            {PANEL_TAB_CONFIG.map((item) => (
-              <SideNavItem
-                key={item.id}
-                item={item}
-                active={tab === item.id}
-                expanded={true}
-                badge={panelBadges[item.id]}
-                onClick={() => {
-                  navigateTab(item.id);
-                  setSidePanelExpanded(false);
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Quick links */}
-          <div style={{
-            borderRadius: 14,
-            border: "1px solid rgba(15,23,42,0.10)",
-            background: "rgba(255,255,255,0.55)",
-            padding: 12,
-            display: "grid",
-            gap: 10,
-            alignContent: "start",
-            overflow: "hidden",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <div style={{
-                fontSize: "0.58rem",
-                fontWeight: 700,
-                letterSpacing: "0.30em",
-                textTransform: "uppercase",
-                color: "rgba(15,23,42,0.40)",
-                fontFamily: APP_BRAND_STACK,
-              }}>
-                Quick Links
-              </div>
-              <button
-                onClick={() => {
-                  setShowAddQuickLink((prev) => !prev);
-                  setQuickLinkError("");
-                }}
-                style={{
-                  border: `1px solid rgba(59,130,246,0.28)`,
-                  borderRadius: 8,
-                  background: "rgba(59,130,246,0.08)",
-                  color: DS.gold,
-                  fontSize: "0.62rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  fontFamily: APP_BRAND_STACK,
-                  padding: "5px 8px",
-                  cursor: "pointer",
-                  transition: DS.transColor,
-                }}
-              >
-                {showAddQuickLink ? "Cancel" : "Add"}
-              </button>
-            </div>
-            {showAddQuickLink && (
-              <div style={{ display: "grid", gap: 8 }}>
-                <input
-                  value={quickLinkName}
-                  onChange={(e) => setQuickLinkName(e.target.value)}
-                  placeholder="Link Name"
-                  style={{
-                    padding: "9px 10px",
-                    borderRadius: 8,
-                    border: "1px solid rgba(15,23,42,0.14)",
-                    background: "rgba(255,255,255,0.80)",
-                    color: "#0f172a",
-                    outline: "none",
-                    fontSize: "0.82rem",
-                    fontFamily: APP_FONT_STACK,
-                  }}
-                />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
-                  <input
-                    value={quickLinkUrl}
-                    onChange={(e) => setQuickLinkUrl(e.target.value)}
-                    placeholder="example.com"
-                    style={{
-                      padding: "9px 10px",
-                      borderRadius: 8,
-                      border: "1px solid rgba(15,23,42,0.14)",
-                      background: "rgba(255,255,255,0.80)",
-                      color: "#0f172a",
-                      outline: "none",
-                      fontSize: "0.82rem",
-                      fontFamily: APP_FONT_STACK,
-                    }}
-                  />
-                  <button
-                    onClick={addQuickLink}
-                    style={{
-                      border: "1px solid rgba(37,99,235,0.35)",
-                      borderRadius: 8,
-                      background: "rgba(37,99,235,0.10)",
-                      color: DS.wine,
-                      fontWeight: 700,
-                      padding: "0 12px",
-                      cursor: "pointer",
-                      fontSize: "0.78rem",
-                      fontFamily: APP_BRAND_STACK,
-                      letterSpacing: "0.10em",
-                      textTransform: "uppercase",
-                      transition: DS.transColor,
-                    }}
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-            )}
-            {quickLinkError && (
-              <div style={{ fontSize: "0.75rem", color: "#1d4ed8", fontWeight: 600 }}>{quickLinkError}</div>
-            )}
-            <div style={{ display: "grid", gap: 7, maxHeight: 260, overflowY: "auto", paddingRight: 2 }}>
-              {quickLinks.map((link) => (
-                <div key={link.id} style={{
-                  borderRadius: 10,
-                  border: "1px solid rgba(15,23,42,0.09)",
-                  background: "rgba(255,255,255,0.65)",
-                  padding: "9px 10px",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 5 }}>
-                    <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#0f172a", lineHeight: 1.3, fontFamily: APP_FONT_STACK }}>{link.name}</div>
-                    {!link.isDefault && (
-                      <button
-                        onClick={() => removeQuickLink(link.id)}
-                        style={{
-                          border: "none",
-                          borderRadius: 6,
-                          background: "rgba(214,5,43,0.08)",
-                          color: "#1d4ed8",
-                          fontSize: "0.65rem",
-                          fontWeight: 700,
-                          padding: "3px 6px",
-                          cursor: "pointer",
-                          fontFamily: APP_BRAND_STACK,
-                          letterSpacing: "0.10em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  <div style={{ fontSize: "0.7rem", color: "rgba(15,23,42,0.48)", lineHeight: 1.45, marginBottom: 7 }}>{link.description}</div>
-                  <button
-                    onClick={() => openQuickLink(link.url)}
-                    style={{
-                      width: "100%",
-                      border: "1px solid rgba(37,99,235,0.28)",
-                      borderRadius: 7,
-                      background: "rgba(37,99,235,0.07)",
-                      color: DS.wine,
-                      fontSize: "0.65rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      fontFamily: APP_BRAND_STACK,
-                      padding: "5px 6px",
-                      cursor: "pointer",
-                      transition: DS.transColor,
-                    }}
-                  >
-                    Open
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
+        {!isHomeTab && (
+          <WorkspaceSidebar
+            activeTab={tab}
+            onNavigate={(nextTab) => navigateTab(nextTab)}
+            onOpenWhatsApp={openCscWhatsApp}
+            badgeMap={navBadges}
+          />
+        )}
 
         {/* -- Main Content Area -- */}
         <main style={{
@@ -7420,6 +7019,25 @@ export default function CSCBilling() {
           }}>
             {/* Active view label */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                onClick={() => navigateTab("home")}
+                style={{
+                  border: "1px solid rgba(37,99,235,0.28)",
+                  borderRadius: 999,
+                  padding: "6px 11px",
+                  background: "rgba(37,99,235,0.10)",
+                  color: "#1d4ed8",
+                  fontFamily: APP_BRAND_STACK,
+                  fontWeight: 700,
+                  fontSize: "0.56rem",
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Home
+              </button>
               <div style={{
                 width: 6, height: 6, borderRadius: "50%",
                 background: "#2563eb", opacity: 0.7, flexShrink: 0,
@@ -7548,10 +7166,6 @@ export default function CSCBilling() {
             {isHomeTab && (
               <HomeLaunchpad
                 onOpenSection={(sectionId) => navigateTab(sectionId)}
-                openTicketCount={openTicketCount}
-                dailyRevenueTotal={dailyRevenueTotal}
-                b2bPendingCount={b2bPendingCount}
-                cloudSyncLabel={cloudSyncLabel}
               />
             )}
             <TabPanel active={tab === "entry"}>
