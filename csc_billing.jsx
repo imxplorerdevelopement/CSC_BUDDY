@@ -286,6 +286,7 @@ const DATABASE_SECTION_CONFIG = [
     fields: [
       { key: "aadhaarNumber", label: "Aadhaar Number", type: "text" },
       { key: "name", label: "Name", type: "text" },
+      { key: "dateOfBirth", label: "Date of Birth", type: "text" },
       { key: "address", label: "Address", type: "text" },
       { key: "linkedMobileNumber", label: "Mobile Number Linked", type: "text" },
     ],
@@ -297,7 +298,7 @@ const DATABASE_SECTION_CONFIG = [
       { key: "name", label: "Name", type: "text" },
       { key: "passportNumber", label: "Passport Number", type: "text" },
       { key: "address", label: "Address", type: "text" },
-      { key: "dateOfBirth", label: "Date of Birth", type: "date" },
+      { key: "dateOfBirth", label: "Date of Birth", type: "text" },
     ],
   },
   {
@@ -1173,9 +1174,31 @@ function createEmptyDatabaseRecordValues(sectionId) {
   }, {});
 }
 
+function formatAadhaarNumber(value) {
+  const digits = String(value ?? "").replace(/\D/g, "").slice(0, 12);
+  if (!digits) return "";
+  return digits.match(/.{1,4}/g)?.join(" ") || "";
+}
+
+function formatDobValue(value) {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue) return "";
+  const isoMatch = rawValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    return `${day}/${month}/${year}`;
+  }
+  const digits = rawValue.replace(/\D/g, "").slice(0, 8);
+  if (!digits) return "";
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 function normalizeDatabaseFieldInput(fieldKey, value) {
   const rawValue = String(value ?? "");
-  if (fieldKey === "aadhaarNumber") return rawValue.replace(/\D/g, "").slice(0, 12);
+  if (fieldKey === "aadhaarNumber") return formatAadhaarNumber(rawValue);
+  if (fieldKey === "dateOfBirth") return formatDobValue(rawValue);
   if (fieldKey === "linkedMobileNumber" || fieldKey === "mobileNumber") return rawValue.replace(/\D/g, "").slice(0, 10);
   if (fieldKey === "panNumber") return rawValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10);
   if (fieldKey === "passportNumber") return rawValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 15);
@@ -1185,7 +1208,8 @@ function normalizeDatabaseFieldInput(fieldKey, value) {
 function sanitizeDatabaseFieldValue(fieldKey, value) {
   const textValue = String(value ?? "").trim();
   if (!textValue) return "";
-  if (fieldKey === "aadhaarNumber") return textValue.replace(/\D/g, "").slice(0, 12);
+  if (fieldKey === "aadhaarNumber") return formatAadhaarNumber(textValue);
+  if (fieldKey === "dateOfBirth") return formatDobValue(textValue);
   if (fieldKey === "linkedMobileNumber" || fieldKey === "mobileNumber") return textValue.replace(/\D/g, "").slice(0, 10);
   if (fieldKey === "panNumber") return textValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10);
   if (fieldKey === "passportNumber") return textValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 15);
@@ -2006,17 +2030,19 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
             <label key={field.key} style={{ display: "grid", gap: 5 }}>
               <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontWeight: 600 }}>{field.label}</span>
               <input
-                type={field.type === "date" ? "date" : "text"}
+                type="text"
                 value={formValues[field.key] || ""}
                 onChange={(event) => handleFieldChange(field.key, event.target.value)}
-                placeholder={field.type === "date" ? "" : field.label}
+                placeholder={field.key === "dateOfBirth" ? "DD/MM/YYYY" : field.label}
+                inputMode={field.key === "dateOfBirth" || field.key === "aadhaarNumber" ? "numeric" : undefined}
+                maxLength={field.key === "dateOfBirth" ? 10 : field.key === "aadhaarNumber" ? 14 : undefined}
                 style={{
                   padding: "10px 12px",
                   borderRadius: 9,
                   border: "1px solid rgba(15,23,42,0.14)",
                   background: "rgba(255,255,255,0.92)",
                   color: "#0f172a",
-                  fontFamily: field.type === "date" ? APP_MONO_STACK : APP_FONT_STACK,
+                  fontFamily: field.key === "dateOfBirth" ? APP_MONO_STACK : APP_FONT_STACK,
                   fontSize: "0.84rem",
                   outline: "none",
                 }}
