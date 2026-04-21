@@ -252,15 +252,33 @@ const STORAGE_KEYS = {
   quickLinks: "csc-buddy.quick-links",
 };
 const TAB_CONFIG = [
-  { id: "entry", label: "Service Entry", description: "Create tickets and capture walk-ins.", shortLabel: "SE", navGroup: "primary" },
-  { id: "rates", label: "Rate Card", description: "Maintain service pricing and categories.", shortLabel: "RC", navGroup: "primary" },
-  { id: "log", label: "Ticket Dashboard", description: "Track payment, status, and document flow.", shortLabel: "TD", navGroup: "panel" },
-  { id: "b2b", label: "B2B Desk", description: "Prepare partner and bulk workflows.", shortLabel: "B2", navGroup: "panel" },
-  { id: "monthly", label: "Monthly Overview", description: "Revenue, volume, and service trends by month.", shortLabel: "MO", navGroup: "panel" },
-  { id: "customers", label: "Customers", description: "Customer profiles, documents, and contact history.", shortLabel: "CU", navGroup: "panel" },
+  { id: "home", label: "Dashboard Home", description: "Open a workspace from a clean and simple launch screen.", shortLabel: "HM", navGroup: "home" },
+  { id: "entry", label: "New Service Entry", description: "Create new customer service entries quickly.", shortLabel: "NS", navGroup: "primary" },
+  { id: "rates", label: "Rate List", description: "Manage service rates and categories.", shortLabel: "RL", navGroup: "primary" },
+  { id: "b2b", label: "Vendor Dashboard", description: "Track vendor purchases, sales, and payments.", shortLabel: "VD", navGroup: "primary" },
+  { id: "monthly", label: "Analytics", description: "View revenue and ticket trends.", shortLabel: "AN", navGroup: "primary" },
+  { id: "database", label: "Database", description: "Highly confidential records with two-step verification.", shortLabel: "DB", navGroup: "panel" },
+  { id: "log", label: "Ticket Dashboard", description: "Track payment, status, and service flow.", shortLabel: "TD", navGroup: "panel" },
+  { id: "quick_links", label: "Quick Website Links", description: "Open frequently used government portals.", shortLabel: "QL", navGroup: "panel" },
+  { id: "doc_tools", label: "Document Tools", description: "Review document intake and pending document status.", shortLabel: "DT", navGroup: "panel" },
+  { id: "services_dashboard", label: "Services Dashboard", description: "Monitor service mix and category performance.", shortLabel: "SD", navGroup: "panel" },
 ];
 const PRIMARY_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "primary");
 const PANEL_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "panel");
+const HOME_NAV_BUTTONS = [
+  { id: "entry", label: "New Service Entry", helper: "Start customer intake and ticket creation." },
+  { id: "rates", label: "Rate List", helper: "Update and review service pricing." },
+  { id: "b2b", label: "Vendor Dashboard", helper: "Manage B2B entries, services, and payments." },
+  { id: "monthly", label: "Analytics", helper: "Open monthly revenue and category trends." },
+  { id: "database", label: "Database", helper: "Highly confidential workspace with 2FA access." },
+  { id: "log", label: "Ticket Dashboard", helper: "Track open/closed tickets and payment status." },
+  { id: "quick_links", label: "Quick Website Links", helper: "Open core portal links in one click." },
+  { id: "doc_tools", label: "Document Tools", helper: "View required, received, and pending documents." },
+  { id: "services_dashboard", label: "Services Dashboard", helper: "Review service-wise totals and volume." },
+];
+const DATABASE_SECURITY_CODE = String(import.meta.env.VITE_DB_SECURITY_CODE || "CSC123").trim();
+const DATABASE_TOTP_SECRET = String(import.meta.env.VITE_DB_AUTH_TOTP_SECRET || "").trim();
+const DATABASE_BACKUP_AUTH_CODE = String(import.meta.env.VITE_DB_AUTH_BACKUP_CODE || "000000").trim();
 const QUICK_LINK_DEFAULTS = [
   { id: "default_esathi", name: "e-Saathi", description: "UP state citizen services portal.", url: "https://edistrict.up.gov.in", isDefault: true },
   { id: "default_digitalseva", name: "Digital Seva Portal", description: "CSC services and transaction desk.", url: "https://digitalseva.csc.gov.in", isDefault: true },
@@ -283,6 +301,74 @@ function canUseBrowserHistory() {
 
 function normalizePhoneValue(value) {
   return String(value || "").replace(/\D/g, "").slice(0, 10);
+}
+
+function normalizeOtpInput(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 6);
+}
+
+function decodeBase32Secret(secret) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const cleaned = String(secret || "").toUpperCase().replace(/[^A-Z2-7]/g, "");
+  if (!cleaned) return new Uint8Array();
+  let bits = "";
+  for (let i = 0; i < cleaned.length; i += 1) {
+    const value = alphabet.indexOf(cleaned[i]);
+    if (value < 0) continue;
+    bits += value.toString(2).padStart(5, "0");
+  }
+  const byteCount = Math.floor(bits.length / 8);
+  const bytes = new Uint8Array(byteCount);
+  for (let i = 0; i < byteCount; i += 1) {
+    bytes[i] = Number.parseInt(bits.slice(i * 8, i * 8 + 8), 2);
+  }
+  return bytes;
+}
+
+async function getTotpCode(secret, counter) {
+  if (typeof crypto === "undefined" || !crypto.subtle) return "";
+  const secretBytes = decodeBase32Secret(secret);
+  if (!secretBytes.length) return "";
+  const counterBytes = new ArrayBuffer(8);
+  const view = new DataView(counterBytes);
+  const high = Math.floor(counter / 0x100000000);
+  const low = counter >>> 0;
+  view.setUint32(0, high, false);
+  view.setUint32(4, low, false);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    secretBytes,
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"],
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", key, counterBytes));
+  const offset = signature[signature.length - 1] & 0x0f;
+  const code = (
+    ((signature[offset] & 0x7f) << 24)
+    | ((signature[offset + 1] & 0xff) << 16)
+    | ((signature[offset + 2] & 0xff) << 8)
+    | (signature[offset + 3] & 0xff)
+  ) % 1000000;
+  return String(code).padStart(6, "0");
+}
+
+async function verifyAuthenticatorCode(codeInput) {
+  const normalizedCode = normalizeOtpInput(codeInput);
+  if (normalizedCode.length !== 6) return false;
+  if (DATABASE_TOTP_SECRET) {
+    const nowCounter = Math.floor(Date.now() / 30000);
+    const candidates = await Promise.all([
+      getTotpCode(DATABASE_TOTP_SECRET, nowCounter - 1),
+      getTotpCode(DATABASE_TOTP_SECRET, nowCounter),
+      getTotpCode(DATABASE_TOTP_SECRET, nowCounter + 1),
+    ]);
+    return candidates.includes(normalizedCode);
+  }
+  if (DATABASE_BACKUP_AUTH_CODE) {
+    return normalizedCode === normalizeOtpInput(DATABASE_BACKUP_AUTH_CODE);
+  }
+  return false;
 }
 
 function verifyDeleteAccess(actionLabel) {
@@ -315,7 +401,7 @@ function getInitialActiveTab() {
     const historyTab = window.history.state?.tab;
     if (TAB_CONFIG.some((item) => item.id === historyTab)) return historyTab;
   }
-  return getStoredActiveTab();
+  return "home";
 }
 
 function getInitialEntryStep(draftSeed) {
@@ -1057,8 +1143,8 @@ function serializeB2BLedger(ledger) {
 }
 
 function getStoredActiveTab() {
-  const storedTab = readStoredJSON(STORAGE_KEYS.activeTab, "entry");
-  return TAB_CONFIG.some((item) => item.id === storedTab) ? storedTab : "entry";
+  const storedTab = readStoredJSON(STORAGE_KEYS.activeTab, "home");
+  return TAB_CONFIG.some((item) => item.id === storedTab) ? storedTab : "home";
 }
 
 function getStoredSidePanelExpanded() {
@@ -1194,6 +1280,690 @@ function TabPanel({ active, children }) {
       style={{ display: active ? "block" : "none" }}
     >
       {children}
+    </div>
+  );
+}
+
+function BootLoadingScreen() {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "radial-gradient(circle at 18% 12%, rgba(59,130,246,0.16), transparent 36%), linear-gradient(160deg, #f8fbff 0%, #eef4ff 52%, #f8fbff 100%)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "32px",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <style>{`
+        @keyframes cscBootPulse {
+          0% { transform: scale(0.9); opacity: 0.45; }
+          50% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(0.9); opacity: 0.45; }
+        }
+        @keyframes cscBootSweep {
+          0% { transform: translateX(-120%); }
+          100% { transform: translateX(120%); }
+        }
+      `}</style>
+      <div style={{
+        position: "absolute",
+        top: 20,
+        left: 24,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+      }}>
+        <div style={{
+          width: 30,
+          height: 30,
+          borderRadius: 9,
+          background: "rgba(37,99,235,0.12)",
+          border: "1px solid rgba(37,99,235,0.24)",
+          display: "grid",
+          placeItems: "center",
+          color: "#1d4ed8",
+          fontFamily: APP_BRAND_STACK,
+          fontWeight: 800,
+          fontSize: "0.72rem",
+          letterSpacing: "0.12em",
+        }}>
+          D
+        </div>
+        <div style={{
+          fontFamily: APP_BRAND_STACK,
+          fontSize: "0.72rem",
+          letterSpacing: "0.20em",
+          textTransform: "uppercase",
+          fontWeight: 700,
+          color: "#1d4ed8",
+        }}>
+          DICE monologue
+        </div>
+      </div>
+      <div style={{
+        width: "min(560px, 100%)",
+        borderRadius: 22,
+        border: "1px solid rgba(15,23,42,0.10)",
+        background: "rgba(255,255,255,0.88)",
+        boxShadow: "0 20px 50px rgba(15,23,42,0.12)",
+        padding: "28px 24px",
+      }}>
+        <div style={{
+          fontFamily: APP_BRAND_STACK,
+          fontSize: "0.62rem",
+          letterSpacing: "0.24em",
+          textTransform: "uppercase",
+          fontWeight: 700,
+          color: "rgba(37,99,235,0.84)",
+          marginBottom: 10,
+        }}>
+          Launching Workspace
+        </div>
+        <div style={{
+          fontFamily: APP_FONT_STACK,
+          fontSize: "1.55rem",
+          fontWeight: 700,
+          color: "#0f172a",
+          marginBottom: 12,
+          letterSpacing: "-0.01em",
+        }}>
+          Preparing a clean dashboard for your team
+        </div>
+        <div style={{
+          fontFamily: APP_FONT_STACK,
+          fontSize: "0.92rem",
+          lineHeight: 1.6,
+          color: "rgba(15,23,42,0.58)",
+          marginBottom: 18,
+        }}>
+          Loading services, tickets, quick links, and B2B records.
+        </div>
+        <div style={{
+          height: 12,
+          borderRadius: 999,
+          background: "rgba(37,99,235,0.10)",
+          border: "1px solid rgba(37,99,235,0.18)",
+          overflow: "hidden",
+          position: "relative",
+        }}>
+          <span style={{
+            display: "block",
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: "34%",
+            borderRadius: 999,
+            background: "linear-gradient(90deg, rgba(37,99,235,0.25) 0%, rgba(37,99,235,0.85) 50%, rgba(37,99,235,0.25) 100%)",
+            animation: "cscBootSweep 1.35s linear infinite",
+          }} />
+        </div>
+        <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>
+          {[0, 1, 2].map((idx) => (
+            <span key={idx} style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "#2563eb",
+              animation: `cscBootPulse 1.05s ${idx * 0.15}s infinite`,
+            }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomeLaunchpad({ onOpenSection, openTicketCount, dailyRevenueTotal, b2bPendingCount, cloudSyncLabel }) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      padding: "28px",
+      display: "grid",
+      gridTemplateRows: "auto auto 1fr",
+      gap: 18,
+      background: "radial-gradient(circle at 14% 6%, rgba(59,130,246,0.16), transparent 32%), radial-gradient(circle at 85% 85%, rgba(14,165,233,0.12), transparent 28%), #f8fbff",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+        <div>
+          <div style={{
+            fontFamily: APP_BRAND_STACK,
+            fontSize: "0.62rem",
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            fontWeight: 700,
+            color: "#1d4ed8",
+            marginBottom: 10,
+          }}>
+            CSC Dashboard Home
+          </div>
+          <h1 style={{
+            margin: 0,
+            fontFamily: APP_FONT_STACK,
+            fontSize: "clamp(1.45rem, 3vw, 2.15rem)",
+            color: "#0f172a",
+            lineHeight: 1.15,
+            letterSpacing: "-0.02em",
+          }}>
+            Pick a workspace and start immediately
+          </h1>
+          <p style={{
+            margin: "10px 0 0",
+            fontFamily: APP_FONT_STACK,
+            fontSize: "0.96rem",
+            lineHeight: 1.65,
+            color: "rgba(15,23,42,0.62)",
+            maxWidth: 720,
+          }}>
+            This home screen keeps navigation simple and clear for daily staff operations.
+          </p>
+        </div>
+        <div style={{
+          borderRadius: 14,
+          border: "1px solid rgba(15,23,42,0.12)",
+          background: "rgba(255,255,255,0.86)",
+          padding: "12px 14px",
+          minWidth: 210,
+        }}>
+          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
+            Sync Status
+          </div>
+          <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#0f172a" }}>{cloudSyncLabel}</div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+        <div style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.88)", padding: "12px 14px" }}>
+          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>Open Tickets</div>
+          <div style={{ marginTop: 5, fontFamily: APP_MONO_STACK, fontSize: "1.15rem", fontWeight: 700, color: "#1e3a8a" }}>{openTicketCount}</div>
+        </div>
+        <div style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.88)", padding: "12px 14px" }}>
+          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>Daily Revenue</div>
+          <div style={{ marginTop: 5, fontFamily: APP_MONO_STACK, fontSize: "1.15rem", fontWeight: 700, color: "#1e3a8a" }}>Rs. {Math.round(dailyRevenueTotal).toLocaleString("en-IN")}</div>
+        </div>
+        <div style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.88)", padding: "12px 14px" }}>
+          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>B2B Pending</div>
+          <div style={{ marginTop: 5, fontFamily: APP_MONO_STACK, fontSize: "1.15rem", fontWeight: 700, color: "#1e3a8a" }}>{b2bPendingCount}</div>
+        </div>
+      </div>
+
+      <div style={{
+        borderRadius: 18,
+        border: "1px solid rgba(15,23,42,0.12)",
+        background: "rgba(255,255,255,0.90)",
+        boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+        padding: 16,
+      }}>
+        <div style={{
+          fontSize: "0.62rem",
+          fontWeight: 700,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: "rgba(15,23,42,0.45)",
+          fontFamily: APP_BRAND_STACK,
+          marginBottom: 12,
+        }}>
+          Navigation
+        </div>
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          {HOME_NAV_BUTTONS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onOpenSection(item.id)}
+              style={{
+                borderRadius: 14,
+                border: "1px solid rgba(37,99,235,0.24)",
+                background: item.id === "database" ? "linear-gradient(160deg, rgba(220,38,38,0.08), rgba(248,113,113,0.03))" : "rgba(239,246,255,0.64)",
+                padding: "14px 14px",
+                textAlign: "left",
+                display: "grid",
+                gap: 6,
+                cursor: "pointer",
+                transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+                boxShadow: "0 6px 16px rgba(15,23,42,0.05)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <span style={{ fontFamily: APP_FONT_STACK, fontSize: "1.02rem", fontWeight: 700, color: "#0f172a", letterSpacing: "-0.01em" }}>
+                  {item.label}
+                </span>
+                {item.id === "database" && (
+                  <span style={{
+                    borderRadius: 999,
+                    padding: "4px 8px",
+                    border: "1px solid rgba(220,38,38,0.26)",
+                    background: "rgba(220,38,38,0.08)",
+                    color: "#991b1b",
+                    fontSize: "0.54rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    fontFamily: APP_BRAND_STACK,
+                  }}>
+                    2FA
+                  </span>
+                )}
+              </div>
+              <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", lineHeight: 1.55, color: "rgba(15,23,42,0.62)" }}>
+                {item.helper}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickLinksWorkspace({
+  quickLinks,
+  showAddQuickLink,
+  onToggleAddQuickLink,
+  quickLinkName,
+  setQuickLinkName,
+  quickLinkUrl,
+  setQuickLinkUrl,
+  quickLinkError,
+  onSaveQuickLink,
+  onRemoveQuickLink,
+  onOpenQuickLink,
+}) {
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 16, background: "rgba(255,255,255,0.92)", padding: "16px 18px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
+              Quick Website Links
+            </div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.2rem", fontWeight: 700, color: "#0f172a" }}>
+              Open frequently used portals without searching
+            </div>
+          </div>
+          <button
+            onClick={onToggleAddQuickLink}
+            style={{
+              border: "1px solid rgba(37,99,235,0.28)",
+              borderRadius: 10,
+              background: "rgba(37,99,235,0.10)",
+              color: "#1d4ed8",
+              fontFamily: APP_BRAND_STACK,
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              padding: "9px 14px",
+            }}
+          >
+            {showAddQuickLink ? "Cancel" : "Add Link"}
+          </button>
+        </div>
+        {showAddQuickLink && (
+          <div style={{ marginTop: 12, display: "grid", gap: 9, gridTemplateColumns: "1fr 1fr auto" }}>
+            <input
+              value={quickLinkName}
+              onChange={(e) => setQuickLinkName(e.target.value)}
+              placeholder="Portal name"
+              style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.14)", background: "rgba(255,255,255,0.92)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
+            />
+            <input
+              value={quickLinkUrl}
+              onChange={(e) => setQuickLinkUrl(e.target.value)}
+              placeholder="example.com"
+              style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.14)", background: "rgba(255,255,255,0.92)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
+            />
+            <button
+              onClick={onSaveQuickLink}
+              style={{
+                border: "1px solid rgba(22,163,74,0.34)",
+                borderRadius: 10,
+                background: "rgba(22,163,74,0.11)",
+                color: "#166534",
+                fontFamily: APP_BRAND_STACK,
+                fontSize: "0.62rem",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                padding: "10px 14px",
+              }}
+            >
+              Save
+            </button>
+          </div>
+        )}
+        {quickLinkError && <div style={{ marginTop: 8, fontSize: "0.78rem", color: "#b91c1c", fontWeight: 600, fontFamily: APP_FONT_STACK }}>{quickLinkError}</div>}
+      </div>
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
+        {quickLinks.map((link) => (
+          <div key={link.id} style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 12px" }}>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#0f172a", marginBottom: 5 }}>{link.name}</div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", lineHeight: 1.5, color: "rgba(15,23,42,0.60)", marginBottom: 9 }}>
+              {link.description}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => onOpenQuickLink(link.url)}
+                style={{
+                  border: "1px solid rgba(37,99,235,0.30)",
+                  borderRadius: 9,
+                  background: "rgba(37,99,235,0.10)",
+                  color: "#1d4ed8",
+                  fontFamily: APP_BRAND_STACK,
+                  fontSize: "0.58rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  padding: "7px 10px",
+                }}
+              >
+                Open
+              </button>
+              {!link.isDefault && (
+                <button
+                  onClick={() => onRemoveQuickLink(link.id)}
+                  style={{
+                    border: "1px solid rgba(220,38,38,0.30)",
+                    borderRadius: 9,
+                    background: "rgba(220,38,38,0.10)",
+                    color: "#991b1b",
+                    fontFamily: APP_BRAND_STACK,
+                    fontSize: "0.58rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    padding: "7px 10px",
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DocumentToolsWorkspace({ tickets }) {
+  const normalizedTickets = useMemo(() => (
+    tickets.map((ticket) => ticket.structured || toStructuredTicket(ticket))
+  ), [tickets]);
+  const docStats = useMemo(() => normalizedTickets.reduce((acc, structured) => {
+    acc.totalTickets += 1;
+    const required = structured.documents.items.filter((doc) => doc.required).length;
+    const submitted = structured.documents.items.filter((doc) => doc.required && doc.submitted).length;
+    acc.required += required;
+    acc.submitted += submitted;
+    acc.pending += Math.max(0, required - submitted);
+    return acc;
+  }, { totalTickets: 0, required: 0, submitted: 0, pending: 0 }), [normalizedTickets]);
+  const pendingTickets = useMemo(() => normalizedTickets
+    .filter((structured) => structured.documents.items.some((doc) => doc.required && !doc.submitted))
+    .slice(0, 20), [normalizedTickets]);
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
+          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Tickets Checked</div>
+          <div style={{ marginTop: 6, fontSize: "1.12rem", fontWeight: 700, color: "#1e3a8a", fontFamily: APP_MONO_STACK }}>{docStats.totalTickets}</div>
+        </div>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
+          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Required Docs</div>
+          <div style={{ marginTop: 6, fontSize: "1.12rem", fontWeight: 700, color: "#1e3a8a", fontFamily: APP_MONO_STACK }}>{docStats.required}</div>
+        </div>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
+          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Submitted</div>
+          <div style={{ marginTop: 6, fontSize: "1.12rem", fontWeight: 700, color: "#166534", fontFamily: APP_MONO_STACK }}>{docStats.submitted}</div>
+        </div>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
+          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Pending</div>
+          <div style={{ marginTop: 6, fontSize: "1.12rem", fontWeight: 700, color: "#b45309", fontFamily: APP_MONO_STACK }}>{docStats.pending}</div>
+        </div>
+      </div>
+      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 16, background: "rgba(255,255,255,0.90)", overflow: "hidden" }}>
+        <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(15,23,42,0.08)", fontSize: "0.64rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>
+          Tickets With Pending Documents
+        </div>
+        <div style={{ maxHeight: 420, overflowY: "auto" }}>
+          {pendingTickets.length === 0 ? (
+            <div style={{ padding: "14px", color: "rgba(15,23,42,0.56)", fontSize: "0.88rem", fontFamily: APP_FONT_STACK }}>
+              No pending required documents found.
+            </div>
+          ) : pendingTickets.map((structured) => {
+            const pendingNames = structured.documents.items
+              .filter((doc) => doc.required && !doc.submitted)
+              .map((doc) => doc.name)
+              .slice(0, 4);
+            return (
+              <div key={structured.meta.ticketNo} style={{ padding: "11px 14px", borderBottom: "1px solid rgba(15,23,42,0.08)", display: "grid", gap: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.92rem", fontWeight: 700, color: "#0f172a" }}>
+                    {structured.meta.ticketNo} - {structured.parties.documentHolder.name}
+                  </div>
+                  <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.58)" }}>
+                    {structured.meta.createdDate || "Undated"}
+                  </div>
+                </div>
+                <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.80rem", color: "rgba(15,23,42,0.58)" }}>
+                  Pending: {pendingNames.join(", ") || "Required documents not submitted"}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ServicesDashboardWorkspace({ services, tickets }) {
+  const serviceUsage = useMemo(() => {
+    const counts = new Map();
+    tickets.forEach((ticket) => {
+      const structured = ticket.structured || toStructuredTicket(ticket);
+      structured.services.forEach((item) => {
+        const name = String(item?.service || item?.name || "").trim() || "Unspecified";
+        counts.set(name, (counts.get(name) || 0) + (Number(item.qty) || 1));
+      });
+    });
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12);
+  }, [tickets]);
+  const categoryRows = useMemo(() => CATEGORIES.map((category) => {
+    const categoryServices = services.filter((service) => service.category === category);
+    const pricedCount = categoryServices.filter((service) => Number(service.price) > 0).length;
+    return {
+      category,
+      total: categoryServices.length,
+      priced: pricedCount,
+      unpriced: Math.max(0, categoryServices.length - pricedCount),
+    };
+  }), [services]);
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 16, background: "rgba(255,255,255,0.92)", padding: "14px 16px" }}>
+        <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
+          Service Category Coverage
+        </div>
+        <div style={{ display: "grid", gap: 9 }}>
+          {categoryRows.map((row) => (
+            <div key={row.category} style={{ display: "grid", gridTemplateColumns: "minmax(150px, 1fr) auto auto auto", gap: 8, padding: "9px 10px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(248,250,252,0.95)", alignItems: "center" }}>
+              <div style={{ fontFamily: APP_FONT_STACK, fontWeight: 700, color: "#0f172a", fontSize: "0.86rem" }}>{row.category}</div>
+              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", color: "#1e3a8a" }}>Total: {row.total}</div>
+              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", color: "#166534" }}>Priced: {row.priced}</div>
+              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", color: "#b45309" }}>Unpriced: {row.unpriced}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 16, background: "rgba(255,255,255,0.92)", padding: "14px 16px" }}>
+        <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
+          Most Used Services
+        </div>
+        {serviceUsage.length === 0 ? (
+          <div style={{ fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
+            Usage data will appear after tickets are created.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 8 }}>
+            {serviceUsage.map((row) => (
+              <div key={row.name} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, padding: "9px 10px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(248,250,252,0.95)", alignItems: "center" }}>
+                <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.85rem", color: "#0f172a", fontWeight: 600 }}>{row.name}</div>
+                <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.80rem", color: "#1e3a8a", fontWeight: 700 }}>{row.count}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DatabaseWorkspace({ tickets, services, b2bLedger }) {
+  const totalCollections = tickets.reduce((sum, ticket) => sum + (Number(ticket.total) || 0), 0);
+  const totalB2B = b2bLedger.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{
+        border: "1px solid rgba(220,38,38,0.24)",
+        borderRadius: 14,
+        background: "linear-gradient(160deg, rgba(220,38,38,0.10), rgba(255,255,255,0.94))",
+        padding: "13px 14px",
+      }}>
+        <div style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#991b1b", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
+          Highly Confidential
+        </div>
+        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.94rem", color: "#7f1d1d", lineHeight: 1.5 }}>
+          This section is restricted. Share access only with authorized owners and senior operators.
+        </div>
+      </div>
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
+          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Total Tickets</div>
+          <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#1e3a8a" }}>{tickets.length}</div>
+        </div>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
+          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Service Records</div>
+          <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#1e3a8a" }}>{services.length}</div>
+        </div>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
+          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Ticket Collection</div>
+          <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#166534" }}>Rs. {Math.round(totalCollections).toLocaleString("en-IN")}</div>
+        </div>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
+          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>B2B Ledger</div>
+          <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#1e3a8a" }}>Rs. {Math.round(totalB2B).toLocaleString("en-IN")}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DatabaseAccessModal({ onClose, onUnlock }) {
+  const [securityCode, setSecurityCode] = useState("");
+  const [authCode, setAuthCode] = useState("");
+  const [error, setError] = useState("");
+  const [checking, setChecking] = useState(false);
+
+  const hasAuthenticatorConfig = Boolean(DATABASE_TOTP_SECRET || DATABASE_BACKUP_AUTH_CODE);
+  const hasSecurityConfig = Boolean(DATABASE_SECURITY_CODE);
+
+  const handleVerify = async () => {
+    if (checking) return;
+    if (!hasSecurityConfig || !hasAuthenticatorConfig) {
+      setError("Database security is not configured yet. Set env keys before opening this section.");
+      return;
+    }
+    if (String(securityCode || "").trim() !== DATABASE_SECURITY_CODE) {
+      setError("Security code is invalid.");
+      return;
+    }
+    setChecking(true);
+    setError("");
+    try {
+      const isAuthValid = await verifyAuthenticatorCode(authCode);
+      if (!isAuthValid) {
+        setError("Authenticator code is invalid or expired.");
+        return;
+      }
+      onUnlock();
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2,6,23,0.58)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20,
+      zIndex: 120,
+    }}>
+      <div style={{
+        width: "min(460px, 100%)",
+        borderRadius: 18,
+        border: "1px solid rgba(220,38,38,0.26)",
+        background: "rgba(255,255,255,0.97)",
+        boxShadow: "0 24px 56px rgba(15,23,42,0.28)",
+        padding: "20px 18px",
+      }}>
+        <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "#991b1b", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
+          Database Access Gate
+        </div>
+        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.12rem", color: "#0f172a", fontWeight: 700, marginBottom: 6 }}>
+          Verify both factors to continue
+        </div>
+        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.84rem", color: "rgba(15,23,42,0.58)", lineHeight: 1.6, marginBottom: 12 }}>
+          Enter your security code and Google Authenticator code.
+        </div>
+        <div style={{ display: "grid", gap: 10 }}>
+          <input
+            value={securityCode}
+            onChange={(e) => setSecurityCode(e.target.value)}
+            placeholder="Security code"
+            style={{ padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.16)", background: "#fff", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.9rem" }}
+          />
+          <input
+            value={authCode}
+            onChange={(e) => setAuthCode(normalizeOtpInput(e.target.value))}
+            placeholder="Authenticator code"
+            inputMode="numeric"
+            maxLength={6}
+            style={{ padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.16)", background: "#fff", color: "#0f172a", fontFamily: APP_MONO_STACK, fontSize: "0.94rem", letterSpacing: "0.10em" }}
+          />
+        </div>
+        {error && <div style={{ marginTop: 10, fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "#b91c1c", fontWeight: 600 }}>{error}</div>}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+          <button
+            onClick={onClose}
+            style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 10, background: "rgba(15,23,42,0.06)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", padding: "9px 12px" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleVerify}
+            disabled={checking}
+            style={{ border: "1px solid rgba(22,163,74,0.32)", borderRadius: 10, background: checking ? "rgba(22,163,74,0.08)" : "rgba(22,163,74,0.14)", color: "#166534", fontFamily: APP_BRAND_STACK, fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: checking ? "wait" : "pointer", padding: "9px 12px" }}
+          >
+            {checking ? "Verifying..." : "Unlock"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -5594,6 +6364,9 @@ export default function CSCBilling() {
   const [tab, setTab] = useState(() => getInitialActiveTab());
   const [sidePanelExpanded, setSidePanelExpanded] = useState(() => getStoredSidePanelExpanded());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => getStoredSidebarCollapsed());
+  const [isBootLoading, setIsBootLoading] = useState(true);
+  const [showDatabaseGate, setShowDatabaseGate] = useState(false);
+  const [databaseUnlocked, setDatabaseUnlocked] = useState(false);
   const [services, setServices] = useState(() => (
     hydrateServices(readStoredJSON(STORAGE_KEYS.services, INITIAL_SERVICES))
   ));
@@ -5635,10 +6408,15 @@ export default function CSCBilling() {
   const dailyRevenueTotal = ticketRevenueToday + b2bRevenueToday;
   const b2bPendingCount = b2bLedger.filter((entry) => (Number(entry.pendingAmount) || 0) > 0).length;
   const panelBadges = {
+    database: databaseUnlocked ? "Unlocked" : "2FA",
     log: openTicketCount > 0 ? String(openTicketCount) : String(tickets.length),
-    b2b: b2bPendingCount > 0 ? String(b2bPendingCount) : String(b2bLedger.length),
+    quick_links: String(customQuickLinks.length + QUICK_LINK_DEFAULTS.length),
+    doc_tools: String(Math.max(0, tickets.length)),
+    services_dashboard: String(Math.max(0, services.length)),
   };
   const sidebarWidth = sidebarCollapsed ? 168 : 260;
+  const isHomeTab = tab === "home";
+  const activeTabConfig = TAB_CONFIG.find((item) => item.id === tab) || TAB_CONFIG[0];
   const headerStats = [
     { label: "Daily Revenue", value: `Rs. ${Math.round(dailyRevenueTotal).toLocaleString("en-IN")}`, accent: "#0f172a" },
     { label: "B2B Sales Today", value: `Rs. ${Math.round(b2bRevenueToday).toLocaleString("en-IN")}`, accent: "#1d4ed8" },
@@ -5660,8 +6438,12 @@ export default function CSCBilling() {
         : OPS.primary;
   const CSC_WHATSAPP_NUMBER = String(import.meta.env.VITE_CSC_WHATSAPP_NUMBER || "").replace(/\D/g, "");
   const quickLinks = [...QUICK_LINK_DEFAULTS, ...customQuickLinks];
-  const navigateTab = (nextTab, mode = "push") => {
+  const navigateTab = (nextTab, mode = "push", options = {}) => {
     if (!TAB_CONFIG.some((item) => item.id === nextTab)) return;
+    if (nextTab === "database" && !databaseUnlocked && !options.bypassDatabaseGate) {
+      setShowDatabaseGate(true);
+      return;
+    }
     if (nextTab === tab) return;
     updateBrowserState({ tab: nextTab }, mode);
     setTab(nextTab);
@@ -5784,6 +6566,16 @@ export default function CSCBilling() {
     }, 900);
     window.location.href = appUrl;
   };
+  const unlockDatabaseAndOpen = () => {
+    setDatabaseUnlocked(true);
+    setShowDatabaseGate(false);
+    navigateTab("database", "push", { bypassDatabaseGate: true });
+  };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsBootLoading(false), 1350);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     updateBrowserState({ tab }, "replace");
@@ -5793,13 +6585,18 @@ export default function CSCBilling() {
     const handlePopState = (event) => {
       const nextTab = event.state?.tab;
       if (TAB_CONFIG.some((item) => item.id === nextTab)) {
+        if (nextTab === "database" && !databaseUnlocked) {
+          setShowDatabaseGate(true);
+          setTab("home");
+          return;
+        }
         setTab(nextTab);
       }
     };
     if (typeof window === "undefined") return undefined;
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+  }, [databaseUnlocked]);
 
   useEffect(() => {
     writeStoredJSON(STORAGE_KEYS.activeTab, tab);
@@ -5818,6 +6615,12 @@ export default function CSCBilling() {
       setSidePanelExpanded(false);
     }
   }, [sidebarCollapsed, sidePanelExpanded]);
+
+  useEffect(() => {
+    if (!isHomeTab) return;
+    setSidePanelExpanded(false);
+    setShowWalkIn(false);
+  }, [isHomeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -5985,34 +6788,44 @@ export default function CSCBilling() {
     };
   }, [b2bLedger]);
 
+  if (isBootLoading) {
+    return <BootLoadingScreen />;
+  }
+
   return (
     <div style={{
       minHeight: "100vh",
-      background: DS.dark,
+      background: "#f8fbff",
       fontFamily: APP_FONT_STACK,
-      color: DS.fg1,
+      color: "#0f172a",
       display: "flex",
       flexDirection: "column",
     }}>
       {showWalkIn && <WalkInModal onClose={() => setShowWalkIn(false)} onStart={handleWalkInStart} />}
+      {showDatabaseGate && (
+        <DatabaseAccessModal
+          onClose={() => setShowDatabaseGate(false)}
+          onUnlock={unlockDatabaseAndOpen}
+        />
+      )}
       <style>{`
-        :root { color-scheme: dark; }
+        :root { color-scheme: light; }
         * { box-sizing: border-box; }
         html, body {
           margin: 0;
-          background: ${DS.dark};
-          color: ${DS.fg1};
+          background: #f8fbff;
+          color: #0f172a;
         }
         body, button, input, select, textarea {
           font-family: ${APP_FONT_STACK};
-          color: ${DS.fg1};
+          color: #0f172a;
         }
         input::placeholder, textarea::placeholder {
-          color: ${DS.fg4};
+          color: rgba(15,23,42,0.45);
         }
         select option {
-          background: ${DS.darkDeep};
-          color: ${DS.fg1};
+          background: #ffffff;
+          color: #0f172a;
         }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(6px); }
@@ -6069,7 +6882,7 @@ export default function CSCBilling() {
           flex: "0 0 auto",
           background: `radial-gradient(circle at 110% -8%, rgba(59,130,246,0.12), transparent 38%), radial-gradient(circle at -10% 100%, rgba(37,99,235,0.07), transparent 36%), linear-gradient(180deg, #ffffff 0%, #eff6ff 100%)`,
           borderRight: `1px solid rgba(15,23,42,0.10)`,
-          display: "flex",
+          display: isHomeTab ? "none" : "flex",
           flexDirection: "column",
           position: "sticky",
           top: 0,
@@ -6295,6 +7108,7 @@ export default function CSCBilling() {
           aria-hidden={!sidePanelExpanded}
           onClick={() => setSidePanelExpanded(false)}
           style={{
+            display: isHomeTab ? "none" : "block",
             position: "fixed",
             inset: 0,
             background: "rgba(0,0,0,0.55)",
@@ -6309,6 +7123,7 @@ export default function CSCBilling() {
         <aside
           aria-hidden={!sidePanelExpanded}
           style={{
+            display: isHomeTab ? "none" : "grid",
             position: "fixed",
             top: 0,
             bottom: 0,
@@ -6322,7 +7137,6 @@ export default function CSCBilling() {
             transform: sidePanelExpanded ? "translateX(0)" : "translateX(-100%)",
             transition: `transform 0.32s ${DS.ease}`,
             zIndex: 50,
-            display: "grid",
             gridTemplateRows: "auto auto minmax(0,1fr) minmax(0,1.2fr)",
             gap: 16,
           }}
@@ -6584,8 +7398,10 @@ export default function CSCBilling() {
           position: "relative",
         }}>
           {/* Subtle grid texture */}
-          <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.18, backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px)", backgroundSize: "72px 72px" }} />
+          <div style={{ display: isHomeTab ? "none" : "block", position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.18, backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px)", backgroundSize: "72px 72px" }} />
 
+          {!isHomeTab && (
+          <>
           {/* Top bar */}
           <header style={{
             position: "sticky",
@@ -6615,13 +7431,13 @@ export default function CSCBilling() {
                 color: "#0f172a",
                 letterSpacing: "0.04em",
               }}>
-                {TAB_CONFIG.find((item) => item.id === tab)?.label}
+                {activeTabConfig.label}
               </div>
               <div style={{
                 fontSize: "0.68rem", color: "rgba(15,23,42,0.38)",
                 fontFamily: APP_FONT_STACK, fontWeight: 400,
               }}>
-                {TAB_CONFIG.find((item) => item.id === tab)?.description}
+                {activeTabConfig.description}
               </div>
             </div>
 
@@ -6704,7 +7520,7 @@ export default function CSCBilling() {
               letterSpacing: "-0.03em",
               color: "#0f172a",
             }}>
-              {TAB_CONFIG.find((item) => item.id === tab)?.label}
+              {activeTabConfig.label}
             </h1>
             <p style={{
               margin: "10px 0 0",
@@ -6715,18 +7531,29 @@ export default function CSCBilling() {
               fontFamily: APP_FONT_STACK,
               fontWeight: 400,
             }}>
-              {TAB_CONFIG.find((item) => item.id === tab)?.description}
+              {activeTabConfig.description}
             </p>
           </div>
+          </>
+          )}
 
           {/* Tab Content */}
           <div className="csc-content-scroll" style={{
             flex: 1,
-            padding: "24px 28px 48px",
+            padding: isHomeTab ? 0 : "24px 28px 48px",
             overflowY: "auto",
             position: "relative",
             zIndex: 1,
           }}>
+            {isHomeTab && (
+              <HomeLaunchpad
+                onOpenSection={(sectionId) => navigateTab(sectionId)}
+                openTicketCount={openTicketCount}
+                dailyRevenueTotal={dailyRevenueTotal}
+                b2bPendingCount={b2bPendingCount}
+                cloudSyncLabel={cloudSyncLabel}
+              />
+            )}
             <TabPanel active={tab === "entry"}>
               <TicketWorkspace key={entryWorkspaceKey} services={services} tickets={tickets} onSaveTicket={saveTicket} onNavigateTab={navigateTab} isActive={tab === "entry"} />
             </TabPanel>
@@ -6751,6 +7578,33 @@ export default function CSCBilling() {
             </TabPanel>
             <TabPanel active={tab === "monthly"}>
               <MonthlyOverview tickets={tickets} />
+            </TabPanel>
+            <TabPanel active={tab === "database"}>
+              <DatabaseWorkspace tickets={tickets} services={services} b2bLedger={b2bLedger} />
+            </TabPanel>
+            <TabPanel active={tab === "quick_links"}>
+              <QuickLinksWorkspace
+                quickLinks={quickLinks}
+                showAddQuickLink={showAddQuickLink}
+                onToggleAddQuickLink={() => {
+                  setShowAddQuickLink((prev) => !prev);
+                  setQuickLinkError("");
+                }}
+                quickLinkName={quickLinkName}
+                setQuickLinkName={setQuickLinkName}
+                quickLinkUrl={quickLinkUrl}
+                setQuickLinkUrl={setQuickLinkUrl}
+                quickLinkError={quickLinkError}
+                onSaveQuickLink={addQuickLink}
+                onRemoveQuickLink={removeQuickLink}
+                onOpenQuickLink={openQuickLink}
+              />
+            </TabPanel>
+            <TabPanel active={tab === "doc_tools"}>
+              <DocumentToolsWorkspace tickets={tickets} />
+            </TabPanel>
+            <TabPanel active={tab === "services_dashboard"}>
+              <ServicesDashboardWorkspace services={services} tickets={tickets} />
             </TabPanel>
             <TabPanel active={tab === "customers"}>
               <CustomersWorkspace tickets={tickets} onDeleteCustomer={deleteCustomerTickets} />
