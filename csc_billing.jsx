@@ -1196,6 +1196,202 @@ function formatDobValue(value) {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
+const DATABASE_OCR_ENABLED_SECTION_IDS = new Set(["aadhaar", "pan_card", "passport"]);
+let tesseractModulePromise = null;
+
+function toOcrLines(rawText) {
+  return String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function isLikelyNameLine(line, { allowSingleWord = false } = {}) {
+  const cleaned = String(line || "").replace(/\s+/g, " ").trim();
+  if (!cleaned) return false;
+  if (/\d/.test(cleaned)) return false;
+  if (cleaned.length < 3 || cleaned.length > 52) return false;
+  if (!allowSingleWord && cleaned.split(" ").length < 2) return false;
+  if (/(government|india|passport|uidai|authority|address|dob|date of birth|birth|male|female|signature|identification|card|number|republic|issuing|valid|expiry|nationality|code|p<|ind)/i.test(cleaned)) return false;
+  return cleaned.split(" ").every((token) => /^[A-Za-z.'-]+$/.test(token));
+}
+
+function extractDateFromOcrText(rawText) {
+  const text = String(rawText || "");
+  const preferred = text.match(/(?:DOB|Date of Birth|Birth)[^0-9]{0,12}([0-9]{2}[\/\-.][0-9]{2}[\/\-.][0-9]{4}|[0-9]{4}[\/\-.][0-9]{2}[\/\-.][0-9]{2})/i);
+  if (preferred?.[1]) return formatDobValue(preferred[1]);
+  const dayFirst = text.match(/\b([0-9]{2}[\/\-.][0-9]{2}[\/\-.][0-9]{4})\b/);
+  if (dayFirst?.[1]) return formatDobValue(dayFirst[1]);
+  const yearFirst = text.match(/\b([0-9]{4}[\/\-.][0-9]{2}[\/\-.][0-9]{2})\b/);
+  if (yearFirst?.[1]) return formatDobValue(yearFirst[1]);
+  return "";
+}
+
+function parseAadhaarFromOcrText(rawText) {
+  const lines = toOcrLines(rawText);
+  const joined = lines.join("\n");
+  const aadhaarNumber = (joined.match(/\b\d{4}\s?\d{4}\s?\d{4}\b/) || [])[0] || "";
+  const dateOfBirth = extractDateFromOcrText(joined);
+  const dobLineIndex = lines.findIndex((line) => /(dob|date of birth|year of birth)/i.test(line));
+  let name = "";
+  if (dobLineIndex > 0) {
+    const candidate = lines
+      .slice(Math.max(0, dobLineIndex - 3), dobLineIndex)
+      .reverse()
+      .find((line) => isLikelyNameLine(line, { allowSingleWord: true }));
+    if (candidate) name = candidate;
+  }
+  if (!name) {
+    name = lines.find((line) => isLikelyNameLine(line, { allowSingleWord: true })) || "";
+  }
+  const addressIndex = lines.findIndex((line) => /\baddress\b/i.test(line));
+  const address = addressIndex >= 0
+    ? lines.slice(addressIndex + 1, addressIndex + 4).join(", ")
+    : "";
+  const linkedMobileNumber = (joined.match(/(?:mobile|mob|m\.?)[\s:-]*([6-9]\d{9})/i) || [])[1]
+    || (joined.match(/\b[6-9]\d{9}\b/) || [])[0]
+    || "";
+  return {
+    aadhaarNumber,
+    name,
+    dateOfBirth,
+    address,
+    linkedMobileNumber,
+  };
+}
+
+function parsePanFromOcrText(rawText) {
+  const lines = toOcrLines(rawText);
+  const joined = lines.join("\n");
+  const joinedUpper = joined.toUpperCase();
+  const panNumber = (joinedUpper.match(/\b[A-Z]{5}[0-9]{4}[A-Z]\b/) || [])[0] || "";
+  const dateOfBirth = extractDateFromOcrText(joined);
+  const fatherLabelIndex = lines.findIndex((line) => /father/i.test(line));
+  let fatherName = "";
+  if (fatherLabelIndex >= 0) {
+    fatherName = lines
+      .slice(fatherLabelIndex + 1, fatherLabelIndex + 3)
+      .find((line) => isLikelyNameLine(line, { allowSingleWord: true })) || "";
+  }
+  const nameLabelIndex = lines.findIndex((line) => /^name$/i.test(line) || /\bname\b/i.test(line));
+  let name = "";
+  if (nameLabelIndex >= 0) {
+    name = lines
+      .slice(nameLabelIndex + 1, nameLabelIndex + 3)
+      .find((line) => isLikelyNameLine(line, { allowSingleWord: true }) && line !== fatherName) || "";
+  }
+  if (!name) {
+    const fallbackNames = lines.filter((line) => isLikelyNameLine(line, { allowSingleWord: true }));
+    name = fallbackNames.find((line) => line !== fatherName) || fallbackNames[0] || "";
+  }
+  return {
+    name,
+    fatherName,
+    dateOfBirth,
+    panNumber,
+  };
+}
+
+function parsePassportFromOcrText(rawText) {
+  const lines = toOcrLines(rawText);
+  const joined = lines.join("\n");
+  const joinedUpper = joined.toUpperCase();
+  const passportNumber = (joinedUpper.match(/\b[A-Z][0-9]{7}\b/) || [])[0] || "";
+  const dateOfBirth = extractDateFromOcrText(joined);
+  const surnameIndex = lines.findIndex((line) => /\bsurname\b/i.test(line));
+  const givenNameIndex = lines.findIndex((line) => /\bgiven name\b/i.test(line));
+  let surname = "";
+  let givenName = "";
+  if (surnameIndex >= 0) {
+    surname = lines
+      .slice(surnameIndex + 1, surnameIndex + 3)
+      .find((line) => isLikelyNameLine(line, { allowSingleWord: true })) || "";
+  }
+  if (givenNameIndex >= 0) {
+    givenName = lines
+      .slice(givenNameIndex + 1, givenNameIndex + 3)
+      .find((line) => isLikelyNameLine(line, { allowSingleWord: true })) || "";
+  }
+  let name = `${givenName} ${surname}`.replace(/\s+/g, " ").trim();
+  if (!name) {
+    const mrzLine = lines.find((line) => /^P<\w{3}/i.test(line));
+    if (mrzLine) {
+      const cleanedMrz = mrzLine.replace(/^P<\w{3}/i, "");
+      const parts = cleanedMrz
+        .split("<<")
+        .map((part) => part.replace(/</g, " ").trim())
+        .filter(Boolean);
+      if (parts.length >= 2) {
+        name = `${parts[1]} ${parts[0]}`.replace(/\s+/g, " ").trim();
+      } else if (parts.length === 1) {
+        name = parts[0];
+      }
+    }
+  }
+  if (!name) {
+    name = lines.find((line) => isLikelyNameLine(line, { allowSingleWord: true })) || "";
+  }
+  const addressIndex = lines.findIndex((line) => /\baddress\b/i.test(line));
+  const address = addressIndex >= 0
+    ? lines.slice(addressIndex + 1, addressIndex + 4).join(", ")
+    : "";
+  return {
+    name,
+    passportNumber,
+    address,
+    dateOfBirth,
+  };
+}
+
+function getDatabaseValuesFromOcrText(sectionId, rawText) {
+  if (sectionId === "aadhaar") return parseAadhaarFromOcrText(rawText);
+  if (sectionId === "pan_card") return parsePanFromOcrText(rawText);
+  if (sectionId === "passport") return parsePassportFromOcrText(rawText);
+  return {};
+}
+
+function hasAnyDatabaseFieldValue(values) {
+  if (!values || typeof values !== "object") return false;
+  return Object.values(values).some((value) => String(value || "").trim().length > 0);
+}
+
+function normalizeOcrValuesForDatabaseSection(sectionId, extractedValues) {
+  const baseline = createEmptyDatabaseRecordValues(sectionId);
+  const nextValues = { ...baseline };
+  Object.keys(nextValues).forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(extractedValues, key)) {
+      nextValues[key] = sanitizeDatabaseFieldValue(key, extractedValues[key]);
+    }
+  });
+  return nextValues;
+}
+
+async function runOcrOnDatabaseDocument(file, onProgress) {
+  if (!file) throw new Error("Select a document image first.");
+  if (!file.type || !file.type.startsWith("image/")) {
+    throw new Error("Only image files are supported right now (JPG, PNG, WEBP).");
+  }
+  if (!tesseractModulePromise) {
+    tesseractModulePromise = import("tesseract.js");
+  }
+  const { createWorker } = await tesseractModulePromise;
+  const worker = await createWorker("eng", 1, {
+    logger: (message) => {
+      if (message?.status === "recognizing text" && typeof message.progress === "number") {
+        onProgress?.(Math.max(1, Math.round(message.progress * 100)));
+      }
+    },
+  });
+  try {
+    onProgress?.(5);
+    const result = await worker.recognize(file);
+    onProgress?.(100);
+    return String(result?.data?.text || "");
+  } finally {
+    await worker.terminate();
+  }
+}
+
 function normalizeDatabaseFieldInput(fieldKey, value) {
   const rawValue = String(value ?? "");
   if (fieldKey === "aadhaarNumber") return formatAadhaarNumber(rawValue);
@@ -1231,6 +1427,7 @@ function normalizeDatabaseRecordEntry(entry, fallbackIndex = 0) {
     id: String(entry?.id || `db_record_${Date.now()}_${fallbackIndex}`),
     sectionId,
     values,
+    isActiveClient: Boolean(entry?.isActiveClient),
     createdAt,
     updatedAt: String(entry?.updatedAt || createdAt),
   };
@@ -1886,12 +2083,21 @@ function ServicesDashboardWorkspace({ services, tickets }) {
 function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpsertRecord, onDeleteRecord }) {
   const [activeSectionId, setActiveSectionId] = useState(() => DATABASE_SECTION_CONFIG[0].id);
   const [formValues, setFormValues] = useState(() => createEmptyDatabaseRecordValues(DATABASE_SECTION_CONFIG[0].id));
+  const [isActiveClient, setIsActiveClient] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState("");
   const [search, setSearch] = useState("");
   const [formError, setFormError] = useState("");
+  const [ocrFile, setOcrFile] = useState(null);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrError, setOcrError] = useState("");
+  const [ocrStatus, setOcrStatus] = useState("");
+  const [ocrDropActive, setOcrDropActive] = useState(false);
+  const ocrFileInputRef = useRef(null);
   const totalCollections = tickets.reduce((sum, ticket) => sum + (Number(ticket.total) || 0), 0);
   const totalB2B = b2bLedger.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
   const sectionConfig = getDatabaseSection(activeSectionId);
+  const ocrEnabledForSection = DATABASE_OCR_ENABLED_SECTION_IDS.has(activeSectionId);
   const activeSectionRecords = useMemo(() => (
     records
       .filter((record) => record.sectionId === activeSectionId)
@@ -1907,12 +2113,19 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
 
   const resetForm = (sectionId = activeSectionId) => {
     setFormValues(createEmptyDatabaseRecordValues(sectionId));
+    setIsActiveClient(false);
     setEditingRecordId("");
     setFormError("");
   };
 
   useEffect(() => {
     resetForm(activeSectionId);
+    setOcrFile(null);
+    setOcrBusy(false);
+    setOcrProgress(0);
+    setOcrError("");
+    setOcrStatus("");
+    setOcrDropActive(false);
   }, [activeSectionId]);
 
   const handleFieldChange = (fieldKey, rawValue) => {
@@ -1920,6 +2133,71 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
       ...prev,
       [fieldKey]: normalizeDatabaseFieldInput(fieldKey, rawValue),
     }));
+  };
+  const handleOcrFileSelection = (file) => {
+    if (!file) return;
+    if (!file.type || !file.type.startsWith("image/")) {
+      setOcrError("Please upload an image file (JPG, PNG, WEBP).");
+      setOcrStatus("");
+      setOcrFile(null);
+      return;
+    }
+    setOcrFile(file);
+    setOcrError("");
+    setOcrStatus("");
+    setOcrProgress(0);
+  };
+  const handleOcrInputChange = (event) => {
+    const nextFile = event.target.files?.[0] || null;
+    handleOcrFileSelection(nextFile);
+    event.target.value = "";
+  };
+  const handleOcrDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOcrDropActive(false);
+    if (ocrBusy) return;
+    const droppedFile = event.dataTransfer?.files?.[0] || null;
+    handleOcrFileSelection(droppedFile);
+  };
+  const handleRunOcrExtraction = async () => {
+    if (!ocrEnabledForSection || ocrBusy) return;
+    if (!ocrFile) {
+      setOcrError("Choose or drop a document image first.");
+      return;
+    }
+    setOcrBusy(true);
+    setOcrError("");
+    setOcrStatus("");
+    setOcrProgress(0);
+    setFormError("");
+    try {
+      const extractedText = await runOcrOnDatabaseDocument(ocrFile, setOcrProgress);
+      const extractedValues = getDatabaseValuesFromOcrText(activeSectionId, extractedText);
+      const normalizedValues = normalizeOcrValuesForDatabaseSection(activeSectionId, extractedValues);
+      if (!hasAnyDatabaseFieldValue(normalizedValues)) {
+        setOcrError("Could not detect enough details. Try a clearer image.");
+        return;
+      }
+      const createdAt = new Date().toISOString();
+      const nextRecord = normalizeDatabaseRecordEntry({
+        id: `db_record_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        sectionId: activeSectionId,
+        values: normalizedValues,
+        isActiveClient,
+        createdAt,
+        updatedAt: createdAt,
+      }, activeSectionRecords.length);
+      onUpsertRecord?.(nextRecord);
+      setFormValues(normalizedValues);
+      setEditingRecordId("");
+      const extractedCount = Object.values(normalizedValues).filter((value) => String(value || "").trim()).length;
+      setOcrStatus(`Extracted ${extractedCount} field${extractedCount === 1 ? "" : "s"} and created a new entry.`);
+    } catch (error) {
+      setOcrError(error?.message || "Failed to read document.");
+    } finally {
+      setOcrBusy(false);
+    }
   };
 
   const handleSaveRecord = () => {
@@ -1931,6 +2209,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
       id: editingRecordId || `db_record_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       sectionId: activeSectionId,
       values: formValues,
+      isActiveClient,
       createdAt: existingRecord?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }, activeSectionRecords.length);
@@ -1948,7 +2227,66 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
       ...createEmptyDatabaseRecordValues(record.sectionId),
       ...(record.values || {}),
     });
+    setIsActiveClient(Boolean(record?.isActiveClient));
     setFormError("");
+  };
+
+  const handleExportRecordsToExcel = () => {
+    if (!Array.isArray(records) || records.length === 0) {
+      if (typeof window !== "undefined") {
+        window.alert("No database records to export.");
+      }
+      return;
+    }
+    const allFields = [];
+    DATABASE_SECTION_CONFIG.forEach((section) => {
+      section.fields.forEach((field) => {
+        if (!allFields.some((existing) => existing.key === field.key)) {
+          allFields.push({ key: field.key, label: field.label });
+        }
+      });
+    });
+    const sectionLabelById = DATABASE_SECTION_CONFIG.reduce((acc, section) => {
+      acc[section.id] = section.label;
+      return acc;
+    }, {});
+    const csvEscape = (value) => {
+      const text = String(value ?? "");
+      if (/[",\n]/.test(text)) {
+        return `"${text.replace(/"/g, "\"\"")}"`;
+      }
+      return text;
+    };
+    const header = ["Section", "Active Client", "Created At", "Updated At", ...allFields.map((field) => field.label)];
+    const rows = records
+      .map((record, idx) => normalizeDatabaseRecordEntry(record, idx))
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+      .map((record) => {
+        const base = [
+          sectionLabelById[record.sectionId] || record.sectionId,
+          record.isActiveClient ? "Yes" : "No",
+          new Date(record.createdAt).toLocaleString("en-IN"),
+          new Date(record.updatedAt).toLocaleString("en-IN"),
+        ];
+        const values = allFields.map((field) => record.values?.[field.key] || "");
+        return [...base, ...values];
+      });
+    const csvContent = [header, ...rows]
+      .map((row) => row.map(csvEscape).join(","))
+      .join("\n");
+    const csvBlob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
+    const exportDate = new Date().toISOString().slice(0, 10);
+    const filename = `database-export-${exportDate}.csv`;
+    if (typeof window !== "undefined") {
+      const blobUrl = window.URL.createObjectURL(csvBlob);
+      const anchor = document.createElement("a");
+      anchor.href = blobUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(blobUrl);
+    }
   };
 
   const handleDeleteRecord = (record) => {
@@ -1956,6 +2294,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
       const shouldDelete = window.confirm(`Delete this ${sectionConfig.label} entry?`);
       if (!shouldDelete) return;
     }
+    if (!verifyDeleteAccess(`delete database entry ${record.id}`)) return;
     onDeleteRecord?.(record.id);
     if (editingRecordId === record.id) {
       resetForm(activeSectionId);
@@ -1964,19 +2303,6 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
-      <div style={{
-        border: "1px solid rgba(220,38,38,0.24)",
-        borderRadius: 14,
-        background: "linear-gradient(160deg, rgba(220,38,38,0.10), rgba(255,255,255,0.94))",
-        padding: "13px 14px",
-      }}>
-        <div style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#991b1b", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
-          Highly Confidential
-        </div>
-        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.94rem", color: "#7f1d1d", lineHeight: 1.5 }}>
-          Database fields are organized as requested: Aadhaar, Passport, PAN Card, and Mobile Numbers.
-        </div>
-      </div>
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
         <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
           <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Total Tickets</div>
@@ -1997,7 +2323,28 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
       </div>
 
       <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 12 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={handleExportRecordsToExcel}
+            style={{
+              border: "1px solid rgba(37,99,235,0.30)",
+              borderRadius: 10,
+              background: "rgba(37,99,235,0.10)",
+              color: "#1d4ed8",
+              fontFamily: APP_BRAND_STACK,
+              fontSize: "0.58rem",
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              padding: "9px 12px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Export All To Excel
+          </button>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {DATABASE_SECTION_CONFIG.map((section) => {
             const count = records.filter((record) => record.sectionId === section.id).length;
             const active = section.id === activeSectionId;
@@ -2025,6 +2372,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               </button>
             );
           })}
+          </div>
         </div>
       </div>
 
@@ -2033,6 +2381,106 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>
             {sectionConfig.label} Details
           </div>
+          {ocrEnabledForSection && (
+            <div style={{ border: "1px solid rgba(37,99,235,0.22)", borderRadius: 10, background: "rgba(37,99,235,0.06)", padding: 10, display: "grid", gap: 8 }}>
+              <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#1d4ed8", fontFamily: APP_BRAND_STACK }}>
+                Auto Extract From Document
+              </div>
+              <div
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (!ocrBusy) setOcrDropActive(true);
+                }}
+                onDragLeave={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setOcrDropActive(false);
+                }}
+                onDrop={handleOcrDrop}
+                style={{
+                  border: ocrDropActive ? "1px solid rgba(37,99,235,0.54)" : "1px dashed rgba(37,99,235,0.34)",
+                  borderRadius: 9,
+                  background: ocrDropActive ? "rgba(37,99,235,0.12)" : "rgba(255,255,255,0.86)",
+                  padding: "10px 11px",
+                  color: "rgba(15,23,42,0.65)",
+                  fontSize: "0.80rem",
+                  fontFamily: APP_FONT_STACK,
+                  lineHeight: 1.5,
+                }}
+              >
+                Drop Aadhaar/PAN/Passport image here, or choose a file and extract.
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => ocrFileInputRef.current?.click()}
+                  style={{
+                    border: "1px solid rgba(15,23,42,0.18)",
+                    borderRadius: 9,
+                    background: "rgba(255,255,255,0.92)",
+                    color: "rgba(15,23,42,0.76)",
+                    fontFamily: APP_BRAND_STACK,
+                    fontWeight: 700,
+                    fontSize: "0.56rem",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    padding: "9px 11px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Choose File
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRunOcrExtraction}
+                  disabled={ocrBusy || !ocrFile}
+                  style={{
+                    border: "1px solid rgba(37,99,235,0.42)",
+                    borderRadius: 9,
+                    background: ocrBusy || !ocrFile ? "rgba(37,99,235,0.06)" : "rgba(37,99,235,0.13)",
+                    color: ocrBusy || !ocrFile ? "rgba(37,99,235,0.50)" : "#1e40af",
+                    fontFamily: APP_BRAND_STACK,
+                    fontWeight: 700,
+                    fontSize: "0.56rem",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    padding: "9px 11px",
+                    cursor: ocrBusy || !ocrFile ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {ocrBusy ? "Reading..." : "Extract & Create Entry"}
+                </button>
+              </div>
+              {ocrFile && (
+                <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.64)", fontFamily: APP_FONT_STACK }}>
+                  Selected: {ocrFile.name}
+                </div>
+              )}
+              {ocrBusy && (
+                <div style={{ fontSize: "0.76rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
+                  OCR in progress... {Math.min(100, Math.max(0, ocrProgress))}%
+                </div>
+              )}
+              {ocrStatus && (
+                <div style={{ fontSize: "0.76rem", color: "#166534", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                  {ocrStatus}
+                </div>
+              )}
+              {ocrError && (
+                <div style={{ fontSize: "0.76rem", color: "#b91c1c", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                  {ocrError}
+                </div>
+              )}
+              <input
+                ref={ocrFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/bmp,image/tiff"
+                onChange={handleOcrInputChange}
+                style={{ display: "none" }}
+              />
+            </div>
+          )}
           {sectionConfig.fields.map((field) => (
             <label key={field.key} style={{ display: "grid", gap: 5 }}>
               <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontWeight: 600 }}>{field.label}</span>
@@ -2061,6 +2509,15 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               {formError}
             </div>
           )}
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 2, fontFamily: APP_FONT_STACK, fontSize: "0.80rem", color: "rgba(15,23,42,0.70)", fontWeight: 600, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={isActiveClient}
+              onChange={(event) => setIsActiveClient(event.target.checked)}
+              style={{ width: 15, height: 15 }}
+            />
+            Active Client
+          </label>
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="submit"
@@ -2176,6 +2633,12 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                     </div>
                   </div>
                   <div style={{ display: "grid", gap: 5 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 8 }}>
+                      <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.52)", fontWeight: 600 }}>Active Client</span>
+                      <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: record.isActiveClient ? "#166534" : "rgba(15,23,42,0.72)", fontWeight: 600 }}>
+                        {record.isActiveClient ? "Yes" : "No"}
+                      </span>
+                    </div>
                     {sectionConfig.fields.map((field) => (
                       <div key={`${record.id}_${field.key}`} style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 8 }}>
                         <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.52)", fontWeight: 600 }}>{field.label}</span>
