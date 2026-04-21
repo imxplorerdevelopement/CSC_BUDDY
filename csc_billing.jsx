@@ -412,7 +412,14 @@ function normalizeService(service) {
   const quantityMode = QUANTITY_MODE_CONFIG[service?.quantityMode] ? service.quantityMode : getDefaultQuantityModeForService(service);
   const quantityModeConfig = getQuantityModeConfig(quantityMode);
   const parsedMaxQty = Number(service?.maxQty);
-  const rateCard = normalizeRateCard(service?.rateCard, service?.price);
+  const parsedPrice = Number(service?.price);
+  const hasExplicitPrice = Number.isFinite(parsedPrice);
+  const normalizedPrice = hasExplicitPrice ? toMoney(Math.max(0, parsedPrice)) : null;
+  const normalizedRateCard = normalizeRateCard(service?.rateCard, normalizedPrice ?? 0);
+  const rateCard = {
+    ...normalizedRateCard,
+    baseRate: normalizedPrice ?? normalizedRateCard.baseRate,
+  };
   return {
     ...service,
     price: rateCard.baseRate,
