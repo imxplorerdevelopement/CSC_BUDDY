@@ -307,6 +307,7 @@ const DATABASE_SECTION_CONFIG = [
     fields: [
       { key: "name", label: "Name", type: "text" },
       { key: "fatherName", label: "Father's Name", type: "text" },
+      { key: "dateOfBirth", label: "Date of Birth", type: "text" },
       { key: "panNumber", label: "PAN Number", type: "text" },
     ],
   },
@@ -1648,7 +1649,13 @@ function QuickLinksWorkspace({
           </button>
         </div>
         {showAddQuickLink && (
-          <div style={{ marginTop: 12, display: "grid", gap: 9, gridTemplateColumns: "1fr 1fr auto" }}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSaveQuickLink();
+            }}
+            style={{ marginTop: 12, display: "grid", gap: 9, gridTemplateColumns: "1fr 1fr auto" }}
+          >
             <input
               value={quickLinkName}
               onChange={(e) => setQuickLinkName(e.target.value)}
@@ -1662,7 +1669,7 @@ function QuickLinksWorkspace({
               style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.14)", background: "rgba(255,255,255,0.92)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
             />
             <button
-              onClick={onSaveQuickLink}
+              type="submit"
               style={{
                 border: "1px solid rgba(22,163,74,0.34)",
                 borderRadius: 10,
@@ -1679,7 +1686,7 @@ function QuickLinksWorkspace({
             >
               Save
             </button>
-          </div>
+          </form>
         )}
         {quickLinkError && <div style={{ marginTop: 8, fontSize: "0.78rem", color: "#b91c1c", fontWeight: 600, fontFamily: APP_FONT_STACK }}>{quickLinkError}</div>}
       </div>
@@ -1916,11 +1923,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
   };
 
   const handleSaveRecord = () => {
-    const missingField = sectionConfig.fields.find((field) => !String(formValues[field.key] || "").trim());
-    if (missingField) {
-      setFormError(`${missingField.label} is required.`);
-      return;
-    }
+    setFormError("");
     const existingRecord = editingRecordId
       ? activeSectionRecords.find((record) => record.id === editingRecordId)
       : null;
@@ -1933,6 +1936,10 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
     }, activeSectionRecords.length);
     onUpsertRecord?.(nextRecord);
     resetForm(activeSectionId);
+  };
+  const handleFormSubmit = (event) => {
+    event.preventDefault();
+    handleSaveRecord();
   };
 
   const handleEditRecord = (record) => {
@@ -2022,7 +2029,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
       </div>
 
       <div style={{ display: "grid", gap: 12, gridTemplateColumns: "minmax(280px, 420px) minmax(420px, 1fr)" }}>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 14, display: "grid", gap: 10, alignContent: "start" }}>
+        <form onSubmit={handleFormSubmit} style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 14, display: "grid", gap: 10, alignContent: "start" }}>
           <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>
             {sectionConfig.label} Details
           </div>
@@ -2056,7 +2063,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           )}
           <div style={{ display: "flex", gap: 8 }}>
             <button
-              onClick={handleSaveRecord}
+              type="submit"
               style={{
                 border: "1px solid rgba(22,163,74,0.34)",
                 borderRadius: 9,
@@ -2074,6 +2081,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               {editingRecordId ? "Update Entry" : "Save Entry"}
             </button>
             <button
+              type="button"
               onClick={() => resetForm(activeSectionId)}
               style={{
                 border: "1px solid rgba(15,23,42,0.18)",
@@ -2092,7 +2100,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               Clear
             </button>
           </div>
-        </div>
+        </form>
 
         <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 14, display: "grid", gap: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -6130,6 +6138,10 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
     setEntryNote("");
     setServiceName(serviceSuggestions[0] || "");
   };
+  const handleB2BFormSubmit = (event) => {
+    event.preventDefault();
+    handleAddEntry();
+  };
 
   const handleDeleteEntry = (entry) => {
     if (!entry?.id || typeof onDeleteLedgerEntry !== "function") return;
@@ -6271,7 +6283,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
         </div>
       </div>
 
-      <div style={{ background: "rgba(255,255,255,0.72)", borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", padding: 14 }}>
+      <form onSubmit={handleB2BFormSubmit} style={{ background: "rgba(255,255,255,0.72)", borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", padding: 14 }}>
         <div style={{ fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
           Add B2B Entry
         </div>
@@ -6354,11 +6366,11 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-          <button onClick={handleAddEntry} style={{ border: "1px solid rgba(37,99,235,0.40)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: "#1e40af", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
+          <button type="submit" style={{ border: "1px solid rgba(37,99,235,0.40)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: "#1e40af", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
             Add B2B Entry
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
@@ -6847,6 +6859,10 @@ function WalkInModal({ onClose, onStart }) {
     if (cleanPhone && !/^[0-9]{10}$/.test(cleanPhone)) { setError("Phone must be exactly 10 digits."); return; }
     onStart({ name: trimName, phone: cleanPhone, operator });
   };
+  const handleStartSubmit = (event) => {
+    event.preventDefault();
+    handleStart();
+  };
 
   const inputSt = {
     width: "100%", padding: "11px 14px", borderRadius: 10,
@@ -6873,37 +6889,39 @@ function WalkInModal({ onClose, onStart }) {
           Enter the customer name and start the ticket immediately  -  no WhatsApp needed.
         </div>
 
-        <div style={{ display: "grid", gap: 14, marginBottom: 18 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: DS.wine }}>Customer Name *</span>
-            <input autoFocus placeholder="e.g. Rahul Sharma" value={name} onChange={(e) => { setName(e.target.value); setError(""); }} style={inputSt} />
-          </label>
-          <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)" }}>Phone (optional)</span>
-            <input type="tel" placeholder="10-digit mobile" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }} style={inputSt} />
-          </label>
-          <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)" }}>Operator</span>
-            <select value={operator} onChange={(e) => setOperator(e.target.value)} style={inputSt}>
-              {OPERATORS.map((op) => <option key={op} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
-            </select>
-          </label>
-        </div>
-
-        {error && (
-          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#1d4ed8", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
-            {error}
+        <form onSubmit={handleStartSubmit}>
+          <div style={{ display: "grid", gap: 14, marginBottom: 18 }}>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: DS.wine }}>Customer Name *</span>
+              <input autoFocus placeholder="e.g. Rahul Sharma" value={name} onChange={(e) => { setName(e.target.value); setError(""); }} style={inputSt} />
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)" }}>Phone (optional)</span>
+              <input type="tel" placeholder="10-digit mobile" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }} style={inputSt} />
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: "0.52rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)" }}>Operator</span>
+              <select value={operator} onChange={(e) => setOperator(e.target.value)} style={inputSt}>
+                {OPERATORS.map((op) => <option key={op} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
+              </select>
+            </label>
           </div>
-        )}
 
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ border: "1px solid rgba(15,23,42,0.14)", borderRadius: 999, padding: "11px 20px", background: "rgba(255,255,255,0.72)", color: "rgba(15,23,42,0.70)", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
-            Cancel
-          </button>
-          <button onClick={handleStart} style={{ border: "1px solid rgba(37,99,235,0.48)", borderRadius: 999, padding: "11px 24px", background: "rgba(37,99,235,0.13)", color: "#1e40af", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
-            Start Ticket &rarr;
-          </button>
-        </div>
+          {error && (
+            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#1d4ed8", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <button type="button" onClick={onClose} style={{ border: "1px solid rgba(15,23,42,0.14)", borderRadius: 999, padding: "11px 20px", background: "rgba(255,255,255,0.72)", color: "rgba(15,23,42,0.70)", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
+              Cancel
+            </button>
+            <button type="submit" style={{ border: "1px solid rgba(37,99,235,0.48)", borderRadius: 999, padding: "11px 24px", background: "rgba(37,99,235,0.13)", color: "#1e40af", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
+              Start Ticket &rarr;
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
