@@ -4578,6 +4578,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const sanitizePhone = (value) => value.replace(/\D/g, "").slice(0, 10);
   const hasOnlyZeroPricedItems = items.length > 0 && total === 0;
   const canSaveTicket = items.length > 0 && !isOverpaid && !hasOnlyZeroPricedItems;
+  const ENTRY_ACCENT = "#5b7ea5";
+  const ENTRY_ACCENT_TEXT = "#3f6086";
+  const ENTRY_ACCENT_SOFT = "rgba(91,126,165,0.12)";
+  const ENTRY_ACCENT_SOFTER = "rgba(91,126,165,0.08)";
+  const ENTRY_ACCENT_BORDER = "rgba(91,126,165,0.32)";
   const ticketReferenceSummary = ticketMeta
     ? formatReferenceSummary({
       hasReference: getHasReferenceValue(ticketMeta),
@@ -4586,23 +4591,22 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     })
     : "No reference added";
   const surfaceCardStyle = {
-    background: "rgba(255,255,255,0.72)",
+    background: "#ffffff",
     borderRadius: 20,
-    border: "1px solid rgba(15,23,42,0.10)",
-    padding: 22,
-    boxShadow: "0 20px 52px rgba(15,23,42,0.10)",
-    backdropFilter: "blur(4px)",
+    border: "1px solid rgba(15,23,42,0.09)",
+    padding: 24,
+    boxShadow: "0 12px 34px rgba(15,23,42,0.07)",
   };
   const softPanelStyle = {
-    background: "rgba(255,255,255,0.52)",
+    background: "#f7f9fc",
     borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.07)",
+    border: "1px solid rgba(15,23,42,0.08)",
     padding: 18,
-    boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
+    boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
   };
   const sectionEyebrowStyle = {
     fontSize: "0.58rem",
-    color: DS.wine,
+    color: ENTRY_ACCENT_TEXT,
     fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
     textTransform: "uppercase",
@@ -4613,21 +4617,21 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const inputStyle = {
     width: "100%",
     padding: "11px 14px",
-    border: "1px solid rgba(15,23,42,0.12)",
+    border: "1px solid rgba(15,23,42,0.14)",
     borderRadius: 10,
-    background: "rgba(255,255,255,0.82)",
+    background: "#ffffff",
     color: "#0f172a",
     outline: "none",
     fontFamily: APP_FONT_STACK,
     fontSize: "0.88rem",
-    boxShadow: "inset 0 1px 2px rgba(15,23,42,0.04)",
+    boxShadow: "inset 0 1px 2px rgba(15,23,42,0.03)",
   };
   const primaryButtonStyle = {
-    border: "1px solid rgba(37,99,235,0.50)",
+    border: `1px solid ${ENTRY_ACCENT_BORDER}`,
     borderRadius: 999,
     padding: "12px 22px",
-    background: "rgba(37,99,235,0.14)",
-    color: "#1e40af",
+    background: ENTRY_ACCENT_SOFT,
+    color: ENTRY_ACCENT_TEXT,
     fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
     fontSize: "0.6rem",
@@ -4670,9 +4674,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         ? "Local save failed"
         : "Draft idle";
   const draftStatusAccent = draftStorageState === "error"
-    ? "#1d4ed8"
+    ? "#8f2e3d"
     : draftStorageState === "saving"
-      ? "#1d4ed8"
+      ? ENTRY_ACCENT_TEXT
       : "rgba(15,23,42,0.55)";
   const closeConfirmDialog = () => {
     setConfirmDialog({
@@ -5259,7 +5263,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             <div style={{ marginBottom: 28 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div style={sectionEyebrowStyle}>Intake  -  Step {subStep} of {totalSubSteps}</div>
-                <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.30)", color: draftStatusAccent }}>
+                <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: draftStatusAccent }}>
                   {draftStatusLabel}{draftSavedAt ? `  |  ${formatSyncTime(draftSavedAt)}` : ""}
                 </div>
               </div>
@@ -5277,18 +5281,18 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                           padding: "7px 13px", borderRadius: 999,
                           border: hasError && !active ? "1px solid rgba(214,5,43,0.32)" : "none",
                           background: active
-                            ? DS.wine
+                            ? ENTRY_ACCENT
                             : hasError
                               ? "rgba(214,5,43,0.09)"
                               : done
-                                ? "rgba(37,99,235,0.12)"
+                                ? ENTRY_ACCENT_SOFT
                                 : "rgba(15,23,42,0.06)",
                           color: active
                             ? "#fff"
                             : hasError
-                              ? "#1d4ed8"
+                              ? "#8f2e3d"
                               : done
-                                ? DS.wine
+                                ? ENTRY_ACCENT_TEXT
                                 : "rgba(15,23,42,0.45)",
                           fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem",
                           letterSpacing: "0.18em", textTransform: "uppercase",
@@ -5304,12 +5308,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             : hasError
                               ? "rgba(214,5,43,0.16)"
                               : done
-                                ? DS.wine
+                                ? ENTRY_ACCENT
                                 : "rgba(15,23,42,0.10)",
                           color: active
                             ? "#fff"
                             : hasError
-                              ? "#1d4ed8"
+                              ? "#8f2e3d"
                               : done
                                 ? "#fff"
                                 : "rgba(15,23,42,0.40)",
@@ -5322,7 +5326,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         {ws.label}
                       </button>
                       {i < WIZARD_STEPS.length - 1 && (
-                        <div style={{ flex: 1, height: 1, background: done ? "rgba(37,99,235,0.25)" : "rgba(15,23,42,0.08)", borderRadius: 1, minWidth: 8 }} />
+                        <div style={{ flex: 1, height: 1, background: done ? ENTRY_ACCENT_BORDER : "rgba(15,23,42,0.08)", borderRadius: 1, minWidth: 8 }} />
                       )}
                     </React.Fragment>
                   );
@@ -5330,7 +5334,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               </div>
               {/* thin progress bar */}
               <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(15,23,42,0.07)", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${((subStep - 1) / (totalSubSteps - 1)) * 100}%`, background: `linear-gradient(90deg, ${DS.wine}, rgba(59,130,246,0.80))`, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
+                <div style={{ height: "100%", width: `${((subStep - 1) / (totalSubSteps - 1)) * 100}%`, background: ENTRY_ACCENT, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
               </div>
             </div>
 
@@ -5367,7 +5371,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       }}
                     />
                     {intakeFieldErrors.customerName && (
-                      <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
+                      <span style={{ fontSize: "0.78rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>
                         {intakeFieldErrors.customerName}
                       </span>
                     )}
@@ -5393,7 +5397,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       }}
                     />
                     {intakeFieldErrors.customerPhone && (
-                      <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
+                      <span style={{ fontSize: "0.78rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>
                         {intakeFieldErrors.customerPhone}
                       </span>
                     )}
@@ -5420,7 +5424,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       }}
                     />
                     {intakeFieldErrors.entryDateKey && (
-                      <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
+                      <span style={{ fontSize: "0.78rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>
                         {intakeFieldErrors.entryDateKey}
                       </span>
                     )}
@@ -5436,9 +5440,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       alignItems: "center",
                       gap: 10,
                       cursor: "pointer",
-                      border: hasReference ? "1px solid rgba(37,99,235,0.38)" : inputStyle.border,
-                      boxShadow: hasReference ? "0 0 0 2px rgba(37,99,235,0.08)" : inputStyle.boxShadow,
-                      background: hasReference ? "rgba(37,99,235,0.08)" : inputStyle.background,
+                      border: hasReference ? `1px solid ${ENTRY_ACCENT_BORDER}` : inputStyle.border,
+                      boxShadow: hasReference ? `0 0 0 2px ${ENTRY_ACCENT_SOFTER}` : inputStyle.boxShadow,
+                      background: hasReference ? ENTRY_ACCENT_SOFTER : inputStyle.background,
                     }}>
                       <input
                         type="checkbox"
@@ -5482,7 +5486,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                           }}
                         />
                         {intakeFieldErrors.referenceName && (
-                          <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
+                          <span style={{ fontSize: "0.78rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>
                             {intakeFieldErrors.referenceName}
                           </span>
                         )}
@@ -5508,7 +5512,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                           }}
                         />
                         {intakeFieldErrors.referencePhone && (
-                          <span style={{ fontSize: "0.78rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
+                          <span style={{ fontSize: "0.78rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>
                             {intakeFieldErrors.referencePhone}
                           </span>
                         )}
@@ -5531,7 +5535,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     </div>
                   </div>
                   {providedDocIds.length > 0 && (
-                    <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.30)", color: "#1d4ed8" }}>
+                    <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
                       {providedDocIds.length} selected
                     </div>
                   )}
@@ -5546,18 +5550,18 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         style={{
                           display: "flex", alignItems: "center", gap: 10,
                           padding: "13px 14px", borderRadius: 12,
-                          border: checked ? "1.5px solid rgba(59,130,246,0.50)" : "1px solid rgba(15,23,42,0.10)",
-                          background: checked ? "linear-gradient(135deg, rgba(59,130,246,0.13) 0%, rgba(59,130,246,0.06) 100%)" : "rgba(255,255,255,0.72)",
-                          color: checked ? "#1d4ed8" : "#0f172a",
+                          border: checked ? `1.5px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.10)",
+                          background: checked ? ENTRY_ACCENT_SOFTER : "rgba(255,255,255,0.72)",
+                          color: checked ? ENTRY_ACCENT_TEXT : "#0f172a",
                           cursor: "pointer", fontSize: "0.86rem", fontFamily: APP_FONT_STACK, fontWeight: 600,
                           transition: "all 0.18s ease", textAlign: "left",
-                          boxShadow: checked ? "0 6px 18px rgba(59,130,246,0.14)" : "0 3px 10px rgba(15,23,42,0.04)",
+                          boxShadow: checked ? "0 6px 14px rgba(15,23,42,0.08)" : "0 3px 10px rgba(15,23,42,0.04)",
                         }}
                       >
                         <span style={{
                           width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                          background: checked ? "rgba(59,130,246,0.22)" : "rgba(15,23,42,0.07)",
-                          color: checked ? "#1d4ed8" : "rgba(15,23,42,0.35)", fontSize: "0.72rem",
+                          background: checked ? ENTRY_ACCENT_SOFT : "rgba(15,23,42,0.07)",
+                          color: checked ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.35)", fontSize: "0.72rem",
                         }}>
                           {checked ? "v" : ""}
                         </span>
@@ -5599,26 +5603,26 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         onClick={() => setOperator(op.name)}
                         style={{
                           textAlign: "left", padding: "18px 16px", borderRadius: 16,
-                          border: active ? "1.5px solid rgba(37,99,235,0.45)" : "1px solid rgba(15,23,42,0.10)",
-                          background: active ? "linear-gradient(135deg, rgba(37,99,235,0.09) 0%, rgba(37,99,235,0.04) 100%)" : "rgba(255,255,255,0.72)",
+                          border: active ? `1.5px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.10)",
+                          background: active ? ENTRY_ACCENT_SOFTER : "rgba(255,255,255,0.72)",
                           cursor: "pointer", fontFamily: APP_FONT_STACK,
                           transition: "all 0.22s ease",
-                          boxShadow: active ? "0 10px 28px rgba(37,99,235,0.12)" : "0 4px 14px rgba(15,23,42,0.05)",
+                          boxShadow: active ? "0 10px 24px rgba(15,23,42,0.10)" : "0 4px 14px rgba(15,23,42,0.05)",
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
                           <div>
-                            <div style={{ fontSize: "1rem", fontWeight: 700, color: active ? DS.wine : "#0f172a", marginBottom: 3 }}>{op.name}</div>
+                            <div style={{ fontSize: "1rem", fontWeight: 700, color: active ? ENTRY_ACCENT_TEXT : "#0f172a", marginBottom: 3 }}>{op.name}</div>
                             <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)" }}>{op.role}  |  {op.desk}</div>
                           </div>
-                          <div style={{ ...smallBadgeStyle, padding: "4px 9px", background: active ? "rgba(37,99,235,0.10)" : "rgba(15,23,42,0.04)", border: active ? "1px solid rgba(37,99,235,0.25)" : "1px solid rgba(15,23,42,0.08)", color: active ? DS.wine : "rgba(15,23,42,0.50)" }}>
+                          <div style={{ ...smallBadgeStyle, padding: "4px 9px", background: active ? ENTRY_ACCENT_SOFTER : "rgba(15,23,42,0.04)", border: active ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.08)", color: active ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.50)" }}>
                             {op.status}
                           </div>
                         </div>
                         <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.58)", lineHeight: 1.55, marginBottom: 10 }}>{op.focus}</div>
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
                           {op.specialties.map((specialty) => (
-                            <span key={`${op.id}_${specialty}`} style={{ fontSize: "0.64rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: active ? DS.wine : "rgba(15,23,42,0.50)", background: active ? "rgba(37,99,235,0.08)" : "rgba(15,23,42,0.04)", borderRadius: 999, padding: "4px 8px" }}>
+                            <span key={`${op.id}_${specialty}`} style={{ fontSize: "0.64rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: active ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.50)", background: active ? ENTRY_ACCENT_SOFTER : "rgba(15,23,42,0.04)", borderRadius: 999, padding: "4px 8px" }}>
                               {specialty}
                             </span>
                           ))}
@@ -5637,7 +5641,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
             {/* Error */}
             {error && (
-              <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#1d4ed8", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+              <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f2e3d", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
                 {error}
               </div>
             )}
@@ -5709,7 +5713,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   {items.length > 0 && (
-                    <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.30)", color: "#1d4ed8" }}>
+                    <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
                       Rs. {total}
                     </div>
                   )}
@@ -5744,18 +5748,18 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             padding: "7px 13px", borderRadius: 999,
                             border: hasError && !active ? "1px solid rgba(214,5,43,0.32)" : "none",
                             background: active
-                              ? DS.wine
+                              ? ENTRY_ACCENT
                               : hasError
                                 ? "rgba(214,5,43,0.09)"
                                 : done
-                                  ? "rgba(37,99,235,0.12)"
+                                  ? ENTRY_ACCENT_SOFT
                                   : "rgba(15,23,42,0.06)",
                             color: active
                               ? "#fff"
                               : hasError
-                                ? "#1d4ed8"
+                                ? "#8f2e3d"
                                 : done
-                                  ? DS.wine
+                                  ? ENTRY_ACCENT_TEXT
                                   : "rgba(15,23,42,0.40)",
                             fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem",
                             letterSpacing: "0.18em", textTransform: "uppercase",
@@ -5771,12 +5775,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               : hasError
                                 ? "rgba(214,5,43,0.16)"
                                 : done
-                                  ? DS.wine
+                                  ? ENTRY_ACCENT
                                   : "rgba(15,23,42,0.10)",
                             color: active
                               ? "#fff"
                               : hasError
-                                ? "#1d4ed8"
+                                ? "#8f2e3d"
                                 : done
                                   ? "#fff"
                                   : "rgba(15,23,42,0.40)",
@@ -5788,14 +5792,14 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                           {ws.label}
                         </button>
                         {i < T2_STEPS.length - 1 && (
-                          <div style={{ flex: 1, height: 1, background: done ? "rgba(37,99,235,0.25)" : "rgba(15,23,42,0.08)", borderRadius: 1, minWidth: 8 }} />
+                          <div style={{ flex: 1, height: 1, background: done ? ENTRY_ACCENT_BORDER : "rgba(15,23,42,0.08)", borderRadius: 1, minWidth: 8 }} />
                         )}
                       </React.Fragment>
                     );
                   })}
                 </div>
                 <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(15,23,42,0.07)", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${((subStep - 1) / (t2Total - 1)) * 100}%`, background: `linear-gradient(90deg, ${DS.wine}, rgba(59,130,246,0.80))`, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
+                  <div style={{ height: "100%", width: `${((subStep - 1) / (t2Total - 1)) * 100}%`, background: ENTRY_ACCENT, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
                 </div>
               </div>
 
@@ -5891,7 +5895,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               />
                             )}
                             {selectedServiceDetailErrors[field.key] && (
-                              <span style={{ fontSize: "0.76rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>{selectedServiceDetailErrors[field.key]}</span>
+                              <span style={{ fontSize: "0.76rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>{selectedServiceDetailErrors[field.key]}</span>
                             )}
                           </label>
                         ))}
@@ -5935,7 +5939,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                     <div style={sectionEyebrowStyle}>Added Services</div>
                     {items.length > 0 && (
-                      <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.28)", color: "#1d4ed8" }}>
+                      <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
                         Rs. {total}
                       </div>
                     )}
@@ -5957,8 +5961,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.48)", lineHeight: 1.5, marginTop: 3 }}>{it.detailSummary}</div>
                             )}
                           </div>
-                          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1d4ed8", whiteSpace: "nowrap" }}>Rs. {it.amount}</div>
-                          <button onClick={() => removeTask(i)} style={{ width: 30, height: 30, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#1d4ed8", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: ENTRY_ACCENT_TEXT, whiteSpace: "nowrap" }}>Rs. {it.amount}</div>
+                          <button onClick={() => removeTask(i)} style={{ width: 30, height: 30, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
                             x
                           </button>
                         </div>
@@ -5997,7 +6001,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             <div style={{ fontSize: "0.92rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
                               {group.serviceName}
                             </div>
-                            <div style={{ ...smallBadgeStyle, background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.24)", color: "#1d4ed8" }}>
+                            <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
                               {group.docs.filter((doc) => doc.submitted).length}/{group.docs.length} intaked
                             </div>
                           </div>
@@ -6091,13 +6095,13 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
                         <span>Docs submitted</span><span style={{ color: "#0f172a", fontWeight: 700 }}>{submittedRequiredDocsCount}/{requiredDocsCount}</span>
                       </div>
-                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.05rem", fontFamily: APP_FONT_STACK, color: pendingBalance > 0 ? "#1d4ed8" : DS.wine }}>
+                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.05rem", fontFamily: APP_FONT_STACK, color: pendingBalance > 0 ? ENTRY_ACCENT_TEXT : ENTRY_ACCENT_TEXT }}>
                         <span>Pending Balance</span><span>Rs. {pendingBalance}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ marginBottom: 18, padding: "12px 14px", borderRadius: 10, background: isOverpaid ? "rgba(214,5,43,0.07)" : pendingBalance > 0 ? "rgba(59,130,246,0.10)" : "rgba(37,99,235,0.07)", border: isOverpaid ? "1px solid rgba(214,5,43,0.22)" : pendingBalance > 0 ? "1px solid rgba(59,130,246,0.26)" : "1px solid rgba(37,99,235,0.22)", color: isOverpaid ? "#1d4ed8" : pendingBalance > 0 ? "#1d4ed8" : DS.wine, fontSize: "0.83rem", lineHeight: 1.6, fontFamily: APP_FONT_STACK, fontWeight: 500 }}>
+                  <div style={{ marginBottom: 18, padding: "12px 14px", borderRadius: 10, background: isOverpaid ? "rgba(214,5,43,0.07)" : ENTRY_ACCENT_SOFTER, border: isOverpaid ? "1px solid rgba(214,5,43,0.22)" : `1px solid ${ENTRY_ACCENT_BORDER}`, color: isOverpaid ? "#8f2e3d" : ENTRY_ACCENT_TEXT, fontSize: "0.83rem", lineHeight: 1.6, fontFamily: APP_FONT_STACK, fontWeight: 500 }}>
                     {hasOnlyZeroPricedItems
                       ? "All services are still Rs. 0. Update the rate card or enter a custom amount before saving."
                       : isOverpaid
@@ -6110,13 +6114,13 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     <button
                       onClick={() => saveTicket("Open")}
-                      style={{ ...secondaryButtonStyle, background: canSaveTicket ? "rgba(59,130,246,0.12)" : "rgba(15,23,42,0.04)", border: canSaveTicket ? "1px solid rgba(59,130,246,0.34)" : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? "#1d4ed8" : "rgba(15,23,42,0.45)", cursor: "pointer" }}
+                      style={{ ...secondaryButtonStyle, background: canSaveTicket ? ENTRY_ACCENT_SOFTER : "rgba(15,23,42,0.04)", border: canSaveTicket ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.45)", cursor: "pointer" }}
                     >
                       Save for Later
                     </button>
                     <button
                       onClick={() => saveTicket("Closed")}
-                      style={{ ...primaryButtonStyle, padding: "13px 22px", background: canSaveTicket ? "rgba(37,99,235,0.14)" : "rgba(15,23,42,0.04)", border: canSaveTicket ? "1px solid rgba(37,99,235,0.42)" : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? DS.wine : "rgba(15,23,42,0.45)", cursor: "pointer" }}
+                      style={{ ...primaryButtonStyle, padding: "13px 22px", background: canSaveTicket ? ENTRY_ACCENT_SOFT : "rgba(15,23,42,0.04)", border: canSaveTicket ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.45)", cursor: "pointer" }}
                     >
                       Save & Complete
                     </button>
@@ -6125,7 +6129,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               )}
 
               {undoAction && (
-                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(59,130,246,0.11)", border: "1px solid rgba(59,130,246,0.30)", color: "#1d4ed8", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT, fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <span>{undoAction.message}</span>
                   <button
                     onClick={() => {
@@ -6136,7 +6140,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       }
                       setUndoAction(null);
                     }}
-                    style={{ border: "1px solid rgba(59,130,246,0.45)", borderRadius: 999, padding: "7px 12px", background: "rgba(255,255,255,0.74)", color: "#1d4ed8", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer" }}
+                    style={{ border: `1px solid ${ENTRY_ACCENT_BORDER}`, borderRadius: 999, padding: "7px 12px", background: "rgba(255,255,255,0.78)", color: ENTRY_ACCENT_TEXT, fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer" }}
                   >
                     Undo
                   </button>
@@ -6145,7 +6149,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
               {/* Error */}
               {error && (
-                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#1d4ed8", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f2e3d", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
                   {error}
                 </div>
               )}
@@ -9012,7 +9016,7 @@ export default function CSCBilling() {
           position: "relative",
         }}>
           {/* Subtle grid texture */}
-          <div style={{ display: isHomeTab ? "none" : "block", position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.18, backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px)", backgroundSize: "72px 72px" }} />
+          <div style={{ display: isHomeTab || tab === "entry" ? "none" : "block", position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.18, backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px)", backgroundSize: "72px 72px" }} />
 
           {!isHomeTab && (
           <>
@@ -9184,43 +9188,45 @@ export default function CSCBilling() {
           <div style={{
             padding: "28px 32px 22px",
             borderBottom: `1px solid rgba(15,23,42,0.09)`,
-            backgroundImage: `radial-gradient(circle at 8% 8%, rgba(59,130,246,0.20), transparent 32%), radial-gradient(circle at 90% 90%, rgba(37,99,235,0.10), transparent 30%)`,
+            background: tab === "entry" ? "#f4f6f9" : "#f8fafc",
             position: "relative",
             zIndex: 1,
           }}>
-            <div style={{
-              fontSize: "0.58rem",
-              fontWeight: 700,
-              letterSpacing: "0.32em",
-              textTransform: "uppercase",
-              color: DS.wine,
-              fontFamily: APP_BRAND_STACK,
-              marginBottom: 10,
-            }}>
-              CSC Centre Workspace
+            <div style={{ width: "100%", maxWidth: 1240, margin: "0 auto" }}>
+              <div style={{
+                fontSize: "0.58rem",
+                fontWeight: 700,
+                letterSpacing: "0.32em",
+                textTransform: "uppercase",
+                color: tab === "entry" ? "#4c6f96" : DS.wine,
+                fontFamily: APP_BRAND_STACK,
+                marginBottom: 10,
+              }}>
+                CSC Centre Workspace
+              </div>
+              <h1 style={{
+                margin: 0,
+                fontFamily: APP_FONT_STACK,
+                fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)",
+                fontWeight: 800,
+                lineHeight: 1.0,
+                letterSpacing: "-0.03em",
+                color: "#0f172a",
+              }}>
+                {activeTabConfig.label}
+              </h1>
+              <p style={{
+                margin: "10px 0 0",
+                fontSize: "0.86rem",
+                lineHeight: 1.72,
+                color: "rgba(15,23,42,0.60)",
+                maxWidth: 520,
+                fontFamily: APP_FONT_STACK,
+                fontWeight: 400,
+              }}>
+                {activeTabConfig.description}
+              </p>
             </div>
-            <h1 style={{
-              margin: 0,
-              fontFamily: APP_FONT_STACK,
-              fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)",
-              fontWeight: 800,
-              lineHeight: 1.0,
-              letterSpacing: "-0.03em",
-              color: "#0f172a",
-            }}>
-              {activeTabConfig.label}
-            </h1>
-            <p style={{
-              margin: "10px 0 0",
-              fontSize: "0.86rem",
-              lineHeight: 1.72,
-              color: "rgba(15,23,42,0.60)",
-              maxWidth: 520,
-              fontFamily: APP_FONT_STACK,
-              fontWeight: 400,
-            }}>
-              {activeTabConfig.description}
-            </p>
           </div>
           </>
           )}
@@ -9239,7 +9245,9 @@ export default function CSCBilling() {
               />
             )}
             <TabPanel active={tab === "entry"}>
-              <TicketWorkspace key={entryWorkspaceKey} services={services} tickets={tickets} onSaveTicket={saveTicket} onNavigateTab={navigateTab} isActive={tab === "entry"} />
+              <div style={{ width: "100%", maxWidth: 1240, margin: "0 auto" }}>
+                <TicketWorkspace key={entryWorkspaceKey} services={services} tickets={tickets} onSaveTicket={saveTicket} onNavigateTab={navigateTab} isActive={tab === "entry"} />
+              </div>
             </TabPanel>
             <TabPanel active={tab === "rates"}>
               <RateCard services={services} setServices={setServices} />
