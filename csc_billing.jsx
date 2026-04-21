@@ -250,6 +250,7 @@ const STORAGE_KEYS = {
   ticketDraft: "csc-buddy.ticket-draft",
   ticketCounter: "csc-buddy.ticket-counter",
   quickLinks: "csc-buddy.quick-links",
+  databaseRecords: "csc-buddy.database-records",
 };
 const TAB_CONFIG = [
   { id: "home", label: "Dashboard Home", description: "Open a workspace from a clean and simple launch screen.", shortLabel: "HM", navGroup: "home" },
@@ -278,6 +279,49 @@ const HOME_NAV_BUTTONS = [
 ];
 const CORE_WORKSPACE_TAB_IDS = ["entry", "rates", "b2b", "monthly"];
 const TOOL_WORKSPACE_TAB_IDS = ["database", "log", "quick_links", "doc_tools", "services_dashboard"];
+const DATABASE_SECTION_CONFIG = [
+  {
+    id: "aadhaar",
+    label: "Aadhaar",
+    fields: [
+      { key: "aadhaarNumber", label: "Aadhaar Number", type: "text" },
+      { key: "name", label: "Name", type: "text" },
+      { key: "address", label: "Address", type: "text" },
+      { key: "linkedMobileNumber", label: "Mobile Number Linked", type: "text" },
+    ],
+  },
+  {
+    id: "passport",
+    label: "Passport",
+    fields: [
+      { key: "name", label: "Name", type: "text" },
+      { key: "passportNumber", label: "Passport Number", type: "text" },
+      { key: "address", label: "Address", type: "text" },
+      { key: "dateOfBirth", label: "Date of Birth", type: "date" },
+    ],
+  },
+  {
+    id: "pan_card",
+    label: "PAN Card",
+    fields: [
+      { key: "name", label: "Name", type: "text" },
+      { key: "fatherName", label: "Father's Name", type: "text" },
+      { key: "panNumber", label: "PAN Number", type: "text" },
+    ],
+  },
+  {
+    id: "mobile_numbers",
+    label: "Mobile Numbers",
+    fields: [
+      { key: "name", label: "Name", type: "text" },
+      { key: "mobileNumber", label: "Mobile Number", type: "text" },
+    ],
+  },
+];
+const DATABASE_SECTION_MAP = DATABASE_SECTION_CONFIG.reduce((acc, section) => {
+  acc[section.id] = section;
+  return acc;
+}, {});
 const QUICK_LINK_DEFAULTS = [
   { id: "default_esathi", name: "e-Saathi", description: "UP state citizen services portal.", url: "https://edistrict.up.gov.in", isDefault: true },
   { id: "default_digitalseva", name: "Digital Seva Portal", description: "CSC services and transaction desk.", url: "https://digitalseva.csc.gov.in", isDefault: true },
@@ -1117,6 +1161,59 @@ function serializeB2BLedger(ledger) {
   return ledger.map((entry, idx) => normalizeB2BLedgerEntry(entry, idx));
 }
 
+function getDatabaseSection(sectionId) {
+  return DATABASE_SECTION_MAP[sectionId] || DATABASE_SECTION_CONFIG[0];
+}
+
+function createEmptyDatabaseRecordValues(sectionId) {
+  const section = getDatabaseSection(sectionId);
+  return section.fields.reduce((acc, field) => {
+    acc[field.key] = "";
+    return acc;
+  }, {});
+}
+
+function sanitizeDatabaseFieldValue(fieldKey, value) {
+  const textValue = String(value ?? "").trim();
+  if (!textValue) return "";
+  if (fieldKey === "aadhaarNumber") return textValue.replace(/\D/g, "").slice(0, 12);
+  if (fieldKey === "linkedMobileNumber" || fieldKey === "mobileNumber") return textValue.replace(/\D/g, "").slice(0, 10);
+  if (fieldKey === "panNumber") return textValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10);
+  if (fieldKey === "passportNumber") return textValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 15);
+  if (fieldKey === "name" || fieldKey === "fatherName") return textValue.replace(/\s+/g, " ").trim();
+  return textValue;
+}
+
+function normalizeDatabaseRecordEntry(entry, fallbackIndex = 0) {
+  const sectionId = DATABASE_SECTION_MAP[entry?.sectionId] ? entry.sectionId : DATABASE_SECTION_CONFIG[0].id;
+  const section = getDatabaseSection(sectionId);
+  const sourceValues = entry?.values && typeof entry.values === "object" ? entry.values : {};
+  const values = section.fields.reduce((acc, field) => {
+    acc[field.key] = sanitizeDatabaseFieldValue(field.key, sourceValues[field.key]);
+    return acc;
+  }, {});
+  const createdAt = String(entry?.createdAt || new Date().toISOString());
+  return {
+    id: String(entry?.id || `db_record_${Date.now()}_${fallbackIndex}`),
+    sectionId,
+    values,
+    createdAt,
+    updatedAt: String(entry?.updatedAt || createdAt),
+  };
+}
+
+function hydrateDatabaseRecords(storedRecords) {
+  if (!Array.isArray(storedRecords)) return [];
+  return storedRecords
+    .filter((record) => record && typeof record === "object")
+    .map((record, idx) => normalizeDatabaseRecordEntry(record, idx));
+}
+
+function serializeDatabaseRecords(records) {
+  if (!Array.isArray(records)) return [];
+  return records.map((record, idx) => normalizeDatabaseRecordEntry(record, idx));
+}
+
 function getStoredActiveTab() {
   const storedTab = readStoredJSON(STORAGE_KEYS.activeTab, "home");
   return TAB_CONFIG.some((item) => item.id === storedTab) ? storedTab : "home";
@@ -1732,9 +1829,85 @@ function ServicesDashboardWorkspace({ services, tickets }) {
   );
 }
 
-function DatabaseWorkspace({ tickets, services, b2bLedger }) {
+function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpsertRecord, onDeleteRecord }) {
+  const [activeSectionId, setActiveSectionId] = useState(() => DATABASE_SECTION_CONFIG[0].id);
+  const [formValues, setFormValues] = useState(() => createEmptyDatabaseRecordValues(DATABASE_SECTION_CONFIG[0].id));
+  const [editingRecordId, setEditingRecordId] = useState("");
+  const [search, setSearch] = useState("");
+  const [formError, setFormError] = useState("");
   const totalCollections = tickets.reduce((sum, ticket) => sum + (Number(ticket.total) || 0), 0);
   const totalB2B = b2bLedger.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+  const sectionConfig = getDatabaseSection(activeSectionId);
+  const activeSectionRecords = useMemo(() => (
+    records
+      .filter((record) => record.sectionId === activeSectionId)
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+  ), [records, activeSectionId]);
+  const filteredSectionRecords = useMemo(() => {
+    const query = String(search || "").trim().toLowerCase();
+    if (!query) return activeSectionRecords;
+    return activeSectionRecords.filter((record) => (
+      sectionConfig.fields.some((field) => String(record.values[field.key] || "").toLowerCase().includes(query))
+    ));
+  }, [activeSectionRecords, search, sectionConfig.fields]);
+
+  const resetForm = (sectionId = activeSectionId) => {
+    setFormValues(createEmptyDatabaseRecordValues(sectionId));
+    setEditingRecordId("");
+    setFormError("");
+  };
+
+  useEffect(() => {
+    resetForm(activeSectionId);
+  }, [activeSectionId]);
+
+  const handleFieldChange = (fieldKey, rawValue) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [fieldKey]: sanitizeDatabaseFieldValue(fieldKey, rawValue),
+    }));
+  };
+
+  const handleSaveRecord = () => {
+    const missingField = sectionConfig.fields.find((field) => !String(formValues[field.key] || "").trim());
+    if (missingField) {
+      setFormError(`${missingField.label} is required.`);
+      return;
+    }
+    const existingRecord = editingRecordId
+      ? activeSectionRecords.find((record) => record.id === editingRecordId)
+      : null;
+    const nextRecord = normalizeDatabaseRecordEntry({
+      id: editingRecordId || `db_record_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      sectionId: activeSectionId,
+      values: formValues,
+      createdAt: existingRecord?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }, activeSectionRecords.length);
+    onUpsertRecord?.(nextRecord);
+    resetForm(activeSectionId);
+  };
+
+  const handleEditRecord = (record) => {
+    setEditingRecordId(record.id);
+    setFormValues({
+      ...createEmptyDatabaseRecordValues(record.sectionId),
+      ...(record.values || {}),
+    });
+    setFormError("");
+  };
+
+  const handleDeleteRecord = (record) => {
+    if (typeof window !== "undefined") {
+      const shouldDelete = window.confirm(`Delete this ${sectionConfig.label} entry?`);
+      if (!shouldDelete) return;
+    }
+    onDeleteRecord?.(record.id);
+    if (editingRecordId === record.id) {
+      resetForm(activeSectionId);
+    }
+  };
+
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <div style={{
@@ -1747,7 +1920,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger }) {
           Highly Confidential
         </div>
         <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.94rem", color: "#7f1d1d", lineHeight: 1.5 }}>
-          This section is restricted. Share access only with authorized owners and senior operators.
+          Database fields are organized as requested: Aadhaar, Passport, PAN Card, and Mobile Numbers.
         </div>
       </div>
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
@@ -1766,6 +1939,199 @@ function DatabaseWorkspace({ tickets, services, b2bLedger }) {
         <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
           <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>B2B Ledger</div>
           <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#1e3a8a" }}>Rs. {Math.round(totalB2B).toLocaleString("en-IN")}</div>
+        </div>
+      </div>
+
+      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {DATABASE_SECTION_CONFIG.map((section) => {
+            const count = records.filter((record) => record.sectionId === section.id).length;
+            const active = section.id === activeSectionId;
+            return (
+              <button
+                key={section.id}
+                onClick={() => setActiveSectionId(section.id)}
+                style={{
+                  border: active ? "1px solid rgba(37,99,235,0.38)" : "1px solid rgba(15,23,42,0.14)",
+                  borderRadius: 10,
+                  background: active ? "rgba(37,99,235,0.11)" : "rgba(255,255,255,0.8)",
+                  color: active ? "#1e3a8a" : "#0f172a",
+                  padding: "9px 12px",
+                  fontFamily: APP_FONT_STACK,
+                  fontSize: "0.84rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <span>{section.label}</span>
+                <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.74rem", color: "rgba(15,23,42,0.56)" }}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "minmax(280px, 420px) minmax(420px, 1fr)" }}>
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 14, display: "grid", gap: 10, alignContent: "start" }}>
+          <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>
+            {sectionConfig.label} Details
+          </div>
+          {sectionConfig.fields.map((field) => (
+            <label key={field.key} style={{ display: "grid", gap: 5 }}>
+              <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontWeight: 600 }}>{field.label}</span>
+              <input
+                type={field.type === "date" ? "date" : "text"}
+                value={formValues[field.key] || ""}
+                onChange={(event) => handleFieldChange(field.key, event.target.value)}
+                placeholder={field.type === "date" ? "" : field.label}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 9,
+                  border: "1px solid rgba(15,23,42,0.14)",
+                  background: "rgba(255,255,255,0.92)",
+                  color: "#0f172a",
+                  fontFamily: field.type === "date" ? APP_MONO_STACK : APP_FONT_STACK,
+                  fontSize: "0.84rem",
+                  outline: "none",
+                }}
+              />
+            </label>
+          ))}
+          {formError && (
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.76rem", color: "#b91c1c", fontWeight: 600 }}>
+              {formError}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={handleSaveRecord}
+              style={{
+                border: "1px solid rgba(22,163,74,0.34)",
+                borderRadius: 9,
+                background: "rgba(22,163,74,0.12)",
+                color: "#166534",
+                fontFamily: APP_BRAND_STACK,
+                fontWeight: 700,
+                fontSize: "0.60rem",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                padding: "10px 12px",
+                cursor: "pointer",
+              }}
+            >
+              {editingRecordId ? "Update Entry" : "Save Entry"}
+            </button>
+            <button
+              onClick={() => resetForm(activeSectionId)}
+              style={{
+                border: "1px solid rgba(15,23,42,0.18)",
+                borderRadius: 9,
+                background: "rgba(15,23,42,0.05)",
+                color: "rgba(15,23,42,0.72)",
+                fontFamily: APP_BRAND_STACK,
+                fontWeight: 700,
+                fontSize: "0.60rem",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                padding: "10px 12px",
+                cursor: "pointer",
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 14, display: "grid", gap: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>
+              Saved {sectionConfig.label} Records
+            </div>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={`Search ${sectionConfig.label}`}
+              style={{
+                width: "min(240px, 100%)",
+                padding: "9px 10px",
+                borderRadius: 8,
+                border: "1px solid rgba(15,23,42,0.14)",
+                background: "rgba(255,255,255,0.88)",
+                color: "#0f172a",
+                fontFamily: APP_FONT_STACK,
+                fontSize: "0.82rem",
+                outline: "none",
+              }}
+            />
+          </div>
+          <div style={{ maxHeight: 460, overflowY: "auto", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 10, background: "rgba(248,250,252,0.84)" }}>
+            {filteredSectionRecords.length === 0 ? (
+              <div style={{ padding: 14, color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
+                No entries yet for {sectionConfig.label}.
+              </div>
+            ) : (
+              filteredSectionRecords.map((record) => (
+                <div key={record.id} style={{ padding: "10px 12px", borderBottom: "1px solid rgba(15,23,42,0.08)", display: "grid", gap: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(15,23,42,0.54)" }}>
+                      {new Date(record.createdAt).toLocaleString("en-IN")}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => handleEditRecord(record)}
+                        style={{
+                          border: "1px solid rgba(37,99,235,0.28)",
+                          borderRadius: 7,
+                          background: "rgba(37,99,235,0.10)",
+                          color: "#1d4ed8",
+                          fontFamily: APP_BRAND_STACK,
+                          fontSize: "0.56rem",
+                          fontWeight: 700,
+                          letterSpacing: "0.10em",
+                          textTransform: "uppercase",
+                          cursor: "pointer",
+                          padding: "6px 8px",
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRecord(record)}
+                        style={{
+                          border: "1px solid rgba(220,38,38,0.28)",
+                          borderRadius: 7,
+                          background: "rgba(220,38,38,0.10)",
+                          color: "#991b1b",
+                          fontFamily: APP_BRAND_STACK,
+                          fontSize: "0.56rem",
+                          fontWeight: 700,
+                          letterSpacing: "0.10em",
+                          textTransform: "uppercase",
+                          cursor: "pointer",
+                          padding: "6px 8px",
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gap: 5 }}>
+                    {sectionConfig.fields.map((field) => (
+                      <div key={`${record.id}_${field.key}`} style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 8 }}>
+                        <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.52)", fontWeight: 600 }}>{field.label}</span>
+                        <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a" }}>
+                          {record.values[field.key] || "-"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -6470,6 +6836,9 @@ export default function CSCBilling() {
   const [b2bLedger, setB2BLedger] = useState(() => (
     hydrateB2BLedger(readStoredJSON(STORAGE_KEYS.b2bLedger, []))
   ));
+  const [databaseRecords, setDatabaseRecords] = useState(() => (
+    hydrateDatabaseRecords(readStoredJSON(STORAGE_KEYS.databaseRecords, []))
+  ));
   const [customQuickLinks, setCustomQuickLinks] = useState(() => getStoredQuickLinks());
   const [showAddQuickLink, setShowAddQuickLink] = useState(false);
   const [quickLinkName, setQuickLinkName] = useState("");
@@ -6568,6 +6937,21 @@ export default function CSCBilling() {
   };
   const deleteB2BLedgerEntry = (entryId) => {
     setB2BLedger((prev) => prev.filter((entry) => entry.id !== entryId));
+  };
+  const upsertDatabaseRecord = (nextRecord) => {
+    setDatabaseRecords((prev) => {
+      const normalizedNext = normalizeDatabaseRecordEntry(nextRecord, prev.length);
+      const matchIndex = prev.findIndex((record) => record.id === normalizedNext.id);
+      if (matchIndex === -1) {
+        return [normalizedNext, ...prev];
+      }
+      const updated = [...prev];
+      updated[matchIndex] = normalizedNext;
+      return updated;
+    });
+  };
+  const deleteDatabaseRecord = (recordId) => {
+    setDatabaseRecords((prev) => prev.filter((record) => record.id !== recordId));
   };
   const deleteTicket = (ticketNo) => {
     setTickets((prev) => prev.filter((ticket) => ticket.ticketNo !== ticketNo));
@@ -6743,24 +7127,39 @@ export default function CSCBilling() {
       }
 
       setCloudSyncState("connecting");
-      const [remoteTicketsResult, remoteServicesResult, remoteQuickLinksResult, remoteB2BLedgerResult] = await Promise.all([
+      const [
+        remoteTicketsResult,
+        remoteServicesResult,
+        remoteQuickLinksResult,
+        remoteB2BLedgerResult,
+        remoteDatabaseRecordsResult,
+      ] = await Promise.all([
         dbLoad("tickets"),
         dbLoad("services"),
         dbLoad("quick_links"),
         dbLoad("b2b_ledger"),
+        dbLoad("database_records"),
       ]);
 
       if (cancelled) return;
-      let syncFailed = [remoteTicketsResult, remoteServicesResult, remoteQuickLinksResult, remoteB2BLedgerResult].some((result) => !result?.ok);
+      let syncFailed = [
+        remoteTicketsResult,
+        remoteServicesResult,
+        remoteQuickLinksResult,
+        remoteB2BLedgerResult,
+        remoteDatabaseRecordsResult,
+      ].some((result) => !result?.ok);
 
       const localTickets = readStoredJSON(STORAGE_KEYS.tickets, []);
       const localServices = readStoredJSON(STORAGE_KEYS.services, []);
       const localQuickLinks = getStoredQuickLinks();
       const localB2BLedger = readStoredJSON(STORAGE_KEYS.b2bLedger, []);
+      const localDatabaseRecords = readStoredJSON(STORAGE_KEYS.databaseRecords, []);
       const remoteTickets = remoteTicketsResult?.value;
       const remoteServices = remoteServicesResult?.value;
       const remoteQuickLinks = remoteQuickLinksResult?.value;
       const remoteB2BLedger = remoteB2BLedgerResult?.value;
+      const remoteDatabaseRecords = remoteDatabaseRecordsResult?.value;
 
       if (Array.isArray(remoteTickets) && remoteTickets.length > 0) {
         setTickets(hydrateTickets(remoteTickets));
@@ -6796,6 +7195,16 @@ export default function CSCBilling() {
         if (!seedB2BLedgerResult?.ok) syncFailed = true;
       }
 
+      if (Array.isArray(remoteDatabaseRecords) && remoteDatabaseRecords.length > 0) {
+        const hydratedRemoteRecords = hydrateDatabaseRecords(remoteDatabaseRecords);
+        setDatabaseRecords(hydratedRemoteRecords);
+        writeStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(hydratedRemoteRecords));
+      } else if (Array.isArray(localDatabaseRecords) && localDatabaseRecords.length > 0) {
+        const hydratedLocalRecords = hydrateDatabaseRecords(localDatabaseRecords);
+        const seedDatabaseRecordsResult = await dbSave("database_records", serializeDatabaseRecords(hydratedLocalRecords));
+        if (!seedDatabaseRecordsResult?.ok) syncFailed = true;
+      }
+
       if (!cancelled) {
         dbSyncedRef.current = true;
         if (syncFailed) {
@@ -6816,6 +7225,7 @@ export default function CSCBilling() {
   useDebouncedStoredJSON(STORAGE_KEYS.tickets, serializeTickets(tickets), 180);
   useDebouncedStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(b2bLedger), 180);
   useDebouncedStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks, 180);
+  useDebouncedStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(databaseRecords), 180);
 
   useEffect(() => {
     if (!dbSyncedRef.current || !supabase) return undefined;
@@ -6896,6 +7306,26 @@ export default function CSCBilling() {
       cancelled = true;
     };
   }, [b2bLedger]);
+
+  useEffect(() => {
+    if (!dbSyncedRef.current || !supabase) return undefined;
+    let cancelled = false;
+    async function syncDatabaseRecords() {
+      setCloudSyncState("syncing");
+      const result = await dbSave("database_records", serializeDatabaseRecords(databaseRecords));
+      if (cancelled) return;
+      if (!result?.ok) {
+        setCloudSyncState("sync_failed");
+        return;
+      }
+      setCloudSyncState("synced");
+      setCloudLastSyncedAt(new Date());
+    }
+    syncDatabaseRecords();
+    return () => {
+      cancelled = true;
+    };
+  }, [databaseRecords]);
 
   if (isBootLoading) {
     return <BootLoadingScreen />;
@@ -7222,7 +7652,14 @@ export default function CSCBilling() {
               <MonthlyOverview tickets={tickets} />
             </TabPanel>
             <TabPanel active={tab === "database"}>
-              <DatabaseWorkspace tickets={tickets} services={services} b2bLedger={b2bLedger} />
+              <DatabaseWorkspace
+                tickets={tickets}
+                services={services}
+                b2bLedger={b2bLedger}
+                records={databaseRecords}
+                onUpsertRecord={upsertDatabaseRecord}
+                onDeleteRecord={deleteDatabaseRecord}
+              />
             </TabPanel>
             <TabPanel active={tab === "quick_links"}>
               <QuickLinksWorkspace
