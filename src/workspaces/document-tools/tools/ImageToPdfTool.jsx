@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { DT, eyebrow } from "../theme.js";
 import { UniversalDropzone } from "../components/UniversalDropzone.jsx";
 import { Field, selectStyle } from "../components/Field.jsx";
@@ -16,9 +16,10 @@ const PAGE_SIZES = [
 ];
 
 /**
- * Image → PDF builder. Supports reordering and a single-PDF toggle.
- * Reordering uses two small buttons per row rather than HTML5 drag —
- * far more reliable for the operator persona.
+ * Image → PDF builder. Supports a single-PDF toggle plus several reorder
+ * ergonomics that scale to 20+ images: HTML5 drag-and-drop (primary),
+ * up/down arrows (touch fallback), and jump-to-top / jump-to-bottom (for
+ * the long-list case where arrow-clicking is painful).
  */
 export function ImageToPdfTool({ onQueue }) {
   const [entries, setEntries] = useState([]); // { id, file, url, width, height }
@@ -26,6 +27,10 @@ export function ImageToPdfTool({ onQueue }) {
   const [combine, setCombine] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+  // Ref lets drag handlers read the current id without re-binding on every render.
+  const draggingRef = useRef(null);
 
   useEffect(() => () => {
     entries.forEach((e) => URL.revokeObjectURL(e.url));
@@ -68,6 +73,46 @@ export function ImageToPdfTool({ onQueue }) {
       if (target < 0 || target >= next.length) return prev;
       [next[idx], next[target]] = [next[target], next[idx]];
       return next;
+    });
+  };
+
+  /**
+   * Pure reorder: remove entry `id` and reinsert it at `toIndex`. Keeps React
+   * happy by returning a new array rather than mutating.
+   * @param {typeof entries} list
+   * @param {string} id
+   * @param {number} toIndex
+   */
+  const reorderTo = (list, id, toIndex) => {
+    const fromIndex = list.findIndex((e) => e.id === id);
+    if (fromIndex < 0 || fromIndex === toIndex) return list;
+    const next = [...list];
+    const [moved] = next.splice(fromIndex, 1);
+    const clampedTo = Math.max(0, Math.min(next.length, toIndex));
+    next.splice(clampedTo, 0, moved);
+    return next;
+  };
+
+  const jumpToTop = (id) => setEntries((prev) => reorderTo(prev, id, 0));
+  const jumpToBottom = (id) => setEntries((prev) => reorderTo(prev, id, prev.length));
+
+  /**
+   * Drop `draggingRef.current` above `targetId`. If the drag passes beneath
+   * the last row, append — matches what most users expect from a drop near
+   * the bottom of a list.
+   */
+  const handleDrop = (targetId) => {
+    const id = draggingRef.current;
+    draggingRef.current = null;
+    setDraggingId(null);
+    setDragOverId(null);
+    if (!id || id === targetId) return;
+    setEntries((prev) => {
+      const targetIdx = targetId === "__end__"
+        ? prev.length
+        : prev.findIndex((e) => e.id === targetId);
+      if (targetIdx < 0) return prev;
+      return reorderTo(prev, id, targetIdx);
     });
   };
 
@@ -155,30 +200,98 @@ export function ImageToPdfTool({ onQueue }) {
       />
 
       {entries.length > 0 ? (
-        <div style={{ display: "grid", gap: 6 }}>
-          {entries.map((e, i) => (
-            <div key={e.id} style={{
-              display: "grid",
-              gridTemplateColumns: "auto 1fr auto auto auto",
-              gap: 8,
-              alignItems: "center",
-              padding: "6px 8px",
-              border: `1px solid ${DT.borderSoft}`,
-              borderRadius: DT.rSm,
-              background: DT.surface,
+        <div>
+          {entries.length > 1 ? (
+            <div style={{
+              fontFamily: DT.font,
+              fontSize: "0.74rem",
+              color: DT.textSubtle,
+              marginBottom: 6,
             }}>
-              <img src={e.url} alt="" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6 }} />
-              <div style={{ display: "grid", gap: 1 }}>
-                <span style={{ fontFamily: DT.mono, fontSize: "0.80rem", color: DT.text, wordBreak: "break-all" }}>{e.file.name}</span>
-                <span style={{ fontFamily: DT.mono, fontSize: "0.72rem", color: DT.textMuted }}>
-                  #{i + 1} · {e.width}×{e.height}px · {formatBytes(e.file.size)}
-                </span>
-              </div>
-              <MiniBtn onClick={() => move(e.id, -1)} disabled={i === 0}>↑</MiniBtn>
-              <MiniBtn onClick={() => move(e.id, 1)} disabled={i === entries.length - 1}>↓</MiniBtn>
-              <MiniBtn onClick={() => removeOne(e.id)}>✕</MiniBtn>
+              Drag the <DragDotsIcon inline /> handle to reorder. Use the arrows or ⇈ ⇊ to jump to top / bottom.
             </div>
-          ))}
+          ) : null}
+          <div style={{ display: "grid", gap: 6 }}>
+            {entries.map((e, i) => {
+              const isDragging = draggingId === e.id;
+              const isDragTarget = dragOverId === e.id && draggingId && draggingId !== e.id;
+              return (
+                <div
+                  key={e.id}
+                  draggable
+                  onDragStart={(ev) => {
+                    draggingRef.current = e.id;
+                    setDraggingId(e.id);
+                    // Firefox requires setData to actually fire dragover on targets.
+                    ev.dataTransfer.effectAllowed = "move";
+                    try { ev.dataTransfer.setData("text/plain", e.id); } catch { /* no-op */ }
+                  }}
+                  onDragOver={(ev) => {
+                    if (!draggingRef.current) return;
+                    ev.preventDefault();
+                    ev.dataTransfer.dropEffect = "move";
+                    if (dragOverId !== e.id) setDragOverId(e.id);
+                  }}
+                  onDragLeave={() => {
+                    setDragOverId((prev) => (prev === e.id ? null : prev));
+                  }}
+                  onDrop={(ev) => {
+                    ev.preventDefault();
+                    handleDrop(e.id);
+                  }}
+                  onDragEnd={() => {
+                    draggingRef.current = null;
+                    setDraggingId(null);
+                    setDragOverId(null);
+                  }}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "auto auto 1fr auto auto auto auto auto",
+                    gap: 8,
+                    alignItems: "center",
+                    padding: "6px 8px",
+                    border: `1px solid ${isDragTarget ? DT.primary : DT.borderSoft}`,
+                    borderRadius: DT.rSm,
+                    background: isDragTarget ? DT.primarySoft : DT.surface,
+                    opacity: isDragging ? 0.4 : 1,
+                    boxShadow: isDragTarget ? "0 0 0 2px rgba(37,99,235,0.18)" : "none",
+                    transition: "border-color 120ms ease, background 120ms ease, box-shadow 120ms ease",
+                    cursor: "grab",
+                    userSelect: "none",
+                  }}
+                >
+                  <DragHandle />
+                  <img src={e.url} alt="" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6, pointerEvents: "none" }} />
+                  <div style={{ display: "grid", gap: 1, minWidth: 0 }}>
+                    <span style={{ fontFamily: DT.mono, fontSize: "0.80rem", color: DT.text, wordBreak: "break-all" }}>{e.file.name}</span>
+                    <span style={{ fontFamily: DT.mono, fontSize: "0.72rem", color: DT.textMuted }}>
+                      #{i + 1} · {e.width}×{e.height}px · {formatBytes(e.file.size)}
+                    </span>
+                  </div>
+                  <MiniBtn onClick={() => jumpToTop(e.id)} disabled={i === 0} title="Move to top">⇈</MiniBtn>
+                  <MiniBtn onClick={() => move(e.id, -1)} disabled={i === 0} title="Move up">↑</MiniBtn>
+                  <MiniBtn onClick={() => move(e.id, 1)} disabled={i === entries.length - 1} title="Move down">↓</MiniBtn>
+                  <MiniBtn onClick={() => jumpToBottom(e.id)} disabled={i === entries.length - 1} title="Move to bottom">⇊</MiniBtn>
+                  <MiniBtn onClick={() => removeOne(e.id)} title="Remove">✕</MiniBtn>
+                </div>
+              );
+            })}
+            {/* Invisible end-of-list drop target so dragging past the last row appends cleanly. */}
+            {draggingId ? (
+              <div
+                onDragOver={(ev) => { ev.preventDefault(); ev.dataTransfer.dropEffect = "move"; setDragOverId("__end__"); }}
+                onDrop={(ev) => { ev.preventDefault(); handleDrop("__end__"); }}
+                onDragLeave={() => setDragOverId((prev) => (prev === "__end__" ? null : prev))}
+                style={{
+                  height: 18,
+                  borderRadius: DT.rSm,
+                  border: `1px dashed ${dragOverId === "__end__" ? DT.primary : "transparent"}`,
+                  background: dragOverId === "__end__" ? DT.primarySoft : "transparent",
+                  transition: "all 120ms ease",
+                }}
+              />
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -228,12 +341,17 @@ export function ImageToPdfTool({ onQueue }) {
   );
 }
 
-function MiniBtn({ onClick, children, disabled }) {
+function MiniBtn({ onClick, children, disabled, title }) {
   return (
     <button
       type="button"
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
+      title={title}
+      // Dragging the parent row shouldn't start when the operator clicks a button;
+      // stop propagation and also prevent the click being read as a drag-start.
+      onMouseDown={(e) => e.stopPropagation()}
+      draggable={false}
       style={{
         width: 28,
         height: 28,
@@ -248,6 +366,48 @@ function MiniBtn({ onClick, children, disabled }) {
     >
       {children}
     </button>
+  );
+}
+
+function DragHandle() {
+  return (
+    <span
+      aria-hidden="true"
+      title="Drag to reorder"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 20,
+        height: 28,
+        color: DT.textSubtle,
+        cursor: "grab",
+        flexShrink: 0,
+      }}
+    >
+      <DragDotsIcon />
+    </span>
+  );
+}
+
+function DragDotsIcon({ inline }) {
+  // Six-dot "grip" glyph. `inline` variant is sized for flowing text.
+  const size = inline ? 10 : 12;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 12 12"
+      aria-hidden="true"
+      style={{ verticalAlign: inline ? "middle" : undefined, fill: "currentColor" }}
+    >
+      <circle cx="4" cy="2.5" r="1" />
+      <circle cx="8" cy="2.5" r="1" />
+      <circle cx="4" cy="6" r="1" />
+      <circle cx="8" cy="6" r="1" />
+      <circle cx="4" cy="9.5" r="1" />
+      <circle cx="8" cy="9.5" r="1" />
+    </svg>
   );
 }
 
