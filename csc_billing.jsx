@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { dbLoad, dbSave, supabase } from "./supabase.js";
 import { DS } from "./design-tokens.js";
 import { DocumentToolsWorkspace } from "./src/workspaces/document-tools/DocumentToolsWorkspace.jsx";
+import { ServicesDashboardWorkspace } from "./src/workspaces/services-dashboard/ServicesDashboardWorkspace.jsx";
 
 const INITIAL_SERVICES = [
   { id: "aadhaar", name: "Aadhaar Update / Correction", category: "Government ID", price: 0, unit: "per application", variable: false },
@@ -2570,72 +2571,6 @@ function QuickLinksWorkspace({
             </div>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function ServicesDashboardWorkspace({ services, tickets }) {
-  const serviceUsage = useMemo(() => {
-    const counts = new Map();
-    tickets.forEach((ticket) => {
-      const structured = ticket.structured || toStructuredTicket(ticket);
-      structured.services.forEach((item) => {
-        const name = String(item?.service || item?.name || "").trim() || "Unspecified";
-        counts.set(name, (counts.get(name) || 0) + (Number(item.qty) || 1));
-      });
-    });
-    return Array.from(counts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 12);
-  }, [tickets]);
-  const categoryRows = useMemo(() => CATEGORIES.map((category) => {
-    const categoryServices = services.filter((service) => service.category === category);
-    const pricedCount = categoryServices.filter((service) => Number(service.price) > 0).length;
-    return {
-      category,
-      total: categoryServices.length,
-      priced: pricedCount,
-      unpriced: Math.max(0, categoryServices.length - pricedCount),
-    };
-  }), [services]);
-
-  return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 16, background: "rgba(255,255,255,0.92)", padding: "14px 16px" }}>
-        <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
-          Service Category Coverage
-        </div>
-        <div style={{ display: "grid", gap: 9 }}>
-          {categoryRows.map((row) => (
-            <div key={row.category} style={{ display: "grid", gridTemplateColumns: "minmax(150px, 1fr) auto auto auto", gap: 8, padding: "9px 10px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(248,250,252,0.95)", alignItems: "center" }}>
-              <div style={{ fontFamily: APP_FONT_STACK, fontWeight: 700, color: "#0f172a", fontSize: "0.86rem" }}>{row.category}</div>
-              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", color: "#1e3a8a" }}>Total: {row.total}</div>
-              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", color: "#166534" }}>Priced: {row.priced}</div>
-              <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", color: "#b45309" }}>Unpriced: {row.unpriced}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 16, background: "rgba(255,255,255,0.92)", padding: "14px 16px" }}>
-        <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
-          Most Used Services
-        </div>
-        {serviceUsage.length === 0 ? (
-          <div style={{ fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
-            Usage data will appear after tickets are created.
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 8 }}>
-            {serviceUsage.map((row) => (
-              <div key={row.name} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, padding: "9px 10px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(248,250,252,0.95)", alignItems: "center" }}>
-                <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.85rem", color: "#0f172a", fontWeight: 600 }}>{row.name}</div>
-                <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.80rem", color: "#1e3a8a", fontWeight: 700 }}>{row.count}</div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -9917,7 +9852,7 @@ export default function CSCBilling() {
               <DocumentToolsWorkspace />
             </TabPanel>
             <TabPanel active={tab === "services_dashboard"}>
-              <ServicesDashboardWorkspace services={services} tickets={tickets} />
+              <ServicesDashboardWorkspace />
             </TabPanel>
             <TabPanel active={tab === "customers"}>
               <CustomersWorkspace tickets={tickets} onDeleteCustomer={deleteCustomerTickets} onNavigateTab={navigateTab} />
