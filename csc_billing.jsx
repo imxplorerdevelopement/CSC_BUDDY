@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { dbLoad, dbSave, supabase } from "./supabase.js";
 import { DS } from "./design-tokens.js";
+import { DocumentToolsWorkspace } from "./src/workspaces/document-tools/DocumentToolsWorkspace.jsx";
 
 const INITIAL_SERVICES = [
   { id: "aadhaar", name: "Aadhaar Update / Correction", category: "Government ID", price: 0, unit: "per application", variable: false },
@@ -2569,79 +2570,6 @@ function QuickLinksWorkspace({
             </div>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function DocumentToolsWorkspace({ tickets }) {
-  const normalizedTickets = useMemo(() => (
-    tickets.map((ticket) => ticket.structured || toStructuredTicket(ticket))
-  ), [tickets]);
-  const docStats = useMemo(() => normalizedTickets.reduce((acc, structured) => {
-    acc.totalTickets += 1;
-    const required = structured.documents.items.filter((doc) => doc.required).length;
-    const submitted = structured.documents.items.filter((doc) => doc.required && doc.submitted).length;
-    acc.required += required;
-    acc.submitted += submitted;
-    acc.pending += Math.max(0, required - submitted);
-    return acc;
-  }, { totalTickets: 0, required: 0, submitted: 0, pending: 0 }), [normalizedTickets]);
-  const pendingTickets = useMemo(() => normalizedTickets
-    .filter((structured) => structured.documents.items.some((doc) => doc.required && !doc.submitted))
-    .slice(0, 20), [normalizedTickets]);
-
-  return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
-          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Tickets Checked</div>
-          <div style={{ marginTop: 6, fontSize: "1.12rem", fontWeight: 700, color: "#1e3a8a", fontFamily: APP_MONO_STACK }}>{docStats.totalTickets}</div>
-        </div>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
-          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Required Docs</div>
-          <div style={{ marginTop: 6, fontSize: "1.12rem", fontWeight: 700, color: "#1e3a8a", fontFamily: APP_MONO_STACK }}>{docStats.required}</div>
-        </div>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
-          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Submitted</div>
-          <div style={{ marginTop: 6, fontSize: "1.12rem", fontWeight: 700, color: "#166534", fontFamily: APP_MONO_STACK }}>{docStats.submitted}</div>
-        </div>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
-          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Pending</div>
-          <div style={{ marginTop: 6, fontSize: "1.12rem", fontWeight: 700, color: "#b45309", fontFamily: APP_MONO_STACK }}>{docStats.pending}</div>
-        </div>
-      </div>
-      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 16, background: "rgba(255,255,255,0.90)", overflow: "hidden" }}>
-        <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(15,23,42,0.08)", fontSize: "0.64rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>
-          Tickets With Pending Documents
-        </div>
-        <div style={{ maxHeight: 420, overflowY: "auto" }}>
-          {pendingTickets.length === 0 ? (
-            <div style={{ padding: "14px", color: "rgba(15,23,42,0.56)", fontSize: "0.88rem", fontFamily: APP_FONT_STACK }}>
-              No pending required documents found.
-            </div>
-          ) : pendingTickets.map((structured) => {
-            const pendingNames = structured.documents.items
-              .filter((doc) => doc.required && !doc.submitted)
-              .map((doc) => doc.name)
-              .slice(0, 4);
-            return (
-              <div key={structured.meta.ticketNo} style={{ padding: "11px 14px", borderBottom: "1px solid rgba(15,23,42,0.08)", display: "grid", gap: 4 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                  <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.92rem", fontWeight: 700, color: "#0f172a" }}>
-                    {structured.meta.ticketNo} - {structured.parties.documentHolder.name}
-                  </div>
-                  <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.58)" }}>
-                    {structured.meta.createdDate || "Undated"}
-                  </div>
-                </div>
-                <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.80rem", color: "rgba(15,23,42,0.58)" }}>
-                  Pending: {pendingNames.join(", ") || "Required documents not submitted"}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
@@ -9986,7 +9914,7 @@ export default function CSCBilling() {
               />
             </TabPanel>
             <TabPanel active={tab === "doc_tools"}>
-              <DocumentToolsWorkspace tickets={tickets} />
+              <DocumentToolsWorkspace />
             </TabPanel>
             <TabPanel active={tab === "services_dashboard"}>
               <ServicesDashboardWorkspace services={services} tickets={tickets} />
