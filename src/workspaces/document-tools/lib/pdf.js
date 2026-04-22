@@ -3,6 +3,68 @@ import { canvasToBlob } from "./canvas.js";
 import { ensurePdfWorker } from "./pdfWorker.js";
 
 /**
+ * Thrown when a PDF is password-protected. `reason` distinguishes between
+ * "no password provided yet" and "the password you entered is wrong" so the
+ * UI can show a helpful message and keep whatever the operator typed.
+ *
+ * pdf.js signals these via PasswordException.code:
+ *   1 = PasswordResponses.NEED_PASSWORD
+ *   2 = PasswordResponses.INCORRECT_PASSWORD
+ */
+export class PdfPasswordRequiredError extends Error {
+  /**
+   * @param {"needed"|"incorrect"} reason
+   */
+  constructor(reason) {
+    super(reason === "incorrect"
+      ? "That password didn't unlock the PDF. Try again."
+      : "This PDF is password-protected. Enter the password to continue.");
+    this.name = "PdfPasswordRequiredError";
+    this.reason = reason;
+  }
+}
+
+function isPdfPasswordException(err) {
+  if (!err) return false;
+  if (err.name === "PasswordException") return true;
+  // Some pdf.js builds wrap the message without preserving the class name.
+  const msg = String(err.message || "").toLowerCase();
+  return msg.includes("password");
+}
+
+function passwordReasonFromException(err) {
+  // pdf.js PasswordResponses: 1 = need, 2 = incorrect.
+  if (err && err.code === 2) return "incorrect";
+  const msg = String(err?.message || "").toLowerCase();
+  if (msg.includes("incorrect")) return "incorrect";
+  return "needed";
+}
+
+/**
+ * Load a PDF via pdf.js. Wraps the PasswordException path in our own typed
+ * error so callers can distinguish "needs password" from other failures.
+ *
+ * @param {ArrayBuffer} arrayBuffer
+ * @param {string} [password]
+ */
+async function loadPdf(arrayBuffer, password) {
+  const pdfjs = ensurePdfWorker();
+  // pdf.js consumes the buffer — clone so callers can reuse the source.
+  const loadingTask = pdfjs.getDocument({
+    data: arrayBuffer.slice(0),
+    password: password || undefined,
+  });
+  try {
+    return await loadingTask.promise;
+  } catch (err) {
+    if (isPdfPasswordException(err)) {
+      throw new PdfPasswordRequiredError(passwordReasonFromException(err));
+    }
+    throw err;
+  }
+}
+
+/**
  * Render a single PDF page to a PNG/JPEG Blob at the requested DPI.
  * Used by the PDF → Image tool.
  *
@@ -12,13 +74,11 @@ import { ensurePdfWorker } from "./pdfWorker.js";
  * @param {number} options.dpi
  * @param {string} options.mime       "image/jpeg" | "image/png"
  * @param {number} [options.quality]  for JPEG, 0..1
+ * @param {string} [options.password] supplied by the operator for encrypted PDFs
  * @returns {Promise<{ blob: Blob, width: number, height: number }>}
  */
 export async function renderPdfPageToImage(arrayBuffer, pageNumber, options) {
-  const pdfjs = ensurePdfWorker();
-  // pdf.js consumes the buffer — clone so we can re-use the source across pages.
-  const loadingTask = pdfjs.getDocument({ data: arrayBuffer.slice(0) });
-  const pdf = await loadingTask.promise;
+  const pdf = await loadPdf(arrayBuffer, options.password);
   try {
     const page = await pdf.getPage(pageNumber);
     const scale = options.dpi / 72; // PDF internal unit is 72 DPI
@@ -41,14 +101,15 @@ export async function renderPdfPageToImage(arrayBuffer, pageNumber, options) {
 }
 
 /**
- * Count pages in a PDF without rendering.
+ * Count pages in a PDF without rendering. Throws PdfPasswordRequiredError
+ * if the file is encrypted and the password is missing or wrong.
+ *
  * @param {ArrayBuffer} arrayBuffer
+ * @param {string} [password]
  * @returns {Promise<number>}
  */
-export async function getPdfPageCount(arrayBuffer) {
-  const pdfjs = ensurePdfWorker();
-  const loadingTask = pdfjs.getDocument({ data: arrayBuffer.slice(0) });
-  const pdf = await loadingTask.promise;
+export async function getPdfPageCount(arrayBuffer, password) {
+  const pdf = await loadPdf(arrayBuffer, password);
   try {
     return pdf.numPages;
   } finally {
