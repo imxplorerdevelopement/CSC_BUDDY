@@ -7146,6 +7146,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
     agent: createB2BEntryForm("agent"),
   });
   const [formError, setFormError] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: "", message: "", onConfirm: null });
   const [accessCodeDialog, setAccessCodeDialog] = useState({ isOpen: false, title: "", message: "", actionLabel: "", code: "", error: "", onAuthorized: null });
   const b2bFormRef = useRef(null);
@@ -7427,42 +7428,43 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
     });
   };
 
+  const eb = { fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK };
+  const fmtMoneyCompact = (v) => {
+    const n = Math.round(Number(v) || 0);
+    return n === 0 ? "—" : `Rs. ${n.toLocaleString("en-IN")}`;
+  };
+
   return (
-    <div style={{ animation: "fadeIn 0.3s ease-out", maxWidth: 1140, margin: "0 auto", display: "grid", gap: 18 }}>
-      <div style={{ borderRadius: 20, border: "1px solid rgba(15,23,42,0.10)", background: "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,250,252,0.92) 100%)", padding: "18px 20px", boxShadow: ELEVATION.raised }}>
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-          <div style={{ maxWidth: 520 }}>
-            <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
+    <div style={{ animation: "fadeIn 0.3s ease-out", maxWidth: 1140, margin: "0 auto", display: "grid", gap: 12 }}>
+      {/* Compact header: title + tabs + inline stats + add button */}
+      <div style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.92)", padding: "12px 16px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", letterSpacing: "-0.01em" }}>
               Vendor Dashboard
             </div>
-            <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.35rem, 2.5vw, 1.9rem)", fontWeight: 300, color: "#0f172a", lineHeight: 1.05 }}>
-              Purchase, sales, and agent ecosystems separated into clear operational tracks.
+            <div style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>
+              {trackEntities.length} {activeTrack === "agent" ? "agents" : "vendors"}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {B2B_TRACKS.map((track) => {
               const active = track.id === activeTrack;
               return (
                 <button
                   key={track.id}
                   type="button"
-                  onClick={() => {
-                    setActiveTrack(track.id);
-                    setFormError("");
-                  }}
+                  onClick={() => { setActiveTrack(track.id); setFormError(""); }}
                   style={{
-                    borderRadius: 999,
-                    border: active ? "1px solid rgba(30,64,175,0.28)" : "1px solid rgba(15,23,42,0.12)",
-                    background: active ? "rgba(30,64,175,0.10)" : "rgba(255,255,255,0.82)",
-                    color: active ? "#1d4ed8" : "#334155",
-                    padding: "10px 14px",
-                    fontFamily: APP_BRAND_STACK,
-                    fontSize: "0.58rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
+                    borderRadius: 8,
+                    border: active ? "1px solid rgba(30,64,175,0.28)" : "1px solid rgba(15,23,42,0.10)",
+                    background: active ? "rgba(30,64,175,0.10)" : "transparent",
+                    color: active ? "#1d4ed8" : "rgba(15,23,42,0.62)",
+                    padding: "6px 11px",
+                    fontFamily: APP_FONT_STACK,
+                    fontSize: "0.74rem",
+                    fontWeight: 600,
                     cursor: "pointer",
-                    whiteSpace: "nowrap",
                   }}
                 >
                   {track.label}
@@ -7471,46 +7473,56 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
             })}
           </div>
         </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-        {[
-          { label: trackMeta.entityCountLabel, value: trackEntities.length, color: "#0f172a" },
-          { label: trackMeta.amountLabel, value: formatCurrency(trackTotals.amount), color: "#1d4ed8" },
-          { label: trackMeta.settledLabel, value: formatCurrency(trackTotals.settled), color: "#166534" },
-          { label: trackMeta.pendingLabel, value: formatCurrency(trackTotals.pending), color: "#7c2d12" },
-        ].map((card) => (
-          <div key={card.label} style={{ borderRadius: 16, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
-              {card.label}
-            </div>
-            <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.15rem", fontWeight: 300, color: card.color, lineHeight: 1 }}>
-              {card.value}
-            </div>
+        {/* Inline stat strip */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.06)", alignItems: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={eb}>{trackMeta.amountLabel}</span>
+            <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#0f172a" }}>{fmtMoneyCompact(trackTotals.amount)}</span>
           </div>
-        ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={eb}>{trackMeta.settledLabel}</span>
+            <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#166534" }}>{fmtMoneyCompact(trackTotals.settled)}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={eb}>{trackMeta.pendingLabel}</span>
+            <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: trackTotals.pending > 0 ? "#7c2d12" : "rgba(15,23,42,0.40)" }}>{fmtMoneyCompact(trackTotals.pending)}</span>
+          </div>
+          <div style={{ marginLeft: "auto" }}>
+            <button
+              type="button"
+              onClick={() => { setFormOpen((v) => !v); if (!formOpen) setTimeout(() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50); }}
+              style={{
+                border: formOpen ? "1px solid rgba(15,23,42,0.16)" : "1px solid rgba(30,64,175,0.32)",
+                borderRadius: 8,
+                background: formOpen ? "rgba(255,255,255,0.92)" : "rgba(30,64,175,0.10)",
+                color: formOpen ? "rgba(15,23,42,0.65)" : "#1d4ed8",
+                padding: "8px 14px",
+                fontFamily: APP_FONT_STACK,
+                fontSize: "0.78rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {formOpen ? "Close form" : `+ ${trackMeta.submitLabel}`}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: "0 1 330px", minWidth: 280, borderRadius: 18, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.88)", padding: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
-            <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>
-              {trackMeta.listHeading}
-            </div>
-            <div style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.48)", fontFamily: APP_MONO_STACK }}>
-              {trackEntities.length}
-            </div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ flex: "0 1 280px", minWidth: 240, borderRadius: 12, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.92)", padding: 10 }}>
+          <div style={{ ...eb, marginBottom: 8 }}>
+            {trackMeta.listHeading}
           </div>
           {trackEntities.length === 0 ? (
             <div style={{ borderRadius: 14, border: "1px dashed rgba(15,23,42,0.16)", background: "rgba(248,250,252,0.90)", padding: "14px 12px", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
               {activeTrack === "agent" ? "No agents tracked yet. Add the first referral entry below." : "No vendors in this track yet. Add the first entry below."}
             </div>
           ) : (
-            <div role="tablist" aria-label={`${trackMeta.listHeading} list`} style={{ display: "grid", gap: 9 }}>
+            <div role="tablist" aria-label={`${trackMeta.listHeading} list`} style={{ display: "grid", gap: 4 }}>
               {trackEntities.map((entity) => {
                 const active = entity.key === activeEntity?.key;
-                const secondaryRoles = entity.roles.filter((roleId) => roleId !== activeTrack);
-                const servicePreview = entity.serviceNames.slice(0, 3).join(", ");
+                const hasPending = entity.pendingValue > 0;
                 return (
                   <button
                     key={entity.key}
@@ -7519,63 +7531,24 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
                     aria-selected={active}
                     onClick={() => selectEntity(entity)}
                     style={{
-                      borderRadius: 14,
-                      border: active ? "1px solid rgba(30,64,175,0.24)" : "1px solid rgba(15,23,42,0.09)",
-                      background: active ? "rgba(30,64,175,0.08)" : "rgba(248,250,252,0.90)",
-                      padding: "12px 12px 11px",
+                      borderRadius: 8,
+                      border: active ? "1px solid rgba(30,64,175,0.24)" : "1px solid transparent",
+                      background: active ? "rgba(30,64,175,0.08)" : "transparent",
+                      padding: "8px 10px",
                       textAlign: "left",
                       cursor: "pointer",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                      <div>
-                        <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                          {entity.name}
-                        </div>
-                        {secondaryRoles.length > 0 && (
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                            {secondaryRoles.map((roleId) => {
-                              const badge = B2B_ROLE_BADGE_META[roleId];
-                              return (
-                                <span
-                                  key={`${entity.key}_${roleId}`}
-                                  style={{
-                                    borderRadius: 999,
-                                    border: `1px solid ${badge.border}`,
-                                    background: badge.background,
-                                    color: badge.color,
-                                    padding: "3px 8px",
-                                    fontFamily: APP_BRAND_STACK,
-                                    fontSize: "0.54rem",
-                                    fontWeight: 700,
-                                    letterSpacing: "0.12em",
-                                    textTransform: "uppercase",
-                                  }}
-                                >
-                                  {badge.label}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.40)", fontFamily: APP_BRAND_STACK }}>
-                          {trackMeta.pendingLabel.replace("Total ", "")}
-                        </div>
-                        <div style={{ marginTop: 4, fontSize: "0.82rem", color: "#7c2d12", fontFamily: APP_MONO_STACK, fontWeight: 700 }}>
-                          {formatCurrency(entity.pendingValue)}
-                        </div>
-                      </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: "0.84rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                        {entity.name}
+                      </span>
+                      {hasPending && (
+                        <span style={{ fontSize: "0.70rem", color: "#7c2d12", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                          {fmtMoneyCompact(entity.pendingValue)}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ marginTop: 8, fontSize: "0.76rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.4 }}>
-                      {activeTrack === "agent" ? `${entity.referredClients.length} client${entity.referredClients.length === 1 ? "" : "s"} referred` : (servicePreview || "No services mapped yet")}
-                    </div>
-                    {entity.latestEntry && (
-                      <div style={{ marginTop: 6, fontSize: "0.72rem", color: "rgba(15,23,42,0.48)", fontFamily: APP_FONT_STACK }}>
-                        Latest: {entity.latestEntry.serviceName || entity.latestEntry.referredClient || "Entry"} on {formatEntryDate(entity.latestEntry.entryDate)}
-                      </div>
-                    )}
                   </button>
                 );
               })}
@@ -7583,42 +7556,33 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
           )}
         </div>
 
-        <div style={{ flex: "1 1 560px", minWidth: 320, borderRadius: 18, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.90)", padding: 16 }}>
+        <div style={{ flex: "1 1 480px", minWidth: 280, borderRadius: 12, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.92)", padding: 14 }}>
           {!activeEntity ? (
-            <div className="csc-empty-state" style={{ padding: "24px 18px" }}>
-              <div className="csc-empty-state-icon">VD</div>
-              <div className="csc-empty-state-title">No profile selected yet.</div>
-              <div className="csc-empty-state-message">
-                Start with a new {activeTrack === "agent" ? "agent" : "vendor"} entry below to build this track.
-              </div>
-              <button type="button" className="csc-empty-state-cta" onClick={() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>
-                {trackMeta.submitLabel}
-              </button>
+            <div style={{ fontSize: "0.84rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK, padding: "12px 4px" }}>
+              Select a {activeTrack === "agent" ? "agent" : "vendor"} from the list, or click "+ {trackMeta.submitLabel}" above to add one.
             </div>
           ) : (
             <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-                <div>
-                  <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.45rem", fontWeight: 300, color: "#0f172a", lineHeight: 1.05 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", letterSpacing: "-0.01em" }}>
                     {activeEntity.name}
                   </div>
-                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 8 }}>
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                     {activeEntity.roles.map((roleId) => {
                       const badge = B2B_ROLE_BADGE_META[roleId];
                       return (
                         <span
                           key={`${activeEntity.key}_${roleId}_detail`}
                           style={{
-                            borderRadius: 999,
+                            borderRadius: 6,
                             border: `1px solid ${badge.border}`,
                             background: badge.background,
                             color: badge.color,
-                            padding: "4px 9px",
-                            fontFamily: APP_BRAND_STACK,
-                            fontSize: "0.56rem",
-                            fontWeight: 700,
-                            letterSpacing: "0.12em",
-                            textTransform: "uppercase",
+                            padding: "2px 7px",
+                            fontFamily: APP_FONT_STACK,
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
                           }}
                         >
                           {badge.label}
@@ -7627,70 +7591,35 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
                     })}
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)", fontFamily: APP_BRAND_STACK }}>
-                    {trackMeta.heading}
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: "0.86rem", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK }}>
-                    {activeTrack === "agent" ? `${activeEntity.referredClients.length} referred client${activeEntity.referredClients.length === 1 ? "" : "s"}` : `${activeEntity.entries.length} recent entr${activeEntity.entries.length === 1 ? "y" : "ies"}`}
-                  </div>
+                <div style={{ display: "flex", gap: 14, fontSize: "0.74rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.55)" }}>
+                  <span>Paid <strong style={{ color: "#166534", fontWeight: 700 }}>{fmtMoneyCompact(activeEntity.settledValue)}</strong></span>
+                  <span>Pending <strong style={{ color: activeEntity.pendingValue > 0 ? "#7c2d12" : "rgba(15,23,42,0.40)", fontWeight: 700 }}>{fmtMoneyCompact(activeEntity.pendingValue)}</strong></span>
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 14 }}>
-                {[
-                  { label: trackMeta.amountLabel, value: activeEntity.amountValue, color: "#1d4ed8" },
-                  { label: trackMeta.settledLabel, value: activeEntity.settledValue, color: "#166534" },
-                  { label: trackMeta.pendingLabel, value: activeEntity.pendingValue, color: "#7c2d12" },
-                  { label: activeTrack === "agent" ? "Clients Referred" : "Services Linked", value: activeTrack === "agent" ? activeEntity.referredClients.length : activeEntity.serviceNames.length, color: "#0f172a" },
-                ].map((item) => (
-                  <div key={item.label} style={{ borderRadius: 12, border: "1px solid rgba(15,23,42,0.09)", background: "rgba(248,250,252,0.86)", padding: "10px 11px" }}>
-                    <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
-                      {item.label}
-                    </div>
-                    <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.06rem", fontWeight: 300, color: item.color, lineHeight: 1 }}>
-                      {item.label === "Clients Referred" || item.label === "Services Linked" ? item.value : formatCurrency(item.value)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
-                {activeEntity.roles.map((roleId) => (
-                  <div key={`${activeEntity.key}_${roleId}_services`} style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(248,250,252,0.90)", padding: "12px 13px" }}>
-                    <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.44)", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
-                      {getRoleHeading(roleId)}
-                    </div>
-                    {(activeEntity.servicesByRole[roleId] || []).length === 0 ? (
-                      <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
-                        No services mapped yet.
+              {/* Services — collapsed inline */}
+              {activeEntity.roles.some((roleId) => (activeEntity.servicesByRole[roleId] || []).length > 0) && (
+                <div style={{ display: "grid", gap: 6, marginBottom: 12, paddingBottom: 10, borderBottom: "1px solid rgba(15,23,42,0.06)" }}>
+                  {activeEntity.roles.map((roleId) => {
+                    const groups = activeEntity.servicesByRole[roleId] || [];
+                    if (groups.length === 0) return null;
+                    const items = groups.flatMap((g) => g.items);
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={`${activeEntity.key}_${roleId}_services`} style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+                        <span style={{ ...eb, color: B2B_ROLE_BADGE_META[roleId].color, minWidth: 70 }}>
+                          {roleId === "take" ? "We take" : roleId === "give" ? "We give" : "Refers"}
+                        </span>
+                        <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.70)", fontFamily: APP_FONT_STACK, lineHeight: 1.45 }}>
+                          {items.join(" · ")}
+                        </span>
                       </div>
-                    ) : (
-                      <div style={{ display: "grid", gap: 8 }}>
-                        {activeEntity.servicesByRole[roleId].map((group) => (
-                          <div key={`${activeEntity.key}_${roleId}_${group.label}`} style={{ display: "grid", gap: 5 }}>
-                            <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                              {group.label}
-                            </div>
-                            <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontFamily: APP_FONT_STACK, lineHeight: 1.45 }}>
-                              {group.items.join(" • ")}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.44)", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
-                {trackMeta.detailEntriesHeading}
-              </div>
-              {activeEntity.entries.length === 0 ? (
-                <div style={{ borderRadius: 14, border: "1px dashed rgba(15,23,42,0.14)", background: "rgba(248,250,252,0.88)", padding: "14px 12px", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
-                  No ledger history yet for this profile.
+                    );
+                  })}
                 </div>
-              ) : (
+              )}
+
+              {activeEntity.entries.length === 0 ? null : (
                 <div style={{ display: "grid", gap: 8 }}>
                   {activeEntity.entries.slice(0, 6).map((entry) => (
                     <div key={entry.id} style={{ borderRadius: 12, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(255,255,255,0.78)", padding: "10px 11px" }}>
@@ -7750,7 +7679,8 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
         </div>
       </div>
 
-      <form ref={b2bFormRef} onSubmit={(event) => { event.preventDefault(); handleAddEntry(); }} style={{ width: "100%", maxWidth: 760, margin: "0 auto", borderRadius: 18, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.92)", padding: "18px 18px 16px", boxShadow: ELEVATION.raised }}>
+      {formOpen && (
+      <form ref={b2bFormRef} onSubmit={(event) => { event.preventDefault(); handleAddEntry(); setFormOpen(false); }} style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(30,64,175,0.20)", background: "rgba(255,255,255,0.96)", padding: "14px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK }}>
@@ -7875,6 +7805,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
           </div>
         )}
       </form>
+      )}
 
       <ConfirmDialog isOpen={confirmDialog.isOpen} title={confirmDialog.title} message={confirmDialog.message} onCancel={() => setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null })} onConfirm={() => confirmDialog.onConfirm?.()} confirmLabel="Continue" />
       <AccessCodeDialog isOpen={accessCodeDialog.isOpen} title={accessCodeDialog.title} message={accessCodeDialog.message} code={accessCodeDialog.code} error={accessCodeDialog.error} onCodeChange={(nextCode) => setAccessCodeDialog((prev) => ({ ...prev, code: nextCode, error: "" }))} onCancel={() => setAccessCodeDialog({ isOpen: false, title: "", message: "", actionLabel: "", code: "", error: "", onAuthorized: null })} onConfirm={() => { const verification = verifyDeleteAccess(accessCodeDialog.actionLabel, accessCodeDialog.code); if (!verification.ok) { setAccessCodeDialog((prev) => ({ ...prev, error: verification.message })); } else { const onAuthorized = accessCodeDialog.onAuthorized; setAccessCodeDialog({ isOpen: false, title: "", message: "", actionLabel: "", code: "", error: "", onAuthorized: null }); onAuthorized?.(); } }} />
