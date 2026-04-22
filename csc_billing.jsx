@@ -94,7 +94,6 @@ const SERVICE_DETAIL_LIBRARY = {
   government_id: {
     id: "government_id",
     title: "Application Details",
-    description: "Capture the exact ID work being handled so follow-up is clear later.",
     fields: [
       { key: "requestType", label: "Request Type", type: "select", required: true, options: ["New Application", "Correction / Update", "Reprint / Download"] },
       { key: "proofUsed", label: "Proof / Source", type: "text", required: true, placeholder: "Aadhaar, PAN, birth proof" },
@@ -104,7 +103,6 @@ const SERVICE_DETAIL_LIBRARY = {
   certificate: {
     id: "certificate",
     title: "Certificate Details",
-    description: "Store the purpose and destination so the certificate queue is easy to sort.",
     fields: [
       { key: "purpose", label: "Purpose", type: "text", required: true, placeholder: "Scholarship, job, admission" },
       { key: "officeTarget", label: "Target Office", type: "text", required: false, placeholder: "Tehsil, school, employer" },
@@ -114,7 +112,6 @@ const SERVICE_DETAIL_LIBRARY = {
   legal_docs: {
     id: "legal_docs",
     title: "Document Details",
-    description: "Track what legal document is being prepared and who is involved.",
     fields: [
       { key: "purpose", label: "Document Purpose", type: "text", required: true, placeholder: "Name change, rental, declaration" },
       { key: "partyCount", label: "Party Count", type: "number", required: true, min: 1, placeholder: "1" },
@@ -124,7 +121,6 @@ const SERVICE_DETAIL_LIBRARY = {
   government_service: {
     id: "government_service",
     title: "Service Details",
-    description: "Capture the service stage so the desk knows what remains.",
     fields: [
       { key: "serviceStage", label: "Current Stage", type: "select", required: true, options: ["Fresh", "Update", "Pending Follow-up"] },
       { key: "serviceId", label: "Reference ID", type: "text", required: false, placeholder: "Application no. or account id" },
@@ -134,7 +130,6 @@ const SERVICE_DETAIL_LIBRARY = {
   typing_print: {
     id: "typing_print",
     title: "Output Details",
-    description: "Store the print or typing spec so the work can be reproduced quickly.",
     fields: [
       { key: "format", label: "Format", type: "select", required: true, options: ["Black & White", "Color", "Soft Copy", "Print + Soft Copy"] },
       { key: "size", label: "Paper / Size", type: "select", required: false, options: ["A4", "Legal", "Photo", "Custom"] },
@@ -183,40 +178,6 @@ const DOCUMENT_PRESET_BY_NAME = DOCUMENT_PRESETS.reduce((acc, preset) => {
   acc[String(preset.label || "").trim().toLowerCase()] = preset;
   return acc;
 }, {});
-const CATEGORY_REQUIRED_DOC_IDS = {
-  "Government ID": ["aadhaar", "photo"],
-  "Certificates": ["aadhaar", "photo"],
-  "Legal & Docs": ["aadhaar", "pan"],
-  "Government Services": ["aadhaar", "bank_passbook", "photo"],
-  "Typing & Print": [],
-};
-const SERVICE_REQUIRED_DOC_IDS = {
-  aadhaar: ["aadhaar", "photo"],
-  pan_new: ["aadhaar", "photo"],
-  pan_correction: ["aadhaar", "photo"],
-  passport: ["aadhaar", "pan", "photo"],
-  voter_id: ["aadhaar", "photo"],
-  driving_license: ["aadhaar", "photo"],
-  income_cert: ["aadhaar", "photo"],
-  caste_cert: ["aadhaar", "photo"],
-  domicile_cert: ["aadhaar", "photo"],
-  date_cert: ["aadhaar", "photo"],
-  life_cert: ["aadhaar", "photo"],
-  ayushman: ["aadhaar", "photo"],
-  affidavit: ["aadhaar", "pan", "photo"],
-  gazette: ["aadhaar", "pan", "photo"],
-  rent_agreement: ["aadhaar", "pan", "photo"],
-  deed: ["aadhaar", "pan", "photo"],
-  ration_card: ["aadhaar", "bank_passbook", "photo"],
-  pf: ["aadhaar", "bank_passbook", "photo"],
-  pension: ["aadhaar", "bank_passbook", "photo"],
-  resume: ["photo"],
-  typing_hindi: [],
-  typing_english: [],
-  photocopy: [],
-  lamination: [],
-  pvc_card: ["aadhaar", "photo"],
-};
 const APP_FONT_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
 const APP_SERIF_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
 const APP_BRAND_STACK = "'League Spartan', 'Manrope', sans-serif";
@@ -280,16 +241,16 @@ const STORAGE_KEYS = {
   databaseRecords: "csc-buddy.database-records",
 };
 const TAB_CONFIG = [
-  { id: "home", label: "Dashboard Home", description: "Open a workspace from a clean and simple launch screen.", shortLabel: "HM", navGroup: "home" },
-  { id: "entry", label: "New Service Entry", description: "Create new customer service entries quickly.", shortLabel: "NS", navGroup: "primary" },
-  { id: "rates", label: "Rate List", description: "Manage service rates and categories.", shortLabel: "RL", navGroup: "primary" },
-  { id: "b2b", label: "Vendor Dashboard", description: "Track vendor purchases, sales, and payments.", shortLabel: "VD", navGroup: "primary" },
-  { id: "monthly", label: "Analytics", description: "View revenue and ticket trends.", shortLabel: "AN", navGroup: "primary" },
-  { id: "database", label: "Database", description: "Secure records protected with two-step verification.", shortLabel: "DB", navGroup: "panel" },
-  { id: "log", label: "Ticket Dashboard", description: "Track payment, status, and service flow.", shortLabel: "TD", navGroup: "panel" },
-  { id: "quick_links", label: "Quick Website Links", description: "Open frequently used government portals.", shortLabel: "QL", navGroup: "panel" },
-  { id: "doc_tools", label: "Document Tools", description: "Review document intake and pending document status.", shortLabel: "DT", navGroup: "panel" },
-  { id: "services_dashboard", label: "Services Dashboard", description: "Monitor service mix and category performance.", shortLabel: "SD", navGroup: "panel" },
+  { id: "home", label: "Dashboard Home", shortLabel: "HM", navGroup: "home" },
+  { id: "entry", label: "New Service Entry", shortLabel: "NS", navGroup: "primary" },
+  { id: "rates", label: "Rate List", shortLabel: "RL", navGroup: "primary" },
+  { id: "b2b", label: "Vendor Dashboard", shortLabel: "VD", navGroup: "primary" },
+  { id: "monthly", label: "Analytics", shortLabel: "AN", navGroup: "primary" },
+  { id: "database", label: "Database", shortLabel: "DB", navGroup: "panel" },
+  { id: "log", label: "Ticket Dashboard", shortLabel: "TD", navGroup: "panel" },
+  { id: "quick_links", label: "Quick Website Links", shortLabel: "QL", navGroup: "panel" },
+  { id: "doc_tools", label: "Document Tools", shortLabel: "DT", navGroup: "panel" },
+  { id: "services_dashboard", label: "Services Dashboard", shortLabel: "SD", navGroup: "panel" },
 ];
 const PRIMARY_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "primary");
 const PANEL_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "panel");
@@ -297,7 +258,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "entry",
     label: "New Service Entry",
-    helper: "Start customer intake and ticket creation.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <rect x="5" y="3.5" width="14" height="17" rx="2.5" />
@@ -310,7 +270,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "rates",
     label: "Rate List",
-    helper: "Update and review service pricing.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <rect x="4.5" y="3.5" width="15" height="17" rx="2.5" />
@@ -325,7 +284,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "b2b",
     label: "Vendor Dashboard",
-    helper: "Manage B2B entries, services, and payments.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <path d="M3.5 20.5h17" />
@@ -338,7 +296,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "monthly",
     label: "Analytics",
-    helper: "Open monthly revenue and category trends.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <path d="M4 20h16" />
@@ -351,7 +308,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "database",
     label: "Database",
-    helper: "Two-factor required: one security code and one Google Authenticator code.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <path d="m12 3 7 3v5.7c0 4.2-2.7 7-7 9.3-4.3-2.3-7-5.1-7-9.3V6z" />
@@ -363,7 +319,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "log",
     label: "Ticket Dashboard",
-    helper: "Track open/closed tickets and payment status.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <path d="M4 8.5h3V6h10v2.5h3v7h-3V18H7v-2.5H4z" />
@@ -374,7 +329,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "quick_links",
     label: "Quick Website Links",
-    helper: "Open core portal links in one click.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <path d="M14 5h5v5" />
@@ -386,7 +340,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "doc_tools",
     label: "Document Tools",
-    helper: "View required, received, and pending documents.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <path d="M7 3.5h7l4 4v13H7z" />
@@ -398,7 +351,6 @@ const HOME_NAV_BUTTONS = [
   {
     id: "services_dashboard",
     label: "Services Dashboard",
-    helper: "Review service-wise totals and volume.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
         <circle cx="12" cy="12" r="8.5" />
@@ -456,13 +408,196 @@ const DATABASE_SECTION_MAP = DATABASE_SECTION_CONFIG.reduce((acc, section) => {
   return acc;
 }, {});
 const QUICK_LINK_DEFAULTS = [
-  { id: "default_esathi", name: "e-Saathi", description: "UP state citizen services portal.", url: "https://edistrict.up.gov.in", isDefault: true },
-  { id: "default_digitalseva", name: "Digital Seva Portal", description: "CSC services and transaction desk.", url: "https://digitalseva.csc.gov.in", isDefault: true },
-  { id: "default_estamping", name: "Estamping", description: "Stamp and registration services.", url: "https://igrsup.gov.in", isDefault: true },
-  { id: "default_pf", name: "PF (EPFO)", description: "Provident fund member services.", url: "https://www.epfindia.gov.in", isDefault: true },
-  { id: "default_pension", name: "Pension (NPS)", description: "NPS CRA account and pension tools.", url: "https://npscra.nsdl.co.in", isDefault: true },
-  { id: "default_crsorgi", name: "dc.crsorgi", description: "Civil registration and certificate access.", url: "https://dc.crsorgi.gov.in", isDefault: true },
+  { id: "default_esathi", name: "e-Saathi", url: "https://edistrict.up.gov.in", isDefault: true },
+  { id: "default_digitalseva", name: "Digital Seva Portal", url: "https://digitalseva.csc.gov.in", isDefault: true },
+  { id: "default_estamping", name: "Estamping", url: "https://igrsup.gov.in", isDefault: true },
+  { id: "default_pf", name: "PF (EPFO)", url: "https://www.epfindia.gov.in", isDefault: true },
+  { id: "default_pension", name: "Pension (NPS)", url: "https://npscra.nsdl.co.in", isDefault: true },
+  { id: "default_crsorgi", name: "dc.crsorgi", url: "https://dc.crsorgi.gov.in", isDefault: true },
 ];
+const B2B_TRACKS = [
+  { id: "take", label: "Services We Take", pendingLabel: "Pending Payable" },
+  { id: "give", label: "Services We Give", pendingLabel: "Pending Collection" },
+  { id: "agent", label: "Agents", pendingLabel: "Pending Commission" },
+];
+const B2B_TRACK_META = {
+  take: {
+    heading: "Purchase Ecosystem",
+    entityPlural: "Vendors",
+    entityCountLabel: "Total Vendors",
+    amountLabel: "Total Purchase Amount",
+    settledLabel: "Total Paid",
+    pendingLabel: "Total Pending Payable",
+    listHeading: "Outsource Partners",
+    detailEntriesHeading: "Recent Purchases",
+    amountCaption: "Payable by us",
+    settledCaption: "Paid by us",
+    pendingCaption: "Pending payable",
+    submitLabel: "Add Purchase Entry",
+    paidFieldLabel: "Paid Amount (Rs.)",
+    rateFieldLabel: "Purchase Rate (Rs.)",
+    previewVerb: "Payable",
+  },
+  give: {
+    heading: "Sales Ecosystem",
+    entityPlural: "Client-Vendors",
+    entityCountLabel: "Total Client-Vendors",
+    amountLabel: "Total Sales",
+    settledLabel: "Total Collected",
+    pendingLabel: "Total Pending Recovery",
+    listHeading: "B2B Buyers",
+    detailEntriesHeading: "Recent Sales Entries",
+    amountCaption: "Receivable by us",
+    settledCaption: "Collected by us",
+    pendingCaption: "Pending collection",
+    submitLabel: "Add Sales Entry",
+    paidFieldLabel: "Collected Amount (Rs.)",
+    rateFieldLabel: "Sales Rate (Rs.)",
+    previewVerb: "Receivable",
+  },
+  agent: {
+    heading: "Agent Ecosystem",
+    entityPlural: "Agents",
+    entityCountLabel: "Total Agents",
+    amountLabel: "Total Referred Business",
+    settledLabel: "Commission Paid",
+    pendingLabel: "Commission Pending",
+    listHeading: "Referral Agents",
+    detailEntriesHeading: "Recent Referred Entries",
+    amountCaption: "Referred business",
+    settledCaption: "Commission paid",
+    pendingCaption: "Pending commission",
+    submitLabel: "Add Referral Entry",
+    paidFieldLabel: "Commission Paid (Rs.)",
+    rateFieldLabel: "Commission Rate (Rs.)",
+    previewVerb: "Commission",
+  },
+};
+const B2B_ROLE_BADGE_META = {
+  take: { label: "Supplies to Us", color: "#1e3a8a", border: "rgba(30,58,138,0.28)", background: "rgba(30,58,138,0.08)" },
+  give: { label: "Buys from Us", color: "#0f766e", border: "rgba(15,118,110,0.28)", background: "rgba(15,118,110,0.10)" },
+  agent: { label: "Agent", color: "#7c2d12", border: "rgba(124,45,18,0.24)", background: "rgba(124,45,18,0.08)" },
+};
+const B2B_PAYMENT_MODES = ["Cash", "UPI", "Bank Transfer", "Credit", "Unspecified"];
+const B2B_PARTNER_SEED = [
+  {
+    id: "raj_renu",
+    name: "Raj/Renu",
+    roles: ["take", "give"],
+    servicesByRole: {
+      take: [
+        { label: "Outsource Services", items: ["Lamination", "PVC Card", "E-signature", "Appointments"] },
+      ],
+      give: [
+        { label: "Services We Provide", items: ["E-Stamp Paper"] },
+      ],
+      agent: [],
+    },
+  },
+  {
+    id: "ashad_raja",
+    name: "Ashad Raja",
+    roles: ["take", "give"],
+    servicesByRole: {
+      take: [
+        { label: "Outsource Services", items: ["Notary", "Mobile Number Update"] },
+      ],
+      give: [
+        { label: "Services We Provide", items: ["E-Stamp Paper"] },
+      ],
+      agent: [],
+    },
+  },
+  {
+    id: "sachin",
+    name: "Sachin",
+    roles: ["take"],
+    servicesByRole: {
+      take: [
+        { label: "Outsource Services", items: ["Notary"] },
+      ],
+      give: [],
+      agent: [],
+    },
+  },
+  {
+    id: "varun_riya",
+    name: "Varun/Riya",
+    roles: ["take"],
+    servicesByRole: {
+      take: [
+        {
+          label: "Aadhaar Services",
+          items: [
+            "Child Fresh Apply (Age less than 5)",
+            "Child Fresh Apply (Age more than 5)",
+            "Mobile Number Update",
+            "Address Update",
+            "DOB Increase",
+            "DOB Decrease",
+            "Biometric Update",
+          ],
+        },
+      ],
+      give: [],
+      agent: [],
+    },
+  },
+  {
+    id: "saurabh",
+    name: "Saurabh",
+    roles: ["take"],
+    servicesByRole: {
+      take: [
+        {
+          label: "Driving License",
+          items: ["Learner's", "Permanent", "Learner's + Permanent", "Renewal"],
+        },
+      ],
+      give: [],
+      agent: [],
+    },
+  },
+  {
+    id: "karan",
+    name: "Karan",
+    roles: ["give"],
+    servicesByRole: {
+      take: [],
+      give: [
+        { label: "Services We Provide", items: ["E-Stamp Paper"] },
+      ],
+      agent: [],
+    },
+  },
+];
+const B2B_AGENT_SEED = [];
+
+function createB2BEntryForm(track) {
+  return {
+    partnerName: "",
+    serviceName: "",
+    quantity: "1",
+    rate: "",
+    settledAmount: "",
+    paymentMode: "UPI",
+    entryDate: getTicketCounterDateKey(new Date()),
+    note: "",
+    includeInDailyRevenue: track === "give",
+    referredClient: "",
+    businessAmount: "",
+  };
+}
+
+function dedupeB2BItems(items = []) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const normalized = normalizeEntityKey(item);
+    if (!normalized || seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
+}
 
 function normalizeExternalUrl(url) {
   const trimmed = String(url || "").trim();
@@ -550,14 +685,6 @@ function getOperatorConfig(operatorName) {
 
 function getInitialActiveTab() {
   return "home";
-}
-
-function getInitialEntryStep(draftSeed) {
-  if (canUseBrowserHistory()) {
-    const historyStep = Number(window.history.state?.entryStep);
-    if (historyStep === 1 || historyStep === 2) return historyStep;
-  }
-  return Number(draftSeed?.step) === 2 ? 2 : 1;
 }
 
 function getOperatorTicketMetrics(tickets, operatorName) {
@@ -720,22 +847,88 @@ function normalizeDocNameKey(name) {
   return String(name || "").trim().toLowerCase();
 }
 
-function getRequiredDocIdsForService(service) {
-  const serviceId = String(service?.id || "").trim();
-  const category = String(service?.category || "").trim();
-  const fromService = SERVICE_REQUIRED_DOC_IDS[serviceId];
-  const fromCategory = CATEGORY_REQUIRED_DOC_IDS[category] || [];
-  const candidateIds = Array.isArray(fromService) ? fromService : fromCategory;
+function getUniqueSubmittedDocumentNames(documents) {
+  const list = Array.isArray(documents) ? documents : [];
   const unique = [];
   const seen = new Set();
-  candidateIds.forEach((docId) => {
-    const normalizedDocId = String(docId || "").trim();
-    if (!normalizedDocId || seen.has(normalizedDocId)) return;
-    if (!DOCUMENT_PRESET_MAP[normalizedDocId]) return;
-    seen.add(normalizedDocId);
-    unique.push(normalizedDocId);
+  list.forEach((doc) => {
+    if (!doc?.submitted) return;
+    const name = String(doc?.name || "").trim();
+    const key = normalizeDocNameKey(name);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    unique.push(name);
   });
   return unique;
+}
+
+function normalizeDocumentListInput(rawValue) {
+  if (Array.isArray(rawValue)) {
+    return rawValue
+      .map((entry) => {
+        if (typeof entry === "string") return entry;
+        if (!entry || typeof entry !== "object") return "";
+        return String(
+          entry.label
+          || entry.name
+          || entry.title
+          || entry.document
+          || entry.doc
+          || entry.id
+          || ""
+        ).trim();
+      })
+      .map((entry) => String(entry || "").trim())
+      .filter(Boolean);
+  }
+  if (typeof rawValue === "string") {
+    return rawValue
+      .split(/\r?\n|,|\|/)
+      .map((entry) => String(entry || "").trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function normalizeConfiguredDocumentName(rawName) {
+  const rawText = String(rawName || "").trim();
+  if (!rawText) return "";
+  const presetById = DOCUMENT_PRESET_MAP[rawText];
+  if (presetById?.label) return presetById.label;
+  const presetByName = DOCUMENT_PRESET_BY_NAME[normalizeDocNameKey(rawText)];
+  if (presetByName?.label) return presetByName.label;
+  return rawText;
+}
+
+function getRequiredDocumentNamesForService(service) {
+  const configuredLists = [
+    service?.requiredDocuments,
+    service?.requiredDocs,
+    service?.requiredDocumentSet,
+    service?.documentsRequired,
+    service?.requiredDocIds,
+    service?.requiredDocumentIds,
+  ];
+  const unique = [];
+  const seen = new Set();
+  configuredLists.forEach((listValue) => {
+    normalizeDocumentListInput(listValue).forEach((rawName) => {
+      const normalizedName = normalizeConfiguredDocumentName(rawName);
+      const normalizedKey = normalizeDocNameKey(normalizedName);
+      if (!normalizedKey || seen.has(normalizedKey)) return;
+      seen.add(normalizedKey);
+      unique.push(normalizedName);
+    });
+  });
+  return unique;
+}
+
+function getServiceRequiredDocumentId(serviceId, documentName) {
+  const safeServiceId = String(serviceId || "").trim() || "service";
+  const normalizedName = normalizeDocNameKey(documentName)
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return `doc_req_${safeServiceId}_${normalizedName || "document"}`;
 }
 
 function areDocumentListsEqual(currentList, nextList) {
@@ -759,6 +952,7 @@ function areDocumentListsEqual(currentList, nextList) {
 function syncServiceRequiredDocuments(existingDocuments, serviceItems) {
   const currentDocs = Array.isArray(existingDocuments) ? existingDocuments : [];
   const activeItems = Array.isArray(serviceItems) ? serviceItems : [];
+  if (activeItems.length === 0) return currentDocs;
   const staticDocs = currentDocs.filter((doc) => doc.source !== "service_required");
   const existingById = new Map(currentDocs.map((doc) => [String(doc.id || ""), doc]));
   const submittedPresetIds = new Set(
@@ -781,20 +975,25 @@ function syncServiceRequiredDocuments(existingDocuments, serviceItems) {
     if (!serviceId || seenServiceIds.has(serviceId)) return;
     seenServiceIds.add(serviceId);
     const serviceName = String(item?.name || serviceId);
-    const requiredDocIds = getRequiredDocIdsForService(item);
-    requiredDocIds.forEach((docId) => {
-      const docPreset = DOCUMENT_PRESET_MAP[docId];
-      if (!docPreset) return;
-      const docIdKey = `doc_req_${serviceId}_${docId}`;
+    const requiredDocumentNames = getRequiredDocumentNamesForService(item);
+    requiredDocumentNames.forEach((documentName) => {
+      const normalizedDocumentName = normalizeConfiguredDocumentName(documentName);
+      const normalizedDocumentKey = normalizeDocNameKey(normalizedDocumentName);
+      if (!normalizedDocumentKey) return;
+      const docPreset = DOCUMENT_PRESET_BY_NAME[normalizedDocumentKey] || null;
+      const docPresetId = docPreset?.id || "";
+      const displayName = docPreset?.label || normalizedDocumentName;
+      const docIdKey = getServiceRequiredDocumentId(serviceId, displayName);
       const existingDoc = existingById.get(docIdKey);
-      const shouldPrefillSubmitted = submittedPresetIds.has(docId) || submittedNameKeys.has(normalizeDocNameKey(docPreset.label));
+      const shouldPrefillSubmitted = (docPresetId && submittedPresetIds.has(docPresetId))
+        || submittedNameKeys.has(normalizeDocNameKey(displayName));
       generatedDocs.push({
         id: docIdKey,
-        name: docPreset.label,
+        name: displayName,
         required: true,
         submitted: existingDoc ? Boolean(existingDoc.submitted) : shouldPrefillSubmitted,
         source: "service_required",
-        docPresetId: docId,
+        docPresetId,
         serviceId,
         serviceName,
       });
@@ -1021,10 +1220,8 @@ function buildPrintableTicketHtml(ticket) {
         </div>
       `).join("")
     : `<div class="muted">No services linked to this ticket.</div>`;
-  const providedDocs = structured.documents.items
-    .filter((doc) => doc.submitted)
-    .map((doc) => doc.name)
-    .join(", ");
+  const providedDocNames = getUniqueSubmittedDocumentNames(structured.documents.items);
+  const providedDocs = providedDocNames.join(", ");
   const statusColor = structured.meta.status === "Closed" ? "#047857" : "#B45309";
   const referenceSummary = formatReferenceSummary(structured.parties.reference);
 
@@ -1052,35 +1249,38 @@ function buildPrintableTicketHtml(ticket) {
         box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
       }
       .title {
-        font-size: 20px;
-        font-weight: 800;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.34em;
         text-align: center;
-        margin-bottom: 10px;
+        color: #475569;
+        margin-bottom: 6px;
       }
       .status {
-        text-align: center;
+        text-align: left;
         color: ${statusColor};
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 1px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        margin-bottom: 16px;
+        margin-bottom: 0;
       }
       .row {
         display: flex;
         justify-content: space-between;
         gap: 12px;
       }
-      .stack { margin-bottom: 14px; }
+      .stack { margin-bottom: 12px; }
       .label {
-        font-size: 11px;
+        font-size: 10px;
         color: #64748b;
         text-transform: uppercase;
-        letter-spacing: 0.7px;
+        letter-spacing: 0.14em;
         margin-bottom: 4px;
       }
       .value {
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 700;
         color: #0f172a;
       }
@@ -1092,8 +1292,8 @@ function buildPrintableTicketHtml(ticket) {
       .divider {
         border-top: 1px dashed #cbd5e1;
         border-bottom: 1px dashed #cbd5e1;
-        padding: 10px 0;
-        margin: 14px 0;
+        padding: 10px 0 9px;
+        margin: 13px 0 12px;
       }
       .item-row {
         font-size: 12px;
@@ -1105,6 +1305,36 @@ function buildPrintableTicketHtml(ticket) {
       .meta-line {
         font-size: 12px;
         color: #475569;
+        margin-top: 6px;
+      }
+      .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+      .file-box {
+        text-align: right;
+      }
+      .identity {
+        margin-bottom: 10px;
+      }
+      .identity .name {
+        font-size: 19px;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.22;
+        margin-bottom: 7px;
+      }
+      .meta-block {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 10px;
+      }
+      .meta-tight {
+        margin-top: 4px;
+      }
+      .doc-list {
         margin-top: 6px;
       }
       @media print {
@@ -1120,30 +1350,31 @@ function buildPrintableTicketHtml(ticket) {
   <body>
     <div class="slip">
       <div class="title">CSC TICKET SLIP</div>
-      <div class="status">Status: ${escapeHtml(structured.meta.status)}</div>
-      <div class="row stack">
-        <div>
-          <div class="label">Document Holder</div>
-          <div class="value">${escapeHtml(structured.parties.documentHolder.name)}</div>
-        </div>
-        <div style="text-align:right">
-          <div class="label">Ticket</div>
+      <div class="header-row">
+        <div class="status">${escapeHtml(structured.meta.status)}</div>
+        <div class="file-box">
+          <div class="label">File Number</div>
           <div class="value">${escapeHtml(structured.meta.ticketNo)}</div>
         </div>
       </div>
-      <div class="meta-line">Reference Contact: ${escapeHtml(referenceSummary)}</div>
-      ${structured.parties.documentHolder.phone ? `<div class="meta-line">Contact: ${escapeHtml(structured.parties.documentHolder.phone)}</div>` : ""}
-      <div class="meta-line">Created: ${escapeHtml(structured.meta.createdDate)} ${escapeHtml(structured.meta.createdTime)}</div>
+      <div class="identity">
+        <div class="label">Document Holder</div>
+        <div class="name">${escapeHtml(structured.parties.documentHolder.name || "-")}</div>
+        ${structured.parties.documentHolder.phone ? `<div class="meta-line">Contact: ${escapeHtml(structured.parties.documentHolder.phone)}</div>` : ""}
+        <div class="meta-line">Reference Contact: ${escapeHtml(referenceSummary)}</div>
+      </div>
       <div class="divider">
         ${servicesHtml}
       </div>
-      <div class="row meta-line">
-        <span>Operator: ${escapeHtml(structured.assignment.operator || "N/A")}</span>
-        <span>Pay: ${escapeHtml(structured.payment.mode)}</span>
+      <div class="meta-block">
+        <div class="meta-line row">
+          <span>Operator: ${escapeHtml(structured.assignment.operator || "N/A")}</span>
+          <span>Created: ${escapeHtml(structured.meta.createdDate)} ${escapeHtml(structured.meta.createdTime)}</span>
+        </div>
+        <div class="meta-line meta-tight">Payment: Collected Rs. ${escapeHtml(structured.payment.paidTotal)} | Pending Rs. ${escapeHtml(structured.payment.pendingBalance)}</div>
+        <div class="meta-line meta-tight">Docs: ${escapeHtml(structured.documents.items.filter((doc) => doc.required && doc.submitted).length)}/${escapeHtml(structured.documents.items.filter((doc) => doc.required).length)} required submitted</div>
+        ${providedDocs ? `<div class="meta-line doc-list">Documents Collected: ${escapeHtml(providedDocs)}</div>` : ""}
       </div>
-      <div class="meta-line">Payment: ${escapeHtml(structured.payment.status)} | Paid Rs. ${escapeHtml(structured.payment.paidTotal)} | Pending Rs. ${escapeHtml(structured.payment.pendingBalance)}</div>
-      <div class="meta-line">Docs: ${escapeHtml(structured.documents.items.filter((doc) => doc.required && doc.submitted).length)}/${escapeHtml(structured.documents.items.filter((doc) => doc.required).length)} required submitted</div>
-      ${providedDocs ? `<div class="meta-line">Provided docs: ${escapeHtml(providedDocs)}</div>` : ""}
     </div>
     <script>
       window.addEventListener("load", function () {
@@ -1269,8 +1500,29 @@ function serializeTickets(tickets) {
   });
 }
 
+function normalizeEntityKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
 function normalizeB2BLedgerEntry(entry, fallbackIndex = 0) {
-  const flow = entry?.flow === "us_to_vendor" ? "us_to_vendor" : "vendor_to_us";
+  const legacyFlow = entry?.flow === "us_to_vendor" ? "us_to_vendor" : "vendor_to_us";
+  const rawEcosystem = String(entry?.ecosystem || "").trim().toLowerCase();
+  const ecosystem = rawEcosystem === "agent"
+    ? "agent"
+    : rawEcosystem === "give"
+      ? "give"
+      : rawEcosystem === "take"
+        ? "take"
+        : (legacyFlow === "us_to_vendor" ? "give" : "take");
+  const flow = ecosystem === "give" ? "us_to_vendor" : "vendor_to_us";
+  const entityType = ecosystem === "agent" ? "agent" : "vendor";
+  const partnerId = String(entry?.partnerId || entry?.vendorId || entry?.agentId || "").trim();
+  const fallbackPartnerName = ecosystem === "agent" ? "Unknown Agent" : "Unknown Vendor";
+  const partnerName = String(entry?.partnerName || entry?.vendorName || entry?.agentName || fallbackPartnerName).trim() || fallbackPartnerName;
+  const partnerKey = normalizeEntityKey(partnerName || partnerId || fallbackPartnerName);
   const quantity = Math.max(1, Number(entry?.quantity) || 1);
   const rate = Math.max(0, Number(entry?.rate) || 0);
   const computedAmount = Math.max(0, Number(entry?.amount) || quantity * rate);
@@ -1283,13 +1535,20 @@ function normalizeB2BLedgerEntry(entry, fallbackIndex = 0) {
       : "Unpaid";
   const defaultEntryDate = getTicketCounterDateKey(new Date());
   const entryDate = toIsoDateKey(entry?.entryDate) || defaultEntryDate;
-  const includeInDailyRevenue = flow === "us_to_vendor"
+  const includeInDailyRevenue = ecosystem === "give"
     ? (typeof entry?.includeInDailyRevenue === "boolean" ? entry.includeInDailyRevenue : true)
     : false;
+  const businessAmount = Math.max(0, Number(entry?.businessAmount) || 0);
+  const referredClient = String(entry?.referredClient || "").trim();
   return {
     id: String(entry?.id || `b2b_${Date.now()}_${fallbackIndex}`),
-    vendorId: String(entry?.vendorId || ""),
-    vendorName: String(entry?.vendorName || "Unknown Vendor"),
+    ecosystem,
+    entityType,
+    partnerId,
+    partnerName,
+    partnerKey,
+    vendorId: partnerId,
+    vendorName: partnerName,
     flow,
     serviceName: String(entry?.serviceName || "").trim(),
     quantity,
@@ -1297,6 +1556,8 @@ function normalizeB2BLedgerEntry(entry, fallbackIndex = 0) {
     amount: computedAmount,
     paidAmount,
     pendingAmount,
+    businessAmount,
+    referredClient,
     paymentStatus,
     paymentMode: String(entry?.paymentMode || "Unspecified"),
     entryDate,
@@ -1803,7 +2064,6 @@ function normalizeQuickLinksList(list) {
     .map((item) => ({
       id: String(item?.id || `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`),
       name: String(item?.name || "").trim(),
-      description: String(item?.description || "Custom quick access link").trim() || "Custom quick access link",
       url: normalizeExternalUrl(item?.url || ""),
       isDefault: false,
     }))
@@ -1816,7 +2076,7 @@ function getStoredQuickLinks() {
 }
 
 //  Tab Button  -  vertical sidebar nav item
-function TabBtn({ label, description, active, onClick, badge, shortLabel = "", expanded = true }) {
+function TabBtn({ label, active, onClick, badge, shortLabel = "", expanded = true }) {
   return (
     <button onClick={onClick} aria-pressed={active} title={expanded ? undefined : label} style={{
       width: "100%", padding: expanded ? "10px 12px 10px 14px" : "10px 10px", border: "none",
@@ -1846,7 +2106,7 @@ function TabBtn({ label, description, active, onClick, badge, shortLabel = "", e
       </span>
       {expanded ? (
         <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{
             fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.02em",
             fontFamily: APP_FONT_STACK,
@@ -1862,15 +2122,6 @@ function TabBtn({ label, description, active, onClick, badge, shortLabel = "", e
               borderRadius: 999, padding: "2px 6px",
             }}>{badge}</span>
           )}
-        </span>
-        <span style={{
-          fontSize: "0.76rem", lineHeight: 1.4, display: "block",
-          color: active ? OPS.textMuted : "rgba(71,85,105,0.85)",
-          fontFamily: APP_FONT_STACK, fontWeight: 400,
-          transition: "color 0.18s ease",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-        }}>
-          {description}
         </span>
         </span>
       ) : (
@@ -2064,7 +2315,6 @@ function HomeLaunchpad({ onOpenSection }) {
                 padding: "16px 16px",
                 textAlign: "left",
                 display: "grid",
-                gap: 6,
                 cursor: "pointer",
                 transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
                 boxShadow: "0 6px 16px rgba(15,23,42,0.05)",
@@ -2096,9 +2346,6 @@ function HomeLaunchpad({ onOpenSection }) {
                   </span>
                 )}
               </div>
-              <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", lineHeight: 1.55, color: "rgba(15,23,42,0.62)" }}>
-                {item.helper}
-              </span>
             </button>
           ))}
         </div>
@@ -2211,11 +2458,8 @@ function QuickLinksWorkspace({
       <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 16, background: "rgba(255,255,255,0.92)", padding: "16px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
-              Quick Website Links
-            </div>
             <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.2rem", fontWeight: 700, color: "#0f172a" }}>
-              Open frequently used portals without searching
+              Quick Website Links
             </div>
           </div>
           <button
@@ -2282,10 +2526,7 @@ function QuickLinksWorkspace({
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
         {quickLinks.map((link) => (
           <div key={link.id} style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.90)", padding: "12px 12px" }}>
-            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#0f172a", marginBottom: 5 }}>{link.name}</div>
-            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", lineHeight: 1.5, color: "rgba(15,23,42,0.60)", marginBottom: 9 }}>
-              {link.description}
-            </div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#0f172a", marginBottom: 9 }}>{link.name}</div>
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={() => onOpenQuickLink(link.url)}
@@ -3181,11 +3422,8 @@ function DatabaseAccessModal({ onClose, onVerify }) {
         <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "#991b1b", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
           Database Access Gate
         </div>
-        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.12rem", color: "#0f172a", fontWeight: 700, marginBottom: 6 }}>
+        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.12rem", color: "#0f172a", fontWeight: 700, marginBottom: 12 }}>
           Verify both factors to continue
-        </div>
-        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.84rem", color: "rgba(15,23,42,0.58)", lineHeight: 1.6, marginBottom: 12 }}>
-          Enter your security code and Google Authenticator code.
         </div>
         <div style={{ display: "grid", gap: 10 }}>
           <input
@@ -3267,9 +3505,6 @@ function SideNavItem({ item, active, expanded, badge, onClick }) {
             <div style={{ fontSize: 13, fontWeight: 600, color: active ? OPS.text : OPS.textMuted, fontFamily: APP_FONT_STACK }}>
               {item.label}
             </div>
-            <div style={{ fontSize: 11, color: "rgba(71,85,105,0.86)", lineHeight: 1.4, fontFamily: APP_FONT_STACK }}>
-              {item.description}
-            </div>
           </div>
         )}
       </div>
@@ -3314,7 +3549,6 @@ function WorkspaceSidebar({
     padding: "11px 12px",
     textAlign: "left",
     display: "grid",
-    gap: 4,
     transition: "all 0.18s ease",
   });
 
@@ -3387,14 +3621,6 @@ function WorkspaceSidebar({
                 </span>
               )}
             </div>
-            <span style={{
-              fontFamily: APP_FONT_STACK,
-              fontSize: "0.76rem",
-              color: "rgba(15,23,42,0.58)",
-              lineHeight: 1.45,
-            }}>
-              {item.description}
-            </span>
           </button>
         );
       })}
@@ -3445,9 +3671,6 @@ function WorkspaceSidebar({
             <div>
               <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.96rem", fontWeight: 800, color: "#0f172a", letterSpacing: "0.06em" }}>
                 Partner Desk
-              </div>
-              <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.74rem", color: "rgba(15,23,42,0.52)" }}>
-                Clear workflow menu for daily staff use
               </div>
             </div>
           </div>
@@ -3810,9 +4033,6 @@ function RateCard({ services, setServices }) {
           }}>
             <div style={rcEyebrow}>{item.label}</div>
             <div style={{ fontSize: "1.8rem", fontWeight: 300, color: "#0f172a", fontFamily: APP_SERIF_STACK, lineHeight: 1.1 }}>{item.count}</div>
-            <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", lineHeight: 1.5, fontFamily: APP_FONT_STACK, marginTop: 4 }}>
-              {QUANTITY_MODE_CONFIG[item.id].helper}
-            </div>
           </div>
         ))}
       </div>
@@ -4456,16 +4676,12 @@ function Dashboard({ bills }) {
 
 function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isActive }) {
   const [draftSeed] = useState(() => getStoredTicketDraft());
-  const [step, setStep] = useState(() => getInitialEntryStep(draftSeed));
   const [hasReference, setHasReference] = useState(() => getHasReferenceValue(draftSeed));
   const [customerName, setCustomerName] = useState(() => draftSeed.customerName || "");
   const [customerPhone, setCustomerPhone] = useState(() => draftSeed.customerPhone || "");
   const [entryDateKey, setEntryDateKey] = useState(() => toIsoDateKey(draftSeed.entryDateKey) || getTicketCounterDateKey(new Date()));
   const [referenceName, setReferenceName] = useState(() => draftSeed.referenceName || "");
   const [referenceLabel, setReferenceLabel] = useState(() => getReferenceLabelValue(draftSeed));
-  const [providedDocIds, setProvidedDocIds] = useState(() => (
-    Array.isArray(draftSeed.providedDocIds) ? draftSeed.providedDocIds : []
-  ));
   const [operator, setOperator] = useState(() => (
     typeof draftSeed.operator === "string" ? draftSeed.operator : DEFAULT_OPERATOR
   ));
@@ -4517,7 +4733,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const [ticketMeta, setTicketMeta] = useState(() => (
     draftSeed.ticketMeta && typeof draftSeed.ticketMeta === "object" ? draftSeed.ticketMeta : null
   ));
-  const [subStep, setSubStep] = useState(1);
+  const [subStep, setSubStep] = useState(() => {
+    const seeded = Number(draftSeed?.subStep);
+    return Number.isFinite(seeded) && seeded >= 1 && seeded <= 4 ? seeded : 1;
+  });
   const [saved, setSaved] = useState(null);
   const [error, setError] = useState("");
   const [intakeFieldErrors, setIntakeFieldErrors] = useState({});
@@ -4536,7 +4755,36 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const referenceNameInputRef = useRef(null);
   const referencePhoneInputRef = useRef(null);
   const entryDateInputRef = useRef(null);
-  const selectedServiceConfig = services.find((service) => service.id === selectedService) || null;
+  const availableServices = useMemo(
+    () => services.filter((service) => (
+      service
+      && typeof service === "object"
+      && String(service.id || "").trim()
+      && String(service.name || "").trim()
+    )),
+    [services]
+  );
+  const intakeServiceGroups = useMemo(() => {
+    const groups = new Map();
+    availableServices.forEach((service) => {
+      const category = String(service.category || "Other").trim() || "Other";
+      if (!groups.has(category)) groups.set(category, []);
+      groups.get(category).push(service);
+    });
+    const ordered = [];
+    CATEGORIES.forEach((category) => {
+      if (!groups.has(category)) return;
+      ordered.push({ category, services: groups.get(category) });
+      groups.delete(category);
+    });
+    Array.from(groups.entries())
+      .sort((left, right) => left[0].localeCompare(right[0]))
+      .forEach(([category, groupedServices]) => {
+        ordered.push({ category, services: groupedServices });
+      });
+    return ordered;
+  }, [availableServices]);
+  const selectedServiceConfig = availableServices.find((service) => service.id === selectedService) || null;
   const selectedQuantityConfig = selectedServiceConfig ? getQuantityModeConfig(selectedServiceConfig.quantityMode) : null;
   const selectedDetailSchema = selectedServiceConfig ? getServiceDetailSchema(selectedServiceConfig) : null;
   const selectedServiceDetailValues = selectedServiceConfig
@@ -4547,8 +4795,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       ? serviceDetailErrorMap[selectedServiceConfig.id]
       : {})
     : {};
-  const selectedOperatorConfig = getOperatorConfig(operator);
-  const selectedOperatorMetrics = getOperatorTicketMetrics(tickets, operator);
 
   const total = items.reduce((sum, it) => sum + it.amount, 0);
   const cashCollected = Math.max(0, Number(paymentCash) || 0);
@@ -4686,28 +4932,16 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       onConfirm: null,
     });
   };
-  function navigateToStep(nextStep, mode = "push") {
-    const normalizedStep = nextStep === 2 ? 2 : 1;
-    if (normalizedStep === step) {
-      if (mode === "replace") {
-        updateBrowserState({ tab: "entry", entryStep: normalizedStep }, "replace");
-      }
-      return;
-    }
-    updateBrowserState({ tab: "entry", entryStep: normalizedStep }, mode);
-    setStep(normalizedStep);
-    setSubStep(1);
-  }
 
   const draftPayload = {
-    step,
+    step: 1,
+    subStep,
     hasReference,
     customerName,
     customerPhone,
     entryDateKey,
     referenceName,
     referenceLabel,
-    providedDocIds,
     operator,
     selectedService,
     qty,
@@ -4745,26 +4979,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
   useEffect(() => {
     if (!isActive) return;
-    updateBrowserState({ tab: "entry", entryStep: step }, "replace");
+    updateBrowserState({ tab: "entry" }, "replace");
   }, [isActive]);
-
-  useEffect(() => {
-    const handlePopState = (event) => {
-      if (event.state?.tab === "entry" && (event.state?.entryStep === 1 || event.state?.entryStep === 2)) {
-        setStep(event.state.entryStep);
-      }
-    };
-    if (typeof window === "undefined") return undefined;
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  useEffect(() => {
-    if (step !== 2) return;
-    if (ticketMeta) return;
-    setError("Intake details are missing. Please start from Intake.");
-    navigateToStep(1, "replace");
-  }, [step, ticketMeta]);
 
   useEffect(() => {
     if (!selectedServiceConfig) {
@@ -4799,12 +5015,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       undoTimeoutRef.current = null;
     }
   }, []);
-
-  const toggleProvidedDoc = (docId) => {
-    setProvidedDocIds((prev) => (
-      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
-    ));
-  };
 
   const focusIntakeField = (fieldKey) => {
     const refByField = {
@@ -4924,10 +5134,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       trimmedReferenceLabel,
       referenceEnabled,
     } = intakeValidation;
-    setTicketMeta({
-      ticketNo: generateBillNo(),
+    setTicketMeta((previous) => ({
+      ticketNo: previous?.ticketNo || generateBillNo(),
       date: formatIsoDateForDisplay(normalizedEntryDateKey),
-      time: timeStr(),
+      time: previous?.time || timeStr(),
       entryDateKey: normalizedEntryDateKey,
       hasReference: referenceEnabled,
       referenceName: referenceEnabled ? trimmedReferenceName : "",
@@ -4937,21 +5147,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       customerName: trimmedName,
       customerPhone: phoneDigits,
       operator,
-    });
-    const intakeDocs = providedDocIds.map((docId) => {
-      const preset = DOCUMENT_PRESETS.find((doc) => doc.id === docId);
-      return {
-        id: `doc_intake_${docId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        name: preset ? preset.label : docId,
-        docPresetId: preset?.id || "",
-        required: false,
-        submitted: true,
-        source: "intake",
-      };
-    });
-    setDocuments(intakeDocs);
-    setSubStep(1);
-    navigateToStep(2);
+    }));
+    setSubStep(2);
     setError("");
   };
 
@@ -5010,7 +5207,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         name: cleanName,
         docPresetId: DOCUMENT_PRESET_BY_NAME[normalizeDocNameKey(cleanName)]?.id || "",
         required: docRequired,
-        submitted: false,
+        submitted: true,
+        source: "intake_custom",
       },
     ]);
     setDocName("");
@@ -5120,14 +5318,14 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
   const resetTicket = () => {
     removeStoredValue(STORAGE_KEYS.ticketDraft);
-    navigateToStep(1, "replace");
+    setSubStep(1);
+    updateBrowserState({ tab: "entry" }, "replace");
     setHasReference(false);
     setCustomerName("");
     setCustomerPhone("");
     setEntryDateKey(getTicketCounterDateKey(new Date()));
     setReferenceName("");
     setReferenceLabel("");
-    setProvidedDocIds([]);
     setOperator(DEFAULT_OPERATOR);
     setSelectedService("");
     setQty(1);
@@ -5165,56 +5363,74 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   };
 
   if (saved) {
+    const savedStructured = toStructuredTicket(saved);
+    const submittedDocNames = getUniqueSubmittedDocumentNames(saved.documents);
+    const submittedRequiredCount = saved.documents?.filter((doc) => doc.required && doc.submitted).length || 0;
+    const requiredCount = saved.documents?.filter((doc) => doc.required).length || 0;
     return (
       <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-        <div id="receipt" style={{ background: "rgba(255,255,255,0.96)", border: "1px solid rgba(15,23,42,0.12)", borderRadius: 20, padding: "28px 24px", maxWidth: 420, margin: "0 auto", color: "#0f172a", boxShadow: "0 20px 52px rgba(15,23,42,0.12)" }}>
-          <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.6rem", letterSpacing: "0.36em", textTransform: "uppercase", color: DS.wine, textAlign: "center", marginBottom: 8 }}>CSC Ticket Slip</div>
-          <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "0.72rem", textAlign: "center", color: saved.status === "Open" ? "#1d4ed8" : DS.wine, fontWeight: 400, marginBottom: 16, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            {saved.status}
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-            <div>
-              <div style={{ fontSize: "0.66rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)" }}>Document Holder</div>
-              <div style={{ fontWeight: 700, fontSize: "0.9rem", fontFamily: APP_FONT_STACK }}>{saved.customerName}</div>
+        <div id="receipt" style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 20, padding: "24px 22px", maxWidth: 470, margin: "0 auto", color: "#0f172a", boxShadow: "0 16px 44px rgba(15,23,42,0.11)" }}>
+          <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", letterSpacing: "0.34em", textTransform: "uppercase", color: "rgba(15,23,42,0.50)", textAlign: "center", marginBottom: 6 }}>CSC Ticket Slip</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 12 }}>
+            <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", letterSpacing: "0.16em", textTransform: "uppercase", color: saved.status === "Open" ? "#1d4ed8" : DS.wine, fontWeight: 700, paddingTop: 2 }}>
+              {saved.status}
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "0.66rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)" }}>Ticket</div>
-              <div style={{ fontWeight: 700, fontSize: "0.9rem", fontFamily: APP_MONO_STACK }}>{saved.ticketNo}</div>
+              <div style={{ fontSize: "0.62rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.48)", marginBottom: 3 }}>File Number</div>
+              <div style={{ fontWeight: 700, fontSize: "0.98rem", fontFamily: APP_MONO_STACK }}>{saved.ticketNo}</div>
             </div>
           </div>
-          <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", marginBottom: 5, fontFamily: APP_FONT_STACK }}>
-            Reference Contact: {formatReferenceSummary(toStructuredTicket(saved).parties.reference)}
+
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: "0.62rem", fontFamily: APP_BRAND_STACK, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.48)", marginBottom: 4 }}>Document Holder</div>
+            <div style={{ fontWeight: 700, fontSize: "1.08rem", lineHeight: 1.25, fontFamily: APP_FONT_STACK, marginBottom: 6 }}>{saved.customerName}</div>
+            {!!saved.customerPhone && (
+              <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontFamily: APP_FONT_STACK, marginBottom: 4 }}>
+                Contact: {saved.customerPhone}
+              </div>
+            )}
+            <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontFamily: APP_FONT_STACK }}>
+              Reference Contact: {formatReferenceSummary(savedStructured.parties.reference)}
+            </div>
           </div>
-          {!!saved.customerPhone && (
-            <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", marginBottom: 12, fontFamily: APP_FONT_STACK }}>Contact: {saved.customerPhone}</div>
-          )}
-          <div style={{ borderTop: "1px solid rgba(15,23,42,0.10)", borderBottom: "1px solid rgba(15,23,42,0.10)", padding: "10px 0", marginBottom: 12 }}>
+
+          <div style={{ borderTop: "1px solid rgba(15,23,42,0.10)", borderBottom: "1px solid rgba(15,23,42,0.10)", padding: "10px 0 9px", marginBottom: 11 }}>
             {saved.items.map((it, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, color: "#0f172a" }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "4px 0", fontSize: "0.83rem", fontFamily: APP_FONT_STACK, color: "#0f172a" }}>
                 <span>{it.name}</span>
-                <span style={{ color: "rgba(15,23,42,0.55)" }}>x{it.qty}</span>
+                <span style={{ color: "rgba(15,23,42,0.55)", whiteSpace: "nowrap" }}>x{it.qty}</span>
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.60)" }}>
-            <span>Operator: {saved.operator}</span>
-            <span>Pay: {saved.payMode}</span>
-          </div>
-          <div style={{ marginTop: 5, fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>
-            Payment: {saved.paymentStatus || "Unpaid"} | Paid Rs. {saved.paidTotal || 0} | Pending Rs. {saved.pendingBalance || 0}
-          </div>
-          <div style={{ marginTop: 5, fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>
-            Docs: {saved.documents?.filter((doc) => doc.required && doc.submitted).length || 0}/{saved.documents?.filter((doc) => doc.required).length || 0} required submitted
-          </div>
-          {!!saved.documents?.filter((doc) => doc.submitted).length && (
-            <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
-              Provided docs: {saved.documents.filter((doc) => doc.submitted).map((doc) => doc.name).join(", ")}
+
+          <div style={{ display: "grid", gap: 5 }}>
+            <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontFamily: APP_FONT_STACK }}>
+              Operator: {saved.operator}
             </div>
-          )}
+            <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontFamily: APP_FONT_STACK }}>
+              Payment: Collected Rs. {saved.paidTotal || 0} | Pending Rs. {saved.pendingBalance || 0}
+            </div>
+            <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontFamily: APP_FONT_STACK }}>
+              Docs: {submittedRequiredCount}/{requiredCount} required submitted
+            </div>
+            {!!submittedDocNames.length && (
+              <div style={{ fontSize: "0.73rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK, lineHeight: 1.55 }}>
+                Documents Collected: {submittedDocNames.join(", ")}
+              </div>
+            )}
+          </div>
         </div>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 16 }}>
           <button onClick={() => printTicketSlip(saved)} style={{ ...secondaryButtonStyle }}>Print Ticket</button>
-          <button onClick={resetTicket} style={{ ...primaryButtonStyle }}>+ New Ticket</button>
+          <button
+            onClick={() => {
+              resetTicket();
+              onNavigateTab?.("home");
+            }}
+            style={{ ...primaryButtonStyle }}
+          >
+            Home
+          </button>
         </div>
       </div>
     );
@@ -5222,11 +5438,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      {step === 1 && (() => {
+      {(() => {
         const WIZARD_STEPS = [
           { num: 1, label: "Customer", short: "Info" },
-          { num: 2, label: "Documents", short: "Docs" },
-          { num: 3, label: "Operator", short: "Op" },
+          { num: 2, label: "Services", short: "Svc" },
+          { num: 3, label: "Documents", short: "Docs" },
+          { num: 4, label: "Payment", short: "Pay" },
         ];
         const totalSubSteps = WIZARD_STEPS.length;
         const intakeSnapshot = getIntakeValidationSnapshot();
@@ -5238,18 +5455,22 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             || intakeSnapshot.nextErrors.referenceName
             || intakeSnapshot.nextErrors.referencePhone
           ),
-          2: false,
+          2: items.length === 0,
           3: false,
+          4: isOverpaid || hasOnlyZeroPricedItems,
         };
 
         const goNextSubStep = () => {
           setError("");
-          if (subStep < totalSubSteps) setSubStep(subStep + 1);
-          else {
-            const intakeValidation = validateIntakeDetails({ focusOnError: true });
-            if (!intakeValidation.isValid) return;
+          if (subStep === 1) {
             createTicket();
+            return;
           }
+          if (subStep === 2 && items.length === 0) {
+            setError("Add at least one service before continuing.");
+            return;
+          }
+          if (subStep < totalSubSteps) setSubStep(subStep + 1);
         };
 
         const goPrevSubStep = () => {
@@ -5341,12 +5562,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             {/* Sub-step panels */}
             {subStep === 1 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
                     Customer Details
-                  </div>
-                  <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.60)" }}>
-                    Enter customer mobile number, name, and entry date first. Add reference person with number if needed.
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
@@ -5525,54 +5743,156 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
             {subStep === 2 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
-                  <div>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
-                      Documents at Intake
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
+                    Add Services
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 14, alignItems: "end" }}>
+                  <label style={{ display: "grid", gap: 7 }}>
+                    <span style={sectionEyebrowStyle}>Select Service</span>
+                    <select value={selectedService} onChange={(e) => { setSelectedService(e.target.value); setCustomAmt(""); }} style={inputStyle}>
+                      <option value="" style={MENU_OPTION_STYLE}>Choose a service...</option>
+                      {CATEGORIES.map((cat) => (
+                        <optgroup key={cat} label={cat} style={MENU_OPTGROUP_STYLE}>
+                          {services.filter((s) => s.category === cat).map((s) => (
+                            <option key={s.id} value={s.id} style={MENU_OPTION_STYLE}>{s.name}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </label>
+                  {selectedServiceConfig && (
+                    <>
+                      <label style={{ display: "grid", gap: 7 }}>
+                        <span style={sectionEyebrowStyle}>{selectedQuantityConfig?.inputLabel || "Quantity"}</span>
+                        <input
+                          type="number"
+                          min={selectedServiceConfig?.minQty || 1}
+                          max={selectedServiceConfig?.maxQty || 1}
+                          disabled={selectedServiceConfig?.quantityMode === "fixed"}
+                          value={selectedServiceConfig?.quantityMode === "fixed" ? 1 : qty}
+                          onChange={(e) => setQty(e.target.value)}
+                          style={{ ...inputStyle, textAlign: "center", background: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.82)", color: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.40)" : "#0f172a" }}
+                        />
+                      </label>
+                      {selectedServiceConfig?.variable && (
+                        <label style={{ display: "grid", gap: 7 }}>
+                          <span style={sectionEyebrowStyle}>Custom Amount (Rs.)</span>
+                          <input type="number" value={customAmt} onChange={(e) => setCustomAmt(e.target.value)} placeholder="0" style={inputStyle} />
+                        </label>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {selectedServiceConfig && selectedDetailSchema?.fields?.length > 0 && (
+                  <div style={{ ...softPanelStyle, marginBottom: 14 }}>
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={sectionEyebrowStyle}>{selectedDetailSchema?.title || "Service Details"}</div>
                     </div>
-                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.60)" }}>
-                      What did the customer hand over right now? These prefill the ticket checklist.
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                      {selectedDetailSchema.fields.map((field) => (
+                        <label key={`${selectedServiceConfig.id}_${field.key}`} style={{ display: "grid", gap: 6 }}>
+                          <span style={sectionEyebrowStyle}>{field.label}{field.required ? " *" : ""}</span>
+                          {field.type === "select" ? (
+                            <select
+                              value={selectedServiceDetailValues[field.key] || ""}
+                              onChange={(e) => {
+                                setServiceDetailMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: e.target.value } }));
+                                setServiceDetailErrorMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: "" } }));
+                              }}
+                              style={inputStyle}
+                            >
+                              <option value="" style={MENU_OPTION_STYLE}>Select...</option>
+                              {field.options?.map((option) => (
+                                <option key={`${field.key}_${option}`} value={option} style={MENU_OPTION_STYLE}>{option}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type={field.type === "number" ? "number" : "text"}
+                              min={field.min}
+                              value={selectedServiceDetailValues[field.key] || ""}
+                              onChange={(e) => {
+                                setServiceDetailMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: e.target.value } }));
+                                setServiceDetailErrorMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: "" } }));
+                              }}
+                              placeholder={field.placeholder}
+                              style={inputStyle}
+                            />
+                          )}
+                          {selectedServiceDetailErrors[field.key] && (
+                            <span style={{ fontSize: "0.76rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>{selectedServiceDetailErrors[field.key]}</span>
+                          )}
+                        </label>
+                      ))}
                     </div>
                   </div>
-                  {providedDocIds.length > 0 && (
+                )}
+
+                {selectedServiceConfig && (
+                  <div style={{ ...softPanelStyle, marginBottom: 14 }}>
+                    <div style={sectionEyebrowStyle}>Required Documents (Preview)</div>
+                    {getRequiredDocumentNamesForService(selectedServiceConfig).length === 0 ? (
+                      <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>
+                        No required documents configured for this service.
+                      </div>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8 }}>
+                        {getRequiredDocumentNamesForService(selectedServiceConfig).map((docName) => (
+                          <div key={`preview_${selectedServiceConfig.id}_${normalizeDocNameKey(docName)}`} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.74)", padding: "9px 11px", fontSize: "0.80rem", color: "#0f172a", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+                            {docName}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {selectedServiceConfig && (
+                  <div style={{ marginBottom: 20 }}>
+                    <button onClick={addTask} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
+                      + Add to Ticket
+                    </button>
+                    <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
+                      {selectedServiceConfig?.variable ? "Variable price" : `Rs. ${selectedServiceConfig?.price || 0}`}
+                      {selectedServiceConfig?.quantityMode !== "fixed" ? `  |  max qty ${selectedServiceConfig.maxQty}` : ""}
+                    </span>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={sectionEyebrowStyle}>Added Services</div>
+                  {items.length > 0 && (
                     <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
-                      {providedDocIds.length} selected
+                      Rs. {total}
                     </div>
                   )}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
-                  {DOCUMENT_PRESETS.map((doc) => {
-                    const checked = providedDocIds.includes(doc.id);
-                    return (
-                      <button
-                        key={`intake_${doc.id}`}
-                        onClick={() => toggleProvidedDoc(doc.id)}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 10,
-                          padding: "13px 14px", borderRadius: 12,
-                          border: checked ? `1.5px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.10)",
-                          background: checked ? ENTRY_ACCENT_SOFTER : "rgba(255,255,255,0.72)",
-                          color: checked ? ENTRY_ACCENT_TEXT : "#0f172a",
-                          cursor: "pointer", fontSize: "0.86rem", fontFamily: APP_FONT_STACK, fontWeight: 600,
-                          transition: "all 0.18s ease", textAlign: "left",
-                          boxShadow: checked ? "0 6px 14px rgba(15,23,42,0.08)" : "0 3px 10px rgba(15,23,42,0.04)",
-                        }}
-                      >
-                        <span style={{
-                          width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                          background: checked ? ENTRY_ACCENT_SOFT : "rgba(15,23,42,0.07)",
-                          color: checked ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.35)", fontSize: "0.72rem",
-                        }}>
-                          {checked ? "v" : ""}
-                        </span>
-                        {doc.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {providedDocIds.length === 0 && (
-                  <div style={{ marginTop: 14, fontSize: "0.82rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
-                    Nothing selected  -  you can skip and add documents manually in the ticket.
+                {items.length === 0 ? (
+                  <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(15,23,42,0.45)", fontSize: "0.85rem", padding: "22px 16px" }}>
+                    No services added yet.
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {items.map((it, i) => (
+                      <div key={i} style={{ ...softPanelStyle, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.90rem", fontFamily: APP_FONT_STACK }}>{it.name}</div>
+                          <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", marginTop: 2 }}>
+                            {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty}  |  Unit Rs. {it.unitPrice}
+                          </div>
+                          {!!it.detailSummary && (
+                            <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.48)", lineHeight: 1.5, marginTop: 3 }}>{it.detailSummary}</div>
+                          )}
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: "0.95rem", color: ENTRY_ACCENT_TEXT, whiteSpace: "nowrap" }}>Rs. {it.amount}</div>
+                        <button onClick={() => removeTask(i)} style={{ width: 30, height: 30, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
+                          x
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -5580,61 +5900,222 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
             {subStep === 3 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
                   <div>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1, fontFamily: APP_FONT_STACK }}>
-                      Assign Operator
-                    </div>
-                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.60)" }}>
-                      Pick the desk owner handling this file. Their metrics are live.
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
+                      Service Document Intake
                     </div>
                   </div>
-                  <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(15,23,42,0.09)", color: "rgba(15,23,42,0.55)" }}>
-                    {selectedOperatorConfig.role}  |  Avg Rs. {selectedOperatorMetrics.avgTicketRate}
+                  <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(15,23,42,0.09)", color: "rgba(15,23,42,0.52)" }}>
+                    {submittedRequiredDocsCount}/{requiredDocsCount} required submitted
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
-                  {OPERATOR_DIRECTORY.map((op) => {
-                    const metrics = getOperatorTicketMetrics(tickets, op.name);
-                    const active = operator === op.name;
-                    return (
-                      <button
-                        key={op.id}
-                        onClick={() => setOperator(op.name)}
-                        style={{
-                          textAlign: "left", padding: "18px 16px", borderRadius: 16,
-                          border: active ? `1.5px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.10)",
-                          background: active ? ENTRY_ACCENT_SOFTER : "rgba(255,255,255,0.72)",
-                          cursor: "pointer", fontFamily: APP_FONT_STACK,
-                          transition: "all 0.22s ease",
-                          boxShadow: active ? "0 10px 24px rgba(15,23,42,0.10)" : "0 4px 14px rgba(15,23,42,0.05)",
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
-                          <div>
-                            <div style={{ fontSize: "1rem", fontWeight: 700, color: active ? ENTRY_ACCENT_TEXT : "#0f172a", marginBottom: 3 }}>{op.name}</div>
-                            <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)" }}>{op.role}  |  {op.desk}</div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {serviceDocumentGroups.length === 0 ? (
+                    <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(15,23,42,0.45)", fontSize: "0.84rem", padding: "22px 16px" }}>
+                      Add at least one service first. Required documents will appear service-wise.
+                    </div>
+                  ) : (
+                    serviceDocumentGroups.map((group) => (
+                      <div key={`group_${group.serviceId}`} style={{ ...softPanelStyle, padding: "14px 15px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+                          <div style={{ fontSize: "0.92rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                            {group.serviceName}
                           </div>
-                          <div style={{ ...smallBadgeStyle, padding: "4px 9px", background: active ? ENTRY_ACCENT_SOFTER : "rgba(15,23,42,0.04)", border: active ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.08)", color: active ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.50)" }}>
-                            {op.status}
+                          <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
+                            {group.docs.filter((doc) => doc.submitted).length}/{group.docs.length} intaked
                           </div>
                         </div>
-                        <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.58)", lineHeight: 1.55, marginBottom: 10 }}>{op.focus}</div>
-                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
-                          {op.specialties.map((specialty) => (
-                            <span key={`${op.id}_${specialty}`} style={{ fontSize: "0.64rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: active ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.50)", background: active ? ENTRY_ACCENT_SOFTER : "rgba(15,23,42,0.04)", borderRadius: 999, padding: "4px 8px" }}>
-                              {specialty}
-                            </span>
-                          ))}
+                        {group.docs.length === 0 ? (
+                          <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
+                            No required documents configured for this service.
+                          </div>
+                        ) : (
+                          <div style={{ display: "grid", gap: 8 }}>
+                            {group.docs.map((doc) => (
+                              <div key={doc.id} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.72)", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                                <div style={{ fontSize: "0.84rem", color: "#0f172a", fontWeight: 600, fontFamily: APP_FONT_STACK }}>
+                                  {doc.name}
+                                </div>
+                                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(15,23,42,0.64)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
+                                    <input
+                                      type="radio"
+                                      name={`doc_status_${doc.id}`}
+                                      checked={Boolean(doc.submitted)}
+                                      onChange={() => setDocumentSubmitted(doc.id, true)}
+                                    />
+                                    Intaked
+                                  </label>
+                                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(15,23,42,0.64)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
+                                    <input
+                                      type="radio"
+                                      name={`doc_status_${doc.id}`}
+                                      checked={!doc.submitted}
+                                      onChange={() => setDocumentSubmitted(doc.id, false)}
+                                    />
+                                    Pending
+                                  </label>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div style={{ ...softPanelStyle, marginTop: 12 }}>
+                  <div style={sectionEyebrowStyle}>Custom Documents</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, alignItems: "center", marginBottom: 10 }}>
+                    <input
+                      value={docName}
+                      onChange={(e) => {
+                        setDocName(e.target.value);
+                        setError("");
+                      }}
+                      placeholder="Add custom document"
+                      style={inputStyle}
+                    />
+                    <button onClick={addDocument} style={{ ...secondaryButtonStyle, padding: "11px 16px" }}>
+                      Add
+                    </button>
+                  </div>
+                  {documents.filter((doc) => doc.source !== "service_required").length === 0 ? (
+                    <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>
+                      No custom documents added.
+                    </div>
+                  ) : (
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {documents.filter((doc) => doc.source !== "service_required").map((doc) => (
+                        <div key={doc.id} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.72)", padding: "9px 11px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                          <div style={{ fontSize: "0.82rem", color: "#0f172a", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>{doc.name}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.76rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
+                              <input type="checkbox" checked={Boolean(doc.submitted)} onChange={() => toggleDocumentSubmitted(doc.id)} />
+                              Received
+                            </label>
+                            <button onClick={() => removeDocument(doc.id)} style={{ width: 28, height: 28, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
+                              x
+                            </button>
+                          </div>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4, fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", borderTop: "1px solid rgba(15,23,42,0.07)", paddingTop: 10 }}>
-                          <span>{metrics.ticketCount} tickets</span>
-                          <span>Rs. {metrics.revenue} today</span>
-                          <span>Avg Rs. {metrics.avgTicketRate}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {subStep === 4 && (
+              <div style={{ animation: "fadeIn 0.28s ease-out" }}>
+                <div style={{ maxWidth: 980, margin: "0 auto", width: "100%" }}>
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
+                      Payment
+                    </div>
+                  </div>
+
+                  <div style={{ ...softPanelStyle, marginBottom: 14 }}>
+                    <label style={{ display: "grid", gap: 7, maxWidth: 280 }}>
+                      <span style={sectionEyebrowStyle}>Operator</span>
+                      <select value={operator} onChange={(e) => setOperator(e.target.value)} style={inputStyle}>
+                        {OPERATORS.map((name) => (
+                          <option key={`op_${name}`} value={name} style={MENU_OPTION_STYLE}>{name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div style={{ ...softPanelStyle, marginBottom: 14, padding: "14px 16px" }}>
+                    <div style={sectionEyebrowStyle}>Services Summary</div>
+                    <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+                      {items.map((it, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.86rem", color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                          <span>{it.name} x{it.qty}</span>
+                          <span style={{ fontWeight: 700 }}>Rs. {it.amount}</span>
                         </div>
-                      </button>
-                    );
-                  })}
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ maxWidth: 760, margin: "0 auto 14px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 280px))", justifyContent: "center", gap: 12 }}>
+                    <label style={{ display: "grid", gap: 7 }}>
+                      <span style={sectionEyebrowStyle}>Cash Collected</span>
+                      <input type="number" min="0" value={paymentCash} onChange={(e) => setPaymentCash(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
+                    </label>
+                    <label style={{ display: "grid", gap: 7 }}>
+                      <span style={sectionEyebrowStyle}>UPI Collected</span>
+                      <input type="number" min="0" value={paymentUpi} onChange={(e) => setPaymentUpi(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
+                    </label>
+                  </div>
+
+                  <div style={{ ...softPanelStyle, marginBottom: 14 }}>
+                    <div style={{ display: "grid", gap: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
+                        <span>Ticket Amount</span><span style={{ color: "#0f172a", fontWeight: 700 }}>Rs. {total}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
+                        <span>Collected</span><span style={{ color: "#0f172a", fontWeight: 700 }}>Rs. {paidTotal}</span>
+                      </div>
+                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.02rem", fontFamily: APP_FONT_STACK, color: ENTRY_ACCENT_TEXT }}>
+                        <span>Pending Balance</span><span>Rs. {pendingBalance}</span>
+                      </div>
+                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10 }}>
+                        <div style={{ fontSize: "0.74rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.48)", marginBottom: 8 }}>
+                          Documents Collected
+                        </div>
+                        {documents.filter((doc) => doc.submitted).length === 0 ? (
+                          <div style={{ fontSize: "0.82rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
+                            No documents marked as collected.
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            {Array.from(new Set(
+                              documents
+                                .filter((doc) => doc.submitted)
+                                .map((doc) => String(doc.name || "").trim())
+                                .filter(Boolean)
+                            )).map((docName) => (
+                              <span
+                                key={`payment_doc_${normalizeDocNameKey(docName)}`}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  borderRadius: 999,
+                                  border: "1px solid rgba(15,23,42,0.12)",
+                                  background: "rgba(255,255,255,0.82)",
+                                  color: "#0f172a",
+                                  fontSize: "0.76rem",
+                                  fontFamily: APP_FONT_STACK,
+                                  fontWeight: 600,
+                                  padding: "5px 10px",
+                                }}
+                              >
+                                {docName}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ maxWidth: 760, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <button
+                      onClick={() => saveTicket("Open")}
+                      style={{ ...secondaryButtonStyle, background: canSaveTicket ? ENTRY_ACCENT_SOFTER : "rgba(15,23,42,0.04)", border: canSaveTicket ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.45)", cursor: "pointer" }}
+                    >
+                      Save for Later
+                    </button>
+                    <button
+                      onClick={() => saveTicket("Closed")}
+                      style={{ ...primaryButtonStyle, padding: "13px 22px", background: canSaveTicket ? ENTRY_ACCENT_SOFT : "rgba(15,23,42,0.04)", border: canSaveTicket ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.45)", cursor: "pointer" }}
+                    >
+                      Save & Complete
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -5656,525 +6137,22 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                 )}
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span style={{ fontSize: "0.75rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
-                  {subStep < totalSubSteps ? `${totalSubSteps - subStep} step${totalSubSteps - subStep > 1 ? "s" : ""} left` : "Ready to continue"}
-                </span>
-                <button
-                  onClick={goNextSubStep}
-                  style={{ ...primaryButtonStyle, padding: "13px 28px" }}
-                >
-                  {subStep < totalSubSteps ? "Next ->" : "Continue to Ticket"}
-                </button>
+                {subStep < totalSubSteps && (
+                  <span style={{ fontSize: "0.75rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
+                    {totalSubSteps - subStep} step{totalSubSteps - subStep > 1 ? "s" : ""} left
+                  </span>
+                )}
+                {subStep < totalSubSteps && (
+                  <button
+                    onClick={goNextSubStep}
+                    style={{ ...primaryButtonStyle, padding: "13px 28px" }}
+                  >
+                    Next -&gt;
+                  </button>
+                )}
               </div>
             </div>
           </div>
-        );
-      })()}
-
-      {step === 2 && (() => {
-        const T2_STEPS = [
-          { num: 1, label: "Services" },
-          { num: 2, label: "Documents" },
-          { num: 3, label: "Payment" },
-        ];
-        const t2Total = T2_STEPS.length;
-        const t2StepHasError = {
-          1: items.length === 0,
-          2: false,
-          3: isOverpaid || hasOnlyZeroPricedItems,
-        };
-
-        const goNextT2 = () => {
-          setError("");
-          if (subStep < t2Total) setSubStep(subStep + 1);
-        };
-
-        const goPrevT2 = () => {
-          setError("");
-          if (subStep > 1) setSubStep(subStep - 1);
-          else navigateToStep(1, "replace");
-        };
-
-        return (
-          <>
-            {/* Ticket identity bar */}
-            <div style={{ ...surfaceCardStyle, marginBottom: 16, padding: "16px 20px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div>
-                    <div style={{ ...sectionEyebrowStyle, marginBottom: 3 }}>Ticket in Progress</div>
-                    <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                      {ticketMeta?.customerName}
-                    </div>
-                    <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
-                      #{ticketMeta?.ticketNo}  |  {ticketReferenceSummary}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  {items.length > 0 && (
-                    <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
-                      Rs. {total}
-                    </div>
-                  )}
-                  <button onClick={() => navigateToStep(1, "replace")} style={secondaryButtonStyle}>
-                    &larr; Intake
-                  </button>
-                  <button onClick={() => onNavigateTab?.("log")} style={secondaryButtonStyle}>
-                    Dashboard
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Wizard card */}
-            <div style={{ ...surfaceCardStyle, marginBottom: 16 }}>
-              {/* Progress strip */}
-              <div style={{ marginBottom: 28 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                  <div style={sectionEyebrowStyle}>Build Ticket  -  Step {subStep} of {t2Total}</div>
-                </div>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  {T2_STEPS.map((ws, i) => {
-                    const done = subStep > ws.num;
-                    const active = subStep === ws.num;
-                    const hasError = t2StepHasError[ws.num];
-                    return (
-                      <React.Fragment key={ws.num}>
-                        <button
-                          onClick={() => { setError(""); setSubStep(ws.num); }}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 7,
-                            padding: "7px 13px", borderRadius: 999,
-                            border: hasError && !active ? "1px solid rgba(214,5,43,0.32)" : "none",
-                            background: active
-                              ? ENTRY_ACCENT
-                              : hasError
-                                ? "rgba(214,5,43,0.09)"
-                                : done
-                                  ? ENTRY_ACCENT_SOFT
-                                  : "rgba(15,23,42,0.06)",
-                            color: active
-                              ? "#fff"
-                              : hasError
-                                ? "#8f2e3d"
-                                : done
-                                  ? ENTRY_ACCENT_TEXT
-                                  : "rgba(15,23,42,0.40)",
-                            fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem",
-                            letterSpacing: "0.18em", textTransform: "uppercase",
-                            cursor: "pointer",
-                            transition: "all 0.22s ease",
-                            transform: active ? "scale(1.05)" : "scale(1)",
-                          }}
-                        >
-                          <span style={{
-                            width: 18, height: 18, borderRadius: "50%",
-                            background: active
-                              ? "rgba(255,255,255,0.22)"
-                              : hasError
-                                ? "rgba(214,5,43,0.16)"
-                                : done
-                                  ? ENTRY_ACCENT
-                                  : "rgba(15,23,42,0.10)",
-                            color: active
-                              ? "#fff"
-                              : hasError
-                                ? "#8f2e3d"
-                                : done
-                                  ? "#fff"
-                                  : "rgba(15,23,42,0.40)",
-                            display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            fontSize: "0.62rem", fontWeight: 700, fontFamily: APP_BRAND_STACK, flexShrink: 0,
-                          }}>
-                            {hasError ? "!" : done ? "\u2713" : ws.num}
-                          </span>
-                          {ws.label}
-                        </button>
-                        {i < T2_STEPS.length - 1 && (
-                          <div style={{ flex: 1, height: 1, background: done ? ENTRY_ACCENT_BORDER : "rgba(15,23,42,0.08)", borderRadius: 1, minWidth: 8 }} />
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-                <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(15,23,42,0.07)", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${((subStep - 1) / (t2Total - 1)) * 100}%`, background: ENTRY_ACCENT, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
-                </div>
-              </div>
-
-              {/* Step A: Services */}
-              {subStep === 1 && (
-                <div style={{ animation: "fadeIn 0.28s ease-out" }}>
-                  <div style={{ marginBottom: 22 }}>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
-                      Add Services
-                    </div>
-                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.58)" }}>
-                      Pick each service this customer needs. Add them one at a time.
-                    </div>
-                  </div>
-
-                  {/* Service picker */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 14, alignItems: "end" }}>
-                    <label style={{ display: "grid", gap: 7 }}>
-                      <span style={sectionEyebrowStyle}>Select Service</span>
-                      <select value={selectedService} onChange={(e) => { setSelectedService(e.target.value); setCustomAmt(""); }} style={inputStyle}>
-                        <option value="" style={MENU_OPTION_STYLE}>Choose a service...</option>
-                        {CATEGORIES.map((cat) => (
-                          <optgroup key={cat} label={cat} style={MENU_OPTGROUP_STYLE}>
-                            {services.filter((s) => s.category === cat).map((s) => (
-                              <option key={s.id} value={s.id} style={MENU_OPTION_STYLE}>{s.name}</option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
-                    </label>
-                    {selectedServiceConfig && (
-                      <>
-                        <label style={{ display: "grid", gap: 7 }}>
-                          <span style={sectionEyebrowStyle}>{selectedQuantityConfig?.inputLabel || "Quantity"}</span>
-                          <input
-                            type="number"
-                            min={selectedServiceConfig?.minQty || 1}
-                            max={selectedServiceConfig?.maxQty || 1}
-                            disabled={selectedServiceConfig?.quantityMode === "fixed"}
-                            value={selectedServiceConfig?.quantityMode === "fixed" ? 1 : qty}
-                            onChange={(e) => setQty(e.target.value)}
-                            style={{ ...inputStyle, textAlign: "center", background: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.82)", color: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.40)" : "#0f172a" }}
-                          />
-                        </label>
-                        {selectedServiceConfig?.variable && (
-                          <label style={{ display: "grid", gap: 7 }}>
-                            <span style={sectionEyebrowStyle}>Custom Amount (Rs.)</span>
-                            <input type="number" value={customAmt} onChange={(e) => setCustomAmt(e.target.value)} placeholder="0" style={inputStyle} />
-                          </label>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {/* Detail fields */}
-                  {selectedServiceConfig && selectedDetailSchema?.fields?.length > 0 && (
-                    <div style={{ ...softPanelStyle, marginBottom: 14 }}>
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={sectionEyebrowStyle}>{selectedDetailSchema?.title || "Service Details"}</div>
-                        <div style={{ fontSize: "0.82rem", color: "rgba(15,23,42,0.58)", lineHeight: 1.6 }}>
-                          {selectedDetailSchema?.description}
-                        </div>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-                        {selectedDetailSchema.fields.map((field) => (
-                          <label key={`${selectedServiceConfig.id}_${field.key}`} style={{ display: "grid", gap: 6 }}>
-                            <span style={sectionEyebrowStyle}>{field.label}{field.required ? " *" : ""}</span>
-                            {field.type === "select" ? (
-                              <select
-                                value={selectedServiceDetailValues[field.key] || ""}
-                                onChange={(e) => {
-                                  setServiceDetailMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: e.target.value } }));
-                                  setServiceDetailErrorMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: "" } }));
-                                }}
-                                style={inputStyle}
-                              >
-                                <option value="" style={MENU_OPTION_STYLE}>Select...</option>
-                                {field.options?.map((option) => (
-                                  <option key={`${field.key}_${option}`} value={option} style={MENU_OPTION_STYLE}>{option}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type={field.type === "number" ? "number" : "text"}
-                                min={field.min}
-                                value={selectedServiceDetailValues[field.key] || ""}
-                                onChange={(e) => {
-                                  setServiceDetailMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: e.target.value } }));
-                                  setServiceDetailErrorMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: "" } }));
-                                }}
-                                placeholder={field.placeholder}
-                                style={inputStyle}
-                              />
-                            )}
-                            {selectedServiceDetailErrors[field.key] && (
-                              <span style={{ fontSize: "0.76rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>{selectedServiceDetailErrors[field.key]}</span>
-                            )}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedServiceConfig && (
-                    <div style={{ ...softPanelStyle, marginBottom: 14 }}>
-                      <div style={sectionEyebrowStyle}>Required Documents (Preview)</div>
-                      {getRequiredDocIdsForService(selectedServiceConfig).length === 0 ? (
-                        <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>
-                          No compulsory documents configured for this service.
-                        </div>
-                      ) : (
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8 }}>
-                          {getRequiredDocIdsForService(selectedServiceConfig).map((docId) => (
-                            <div key={`preview_${selectedServiceConfig.id}_${docId}`} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.74)", padding: "9px 11px", fontSize: "0.80rem", color: "#0f172a", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
-                              {DOCUMENT_PRESET_MAP[docId]?.label || docId}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Add button */}
-                  {selectedServiceConfig && (
-                    <div style={{ marginBottom: 20 }}>
-                      <button onClick={addTask} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
-                        + Add to Ticket
-                      </button>
-                      <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
-                        {selectedServiceConfig?.variable ? "Variable price" : `Rs. ${selectedServiceConfig?.price || 0}`}
-                        {selectedServiceConfig?.quantityMode !== "fixed" ? `  |  max qty ${selectedServiceConfig.maxQty}` : ""}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Draft list */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <div style={sectionEyebrowStyle}>Added Services</div>
-                    {items.length > 0 && (
-                      <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
-                        Rs. {total}
-                      </div>
-                    )}
-                  </div>
-                  {items.length === 0 ? (
-                    <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(15,23,42,0.45)", fontSize: "0.85rem", padding: "22px 16px" }}>
-                      No services added yet. Choose one above and tap + Add to Ticket.
-                    </div>
-                  ) : (
-                    <div style={{ display: "grid", gap: 8 }}>
-                      {items.map((it, i) => (
-                        <div key={i} style={{ ...softPanelStyle, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center" }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.90rem", fontFamily: APP_FONT_STACK }}>{it.name}</div>
-                            <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", marginTop: 2 }}>
-                              {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty}  |  Unit Rs. {it.unitPrice}
-                            </div>
-                            {!!it.detailSummary && (
-                              <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.48)", lineHeight: 1.5, marginTop: 3 }}>{it.detailSummary}</div>
-                            )}
-                          </div>
-                          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: ENTRY_ACCENT_TEXT, whiteSpace: "nowrap" }}>Rs. {it.amount}</div>
-                          <button onClick={() => removeTask(i)} style={{ width: 30, height: 30, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
-                            x
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Step B: Documents */}
-              {subStep === 2 && (
-                <div style={{ animation: "fadeIn 0.28s ease-out" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 22 }}>
-                    <div>
-                      <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
-                        Service Document Intake
-                      </div>
-                      <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.58)" }}>
-                        After selecting services, only required documents for each service are listed here. Mark each one as intaked or pending.
-                      </div>
-                    </div>
-                    <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(15,23,42,0.09)", color: "rgba(15,23,42,0.52)" }}>
-                      {submittedRequiredDocsCount}/{requiredDocsCount} required submitted
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {serviceDocumentGroups.length === 0 ? (
-                      <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(15,23,42,0.45)", fontSize: "0.84rem", padding: "22px 16px" }}>
-                        Add at least one service first. Required documents will appear service-wise.
-                      </div>
-                    ) : (
-                      serviceDocumentGroups.map((group) => (
-                        <div key={`group_${group.serviceId}`} style={{ ...softPanelStyle, padding: "14px 15px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
-                            <div style={{ fontSize: "0.92rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                              {group.serviceName}
-                            </div>
-                            <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
-                              {group.docs.filter((doc) => doc.submitted).length}/{group.docs.length} intaked
-                            </div>
-                          </div>
-                          {group.docs.length === 0 ? (
-                            <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
-                              No required documents configured for this service.
-                            </div>
-                          ) : (
-                            <div style={{ display: "grid", gap: 8 }}>
-                              {group.docs.map((doc) => (
-                                <div key={doc.id} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.72)", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                                  <div style={{ fontSize: "0.84rem", color: "#0f172a", fontWeight: 600, fontFamily: APP_FONT_STACK }}>
-                                    {doc.name}
-                                  </div>
-                                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(15,23,42,0.64)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
-                                      <input
-                                        type="radio"
-                                        name={`doc_status_${doc.id}`}
-                                        checked={Boolean(doc.submitted)}
-                                        onChange={() => setDocumentSubmitted(doc.id, true)}
-                                      />
-                                      Intaked
-                                    </label>
-                                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(15,23,42,0.64)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
-                                      <input
-                                        type="radio"
-                                        name={`doc_status_${doc.id}`}
-                                        checked={!doc.submitted}
-                                        onChange={() => setDocumentSubmitted(doc.id, false)}
-                                      />
-                                      Pending
-                                    </label>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Step C: Payment */}
-              {subStep === 3 && (
-                <div style={{ animation: "fadeIn 0.28s ease-out" }}>
-                  <div style={{ marginBottom: 22 }}>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, fontFamily: APP_FONT_STACK }}>
-                      Payment & Save
-                    </div>
-                    <div style={{ fontSize: "0.87rem", lineHeight: 1.7, color: "rgba(15,23,42,0.58)" }}>
-                      Enter what was collected. Partial payment is fine  -  you can keep the balance pending.
-                    </div>
-                  </div>
-
-                  {/* Service summary */}
-                  <div style={{ ...softPanelStyle, marginBottom: 18, padding: "14px 16px" }}>
-                    <div style={sectionEyebrowStyle}>Services Summary</div>
-                    <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-                      {items.map((it, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.86rem", color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                          <span>{it.name} x{it.qty}</span>
-                          <span style={{ fontWeight: 700 }}>Rs. {it.amount}</span>
-                        </div>
-                      ))}
-                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.09)", paddingTop: 8, marginTop: 4, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1rem", fontFamily: APP_FONT_STACK, color: "#0f172a" }}>
-                        <span>Total</span>
-                        <span>Rs. {total}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-                    <label style={{ display: "grid", gap: 7 }}>
-                      <span style={sectionEyebrowStyle}>Cash Collected</span>
-                      <input type="number" min="0" value={paymentCash} onChange={(e) => setPaymentCash(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1.1rem", padding: "14px 16px", textAlign: "right" }} />
-                    </label>
-                    <label style={{ display: "grid", gap: 7 }}>
-                      <span style={sectionEyebrowStyle}>UPI Collected</span>
-                      <input type="number" min="0" value={paymentUpi} onChange={(e) => setPaymentUpi(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1.1rem", padding: "14px 16px", textAlign: "right" }} />
-                    </label>
-                  </div>
-
-                  <div style={{ ...softPanelStyle, marginBottom: 16 }}>
-                    <div style={{ display: "grid", gap: 8 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
-                        <span>Collected</span><span style={{ color: "#0f172a", fontWeight: 700 }}>Rs. {paidTotal}</span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
-                        <span>Docs submitted</span><span style={{ color: "#0f172a", fontWeight: 700 }}>{submittedRequiredDocsCount}/{requiredDocsCount}</span>
-                      </div>
-                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.05rem", fontFamily: APP_FONT_STACK, color: pendingBalance > 0 ? ENTRY_ACCENT_TEXT : ENTRY_ACCENT_TEXT }}>
-                        <span>Pending Balance</span><span>Rs. {pendingBalance}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: 18, padding: "12px 14px", borderRadius: 10, background: isOverpaid ? "rgba(214,5,43,0.07)" : ENTRY_ACCENT_SOFTER, border: isOverpaid ? "1px solid rgba(214,5,43,0.22)" : `1px solid ${ENTRY_ACCENT_BORDER}`, color: isOverpaid ? "#8f2e3d" : ENTRY_ACCENT_TEXT, fontSize: "0.83rem", lineHeight: 1.6, fontFamily: APP_FONT_STACK, fontWeight: 500 }}>
-                    {hasOnlyZeroPricedItems
-                      ? "All services are still Rs. 0. Update the rate card or enter a custom amount before saving."
-                      : isOverpaid
-                      ? "Collected exceeds the total. Reduce before saving."
-                      : pendingBalance > 0
-                        ? "Partial payment recorded. You can save and keep the balance pending."
-                        : "Fully paid. Ready to complete."}
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <button
-                      onClick={() => saveTicket("Open")}
-                      style={{ ...secondaryButtonStyle, background: canSaveTicket ? ENTRY_ACCENT_SOFTER : "rgba(15,23,42,0.04)", border: canSaveTicket ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.45)", cursor: "pointer" }}
-                    >
-                      Save for Later
-                    </button>
-                    <button
-                      onClick={() => saveTicket("Closed")}
-                      style={{ ...primaryButtonStyle, padding: "13px 22px", background: canSaveTicket ? ENTRY_ACCENT_SOFT : "rgba(15,23,42,0.04)", border: canSaveTicket ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(15,23,42,0.09)", color: canSaveTicket ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.45)", cursor: "pointer" }}
-                    >
-                      Save & Complete
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {undoAction && (
-                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT, fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <span>{undoAction.message}</span>
-                  <button
-                    onClick={() => {
-                      undoAction.undoFn?.();
-                      if (undoTimeoutRef.current) {
-                        clearTimeout(undoTimeoutRef.current);
-                        undoTimeoutRef.current = null;
-                      }
-                      setUndoAction(null);
-                    }}
-                    style={{ border: `1px solid ${ENTRY_ACCENT_BORDER}`, borderRadius: 999, padding: "7px 12px", background: "rgba(255,255,255,0.78)", color: ENTRY_ACCENT_TEXT, fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer" }}
-                  >
-                    Undo
-                  </button>
-                </div>
-              )}
-
-              {/* Error */}
-              {error && (
-                <div style={{ marginTop: 16, padding: "11px 14px", borderRadius: 12, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#8f2e3d", fontSize: "0.84rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
-                  {error}
-                </div>
-              )}
-
-              {/* Wizard nav */}
-              {subStep < 3 && (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 28, gap: 12 }}>
-                  <button onClick={goPrevT2} style={secondaryButtonStyle}>&larr; Back</button>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <span style={{ fontSize: "0.75rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK }}>
-                      {t2Total - subStep} step{t2Total - subStep > 1 ? "s" : ""} left
-                    </span>
-                    <button onClick={goNextT2} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
-                      Next &rarr;
-                    </button>
-                  </div>
-                </div>
-              )}
-              {subStep === 3 && (
-                <div style={{ marginTop: 16 }}>
-                  <button onClick={goPrevT2} style={secondaryButtonStyle}>&larr; Documents</button>
-                </div>
-              )}
-            </div>
-          </>
         );
       })()}
       <ConfirmDialog
@@ -7162,186 +7140,282 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
 
 // --- B2B TAB ---
 function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
-  const b2bVendors = [
-    {
-      id: "asaan_kagajat_raja",
-      vendor: "Asaan Kagajat (RAJA)",
-      inboundServices: ["Notary", "Mobile Number Update"],
-      outboundServices: ["Document Printing", "Aadhaar Support", "Form Filling"],
-    },
-    {
-      id: "raj_akansha",
-      vendor: "RAJ/AKANSHA",
-      inboundServices: ["PVC Card", "Lamination", "Mobile Number Update", "Aadhaar Appointment"],
-      outboundServices: ["Certificate Printing", "Application Filing", "Document Scan"],
-    },
-  ];
-  const [activeVendorId, setActiveVendorId] = useState(() => b2bVendors[0]?.id || "");
-  const [flow, setFlow] = useState("vendor_to_us");
-  const [serviceName, setServiceName] = useState("");
-  const [quantity, setQuantity] = useState("1");
-  const [rate, setRate] = useState("");
-  const [paidAmount, setPaidAmount] = useState("");
-  const [paymentMode, setPaymentMode] = useState("UPI");
-  const [entryDate, setEntryDate] = useState(() => getTicketCounterDateKey(new Date()));
-  const [entryNote, setEntryNote] = useState("");
-  const [includeInDailyRevenue, setIncludeInDailyRevenue] = useState(true);
+  const [activeTrack, setActiveTrack] = useState("take");
+  const [activeEntityKeys, setActiveEntityKeys] = useState({ take: "", give: "", agent: "" });
+  const [entryForms, setEntryForms] = useState({
+    take: createB2BEntryForm("take"),
+    give: createB2BEntryForm("give"),
+    agent: createB2BEntryForm("agent"),
+  });
   const [formError, setFormError] = useState("");
-  const [confirmDialog, setConfirmDialog] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
-  const [accessCodeDialog, setAccessCodeDialog] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    actionLabel: "",
-    code: "",
-    error: "",
-    onAuthorized: null,
-  });
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: "", message: "", onConfirm: null });
+  const [accessCodeDialog, setAccessCodeDialog] = useState({ isOpen: false, title: "", message: "", actionLabel: "", code: "", error: "", onAuthorized: null });
   const b2bFormRef = useRef(null);
-
   const normalizedLedger = useMemo(() => hydrateB2BLedger(ledger), [ledger]);
-  const activeVendor = b2bVendors.find((vendor) => vendor.id === activeVendorId) || b2bVendors[0] || null;
-  const serviceSuggestions = activeVendor
-    ? (flow === "vendor_to_us" ? activeVendor.inboundServices : activeVendor.outboundServices)
-    : [];
-  const amountPreview = Math.max(1, Number(quantity) || 1) * Math.max(0, Number(rate) || 0);
-  const paidPreview = Math.max(0, Math.min(amountPreview, Number(paidAmount) || 0));
-  const pendingPreview = Math.max(0, amountPreview - paidPreview);
-  const serviceListId = activeVendor ? `b2b_service_options_${activeVendor.id}_${flow}` : "b2b_service_options";
   const todayKey = getTicketCounterDateKey(new Date());
-
-  useEffect(() => {
-    if (!activeVendor) return;
-    setServiceName(serviceSuggestions[0] || "");
-  }, [activeVendorId, flow]);
-
-  useEffect(() => {
-    setIncludeInDailyRevenue(flow === "us_to_vendor");
-  }, [flow]);
-
-  const vendorSummaries = useMemo(() => (
-    b2bVendors.map((vendor) => {
-      const vendorEntries = normalizedLedger
-        .filter((entry) => entry.vendorId === vendor.id || entry.vendorName === vendor.vendor)
-        .sort((a, b) => {
-          const byDate = String(b.entryDate || "").localeCompare(String(a.entryDate || ""));
-          if (byDate !== 0) return byDate;
-          return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
-        });
-      const purchases = vendorEntries.filter((entry) => entry.flow === "vendor_to_us");
-      const sales = vendorEntries.filter((entry) => entry.flow === "us_to_vendor");
-      return {
-        ...vendor,
-        entries: vendorEntries,
-        purchasesValue: purchases.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0),
-        purchasesPaid: purchases.reduce((sum, entry) => sum + (Number(entry.paidAmount) || 0), 0),
-        purchasesPending: purchases.reduce((sum, entry) => sum + (Number(entry.pendingAmount) || 0), 0),
-        salesValue: sales.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0),
-        salesCollected: sales.reduce((sum, entry) => sum + (Number(entry.paidAmount) || 0), 0),
-        salesPending: sales.reduce((sum, entry) => sum + (Number(entry.pendingAmount) || 0), 0),
-      };
-    })
-  ), [normalizedLedger]);
-  const activeSummary = vendorSummaries.find((vendor) => vendor.id === activeVendorId) || vendorSummaries[0] || null;
   const formatCurrency = (value) => `Rs. ${Math.round(Number(value) || 0).toLocaleString("en-IN")}`;
   const formatEntryDate = (value) => {
     const parsed = new Date(`${String(value || "").trim()}T00:00:00`);
     if (Number.isNaN(parsed.getTime())) return value || "N/A";
     return parsed.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   };
+  const getTrackFlow = (trackId) => (trackId === "give" ? "us_to_vendor" : "vendor_to_us");
+  const getRoleHeading = (roleId) => (
+    roleId === "take"
+      ? "Services We Take From Them"
+      : roleId === "give"
+        ? "Services We Give To Them"
+        : "Agent Referrals"
+  );
+
+  const entityDirectory = useMemo(() => {
+    const entityMap = new Map();
+
+    const ensureEntity = ({ id, name, key }) => {
+      const resolvedName = String(name || "Unnamed Partner").trim() || "Unnamed Partner";
+      const resolvedKey = String(key || id || normalizeEntityKey(resolvedName)).trim() || normalizeEntityKey(resolvedName);
+      if (!entityMap.has(resolvedKey)) {
+        entityMap.set(resolvedKey, {
+          id: String(id || resolvedKey),
+          key: resolvedKey,
+          name: resolvedName,
+          roles: [],
+          servicesByRole: { take: [], give: [], agent: [] },
+        });
+      }
+      return entityMap.get(resolvedKey);
+    };
+
+    const appendServiceGroup = (entity, roleId, label, items) => {
+      const groupLabel = String(label || "Services").trim() || "Services";
+      const normalizedItems = dedupeB2BItems(Array.isArray(items) ? items : [items]);
+      if (normalizedItems.length === 0) return;
+      const existingGroup = entity.servicesByRole[roleId].find((group) => normalizeEntityKey(group.label) === normalizeEntityKey(groupLabel));
+      if (existingGroup) {
+        existingGroup.items = dedupeB2BItems([...existingGroup.items, ...normalizedItems]);
+        return;
+      }
+      entity.servicesByRole[roleId].push({ label: groupLabel, items: normalizedItems });
+    };
+
+    [...B2B_PARTNER_SEED, ...B2B_AGENT_SEED].forEach((seed) => {
+      const entity = ensureEntity({ id: seed.id, name: seed.name, key: seed.id || normalizeEntityKey(seed.name) });
+      (seed.roles || []).forEach((roleId) => {
+        if (!entity.roles.includes(roleId)) entity.roles.push(roleId);
+      });
+      Object.entries(seed.servicesByRole || {}).forEach(([roleId, groups]) => {
+        (groups || []).forEach((group) => appendServiceGroup(entity, roleId, group.label, group.items || []));
+      });
+    });
+
+    normalizedLedger.forEach((entry) => {
+      const entity = ensureEntity({ id: entry.partnerId || entry.partnerKey, name: entry.partnerName, key: entry.partnerId || entry.partnerKey });
+      if (!entity.roles.includes(entry.ecosystem)) entity.roles.push(entry.ecosystem);
+      if (entry.serviceName) {
+        appendServiceGroup(
+          entity,
+          entry.ecosystem,
+          entry.ecosystem === "take"
+            ? "Services We Take"
+            : entry.ecosystem === "give"
+              ? "Services We Give"
+              : "Referred Services",
+          [entry.serviceName]
+        );
+      }
+    });
+
+    return Array.from(entityMap.values())
+      .map((entity) => ({
+        ...entity,
+        roles: [...entity.roles].sort((a, b) => B2B_TRACKS.findIndex((track) => track.id === a) - B2B_TRACKS.findIndex((track) => track.id === b)),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [normalizedLedger]);
+
+  const entitiesByTrack = useMemo(() => {
+    const next = { take: [], give: [], agent: [] };
+    entityDirectory.forEach((entity) => {
+      entity.roles.forEach((roleId) => {
+        const entries = normalizedLedger
+          .filter((entry) => (
+            entry.ecosystem === roleId
+            && (
+              entry.partnerKey === entity.key
+              || normalizeEntityKey(entry.partnerName) === normalizeEntityKey(entity.name)
+              || (entity.id && entry.partnerId === entity.id)
+            )
+          ))
+          .sort((a, b) => {
+            const byDate = String(b.entryDate || "").localeCompare(String(a.entryDate || ""));
+            if (byDate !== 0) return byDate;
+            return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+          });
+
+        const amountValue = roleId === "agent"
+          ? entries.reduce((sum, entry) => sum + (Number(entry.businessAmount) || 0), 0)
+          : entries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+
+        next[roleId].push({
+          ...entity,
+          ecosystem: roleId,
+          entries,
+          amountValue,
+          settledValue: entries.reduce((sum, entry) => sum + (Number(entry.paidAmount) || 0), 0),
+          pendingValue: entries.reduce((sum, entry) => sum + (Number(entry.pendingAmount) || 0), 0),
+          serviceNames: dedupeB2BItems([
+            ...entity.servicesByRole[roleId].flatMap((group) => group.items || []),
+            ...entries.map((entry) => entry.serviceName).filter(Boolean),
+          ]),
+          referredClients: dedupeB2BItems(entries.map((entry) => entry.referredClient).filter(Boolean)),
+          latestEntry: entries[0] || null,
+        });
+      });
+    });
+
+    Object.keys(next).forEach((roleId) => {
+      next[roleId].sort((a, b) => {
+        if (b.pendingValue !== a.pendingValue) return b.pendingValue - a.pendingValue;
+        if (b.amountValue !== a.amountValue) return b.amountValue - a.amountValue;
+        return a.name.localeCompare(b.name);
+      });
+    });
+
+    return next;
+  }, [entityDirectory, normalizedLedger]);
+
+  const trackEntities = entitiesByTrack[activeTrack] || [];
+  const activeEntity = trackEntities.find((entity) => entity.key === activeEntityKeys[activeTrack]) || trackEntities[0] || null;
+  const activeForm = entryForms[activeTrack];
+  const matchingFormEntity = trackEntities.find((entity) => normalizeEntityKey(entity.name) === normalizeEntityKey(activeForm.partnerName));
+  const serviceSuggestions = matchingFormEntity
+    ? dedupeB2BItems(matchingFormEntity.servicesByRole[activeTrack].flatMap((group) => group.items || []))
+    : [];
+  const amountPreview = Math.max(1, Number(activeForm.quantity) || 1) * Math.max(0, Number(activeForm.rate) || 0);
+  const settledPreview = Math.max(0, Math.min(amountPreview, Number(activeForm.settledAmount) || 0));
+  const pendingPreview = Math.max(0, amountPreview - settledPreview);
+  const serviceListId = `b2b_service_options_${activeTrack}_${matchingFormEntity?.key || "custom"}`;
+  const partnerListId = `b2b_partner_options_${activeTrack}`;
+  const trackMeta = B2B_TRACK_META[activeTrack];
+  const trackTotals = trackEntities.reduce((acc, entity) => {
+    acc.amount += Number(entity.amountValue) || 0;
+    acc.settled += Number(entity.settledValue) || 0;
+    acc.pending += Number(entity.pendingValue) || 0;
+    return acc;
+  }, { amount: 0, settled: 0, pending: 0 });
+
+  useEffect(() => {
+    if (trackEntities.length === 0) return;
+    if (trackEntities.some((entity) => entity.key === activeEntityKeys[activeTrack])) return;
+    setActiveEntityKeys((prev) => ({ ...prev, [activeTrack]: trackEntities[0].key }));
+  }, [activeTrack, activeEntityKeys, trackEntities]);
+
+  useEffect(() => {
+    if (!activeEntity || String(activeForm.partnerName || "").trim()) return;
+    setEntryForms((prev) => ({
+      ...prev,
+      [activeTrack]: {
+        ...prev[activeTrack],
+        partnerName: activeEntity.name,
+      },
+    }));
+  }, [activeTrack, activeEntity, activeForm.partnerName]);
+
+  const updateActiveForm = (field, value) => {
+    setFormError("");
+    setEntryForms((prev) => ({
+      ...prev,
+      [activeTrack]: {
+        ...prev[activeTrack],
+        [field]: value,
+      },
+    }));
+  };
+
+  const selectEntity = (entity) => {
+    setActiveEntityKeys((prev) => ({ ...prev, [activeTrack]: entity.key }));
+    setEntryForms((prev) => ({
+      ...prev,
+      [activeTrack]: {
+        ...prev[activeTrack],
+        partnerName: entity.name,
+        serviceName: prev[activeTrack].serviceName || (entity.servicesByRole[activeTrack][0]?.items?.[0] || ""),
+      },
+    }));
+  };
 
   const handleAddEntry = () => {
-    if (!activeVendor) return;
-    const trimmedService = String(serviceName || "").trim();
-    const qtyNum = Math.max(1, Number(quantity) || 1);
-    const rateNum = Math.max(0, Number(rate) || 0);
+    const partnerName = String(activeForm.partnerName || "").trim();
+    const serviceName = String(activeForm.serviceName || "").trim();
+    const referredClient = String(activeForm.referredClient || "").trim();
+    const qtyNum = Math.max(1, Number(activeForm.quantity) || 1);
+    const rateNum = Math.max(0, Number(activeForm.rate) || 0);
     const amount = qtyNum * rateNum;
-    const paid = Math.max(0, Math.min(amount, Number(paidAmount) || 0));
-    const normalizedEntryDate = toIsoDateKey(entryDate) || todayKey;
+    const settledAmount = Math.max(0, Math.min(amount, Number(activeForm.settledAmount) || 0));
+    const normalizedEntryDate = toIsoDateKey(activeForm.entryDate) || todayKey;
+    const selectedEntity = entityDirectory.find((entity) => normalizeEntityKey(entity.name) === normalizeEntityKey(partnerName));
+    const generatedPartnerId = selectedEntity?.id || `partner_${normalizeEntityKey(partnerName).replace(/\s+/g, "_") || Date.now()}`;
 
-    if (!trimmedService) {
+    if (!partnerName) {
+      setFormError(activeTrack === "agent" ? "Agent name is required." : "Vendor name is required.");
+      return;
+    }
+    if (activeTrack !== "agent" && !serviceName) {
       setFormError("Service name is required.");
       return;
     }
-    if (rateNum <= 0) {
-      setFormError("B2B rate must be greater than zero.");
+    if (activeTrack === "agent" && !referredClient) {
+      setFormError("Client referred is required.");
       return;
     }
-    if (amount <= 0) {
-      setFormError("Amount must be greater than zero.");
+    if (rateNum <= 0) {
+      setFormError(`${trackMeta.rateFieldLabel} must be greater than zero.`);
       return;
     }
 
     setFormError("");
     onAddLedgerEntry?.({
       id: `b2b_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      vendorId: activeVendor.id,
-      vendorName: activeVendor.vendor,
-      flow,
-      serviceName: trimmedService,
+      ecosystem: activeTrack,
+      partnerId: generatedPartnerId,
+      partnerName,
+      vendorId: generatedPartnerId,
+      vendorName: partnerName,
+      flow: getTrackFlow(activeTrack),
+      serviceName,
       quantity: qtyNum,
       rate: rateNum,
       amount,
-      paidAmount: paid,
-      paymentMode,
+      paidAmount: settledAmount,
+      paymentMode: activeForm.paymentMode,
       entryDate: normalizedEntryDate,
-      note: String(entryNote || "").trim(),
-      includeInDailyRevenue: flow === "us_to_vendor" ? includeInDailyRevenue : false,
+      note: String(activeForm.note || "").trim(),
+      includeInDailyRevenue: activeTrack === "give" ? Boolean(activeForm.includeInDailyRevenue) : false,
+      businessAmount: activeTrack === "agent" ? Math.max(0, Number(activeForm.businessAmount) || 0) : 0,
+      referredClient: activeTrack === "agent" ? referredClient : "",
       createdAt: new Date().toISOString(),
     });
-    setRate("");
-    setPaidAmount("");
-    setQuantity("1");
-    setEntryNote("");
-    setServiceName(serviceSuggestions[0] || "");
-  };
-  const handleB2BFormSubmit = (event) => {
-    event.preventDefault();
-    handleAddEntry();
-  };
-  const closeConfirmDialog = () => {
-    setConfirmDialog({
-      isOpen: false,
-      title: "",
-      message: "",
-      onConfirm: null,
-    });
-  };
-  const closeAccessCodeDialog = () => {
-    setAccessCodeDialog({
-      isOpen: false,
-      title: "",
-      message: "",
-      actionLabel: "",
-      code: "",
-      error: "",
-      onAuthorized: null,
-    });
-  };
-  const submitDeleteAccessCode = () => {
-    const verification = verifyDeleteAccess(accessCodeDialog.actionLabel, accessCodeDialog.code);
-    if (!verification.ok) {
-      setAccessCodeDialog((prev) => ({ ...prev, error: verification.message }));
-      return;
-    }
-    const onAuthorized = accessCodeDialog.onAuthorized;
-    closeAccessCodeDialog();
-    onAuthorized?.();
+
+    setEntryForms((prev) => ({
+      ...prev,
+      [activeTrack]: {
+        ...createB2BEntryForm(activeTrack),
+        partnerName,
+        paymentMode: prev[activeTrack].paymentMode || "UPI",
+        includeInDailyRevenue: activeTrack === "give" ? Boolean(prev[activeTrack].includeInDailyRevenue) : false,
+      },
+    }));
   };
 
   const handleDeleteEntry = (entry) => {
     if (!entry?.id || typeof onDeleteLedgerEntry !== "function") return;
+    const targetTrackMeta = B2B_TRACK_META[entry.ecosystem] || trackMeta;
     setConfirmDialog({
       isOpen: true,
-      title: "Delete B2B Entry",
-      message: `Delete B2B entry for ${entry.serviceName}? This cannot be undone.`,
+      title: `Delete ${targetTrackMeta.submitLabel}`,
+      message: `Delete this ${entry.ecosystem === "agent" ? "agent" : "vendor"} entry for ${entry.partnerName || entry.serviceName}? This cannot be undone.`,
       onConfirm: () => {
-        closeConfirmDialog();
+        setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null });
         setAccessCodeDialog({
           isOpen: true,
           title: "Access Code Required",
@@ -7356,134 +7430,316 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
   };
 
   return (
-    <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
-        <div style={{ flex: "1 1 250px", minWidth: 240, background: "rgba(255,255,255,0.72)", borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", padding: 12 }}>
-          <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 10 }}>
-            Vendors
+    <div style={{ animation: "fadeIn 0.3s ease-out", maxWidth: 1140, margin: "0 auto", display: "grid", gap: 18 }}>
+      <div style={{ borderRadius: 20, border: "1px solid rgba(15,23,42,0.10)", background: "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,250,252,0.92) 100%)", padding: "18px 20px", boxShadow: ELEVATION.raised }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+          <div style={{ maxWidth: 520 }}>
+            <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
+              Vendor Dashboard
+            </div>
+            <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.35rem, 2.5vw, 1.9rem)", fontWeight: 300, color: "#0f172a", lineHeight: 1.05 }}>
+              Purchase, sales, and agent ecosystems separated into clear operational tracks.
+            </div>
           </div>
-          <div role="tablist" aria-label="B2B vendor list" style={{ display: "grid", gap: 7 }}>
-            {vendorSummaries.map((vendor) => {
-              const active = vendor.id === activeSummary?.id;
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            {B2B_TRACKS.map((track) => {
+              const active = track.id === activeTrack;
               return (
                 <button
-                  key={vendor.id}
-                  role="tab"
-                  aria-selected={active}
-                  aria-controls={`b2b_vendor_panel_${vendor.id}`}
-                  id={`b2b_vendor_tab_${vendor.id}`}
-                  onClick={() => setActiveVendorId(vendor.id)}
+                  key={track.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTrack(track.id);
+                    setFormError("");
+                  }}
                   style={{
-                    borderRadius: 10,
-                    border: active ? "1px solid rgba(37,99,235,0.35)" : "1px solid rgba(15,23,42,0.10)",
-                    background: active ? "rgba(37,99,235,0.09)" : "rgba(255,255,255,0.65)",
-                    padding: "9px 10px",
-                    textAlign: "left",
+                    borderRadius: 999,
+                    border: active ? "1px solid rgba(30,64,175,0.28)" : "1px solid rgba(15,23,42,0.12)",
+                    background: active ? "rgba(30,64,175,0.10)" : "rgba(255,255,255,0.82)",
+                    color: active ? "#1d4ed8" : "#334155",
+                    padding: "10px 14px",
+                    fontFamily: APP_BRAND_STACK,
+                    fontSize: "0.58rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
                     cursor: "pointer",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                    {vendor.vendor}
-                  </div>
-                  <div style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.55)", marginTop: 2, fontFamily: APP_FONT_STACK }}>
-                    Purchases {formatCurrency(vendor.purchasesValue)} | Sales {formatCurrency(vendor.salesValue)}
-                  </div>
+                  {track.label}
                 </button>
               );
             })}
           </div>
         </div>
+      </div>
 
-        <div
-          role="tabpanel"
-          id={`b2b_vendor_panel_${activeSummary?.id || "none"}`}
-          aria-labelledby={`b2b_vendor_tab_${activeSummary?.id || "none"}`}
-          style={{ flex: "2 1 480px", minWidth: 280, background: "rgba(255,255,255,0.72)", borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", padding: 14 }}
-        >
-          {!activeSummary ? (
-            <div style={{ color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>No vendor selected.</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+        {[
+          { label: trackMeta.entityCountLabel, value: trackEntities.length, color: "#0f172a" },
+          { label: trackMeta.amountLabel, value: formatCurrency(trackTotals.amount), color: "#1d4ed8" },
+          { label: trackMeta.settledLabel, value: formatCurrency(trackTotals.settled), color: "#166534" },
+          { label: trackMeta.pendingLabel, value: formatCurrency(trackTotals.pending), color: "#7c2d12" },
+        ].map((card) => (
+          <div key={card.label} style={{ borderRadius: 16, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.90)", padding: "12px 14px" }}>
+            <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
+              {card.label}
+            </div>
+            <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.15rem", fontWeight: 300, color: card.color, lineHeight: 1 }}>
+              {card.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ flex: "0 1 330px", minWidth: 280, borderRadius: 18, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.88)", padding: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
+            <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>
+              {trackMeta.listHeading}
+            </div>
+            <div style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.48)", fontFamily: APP_MONO_STACK }}>
+              {trackEntities.length}
+            </div>
+          </div>
+          {trackEntities.length === 0 ? (
+            <div style={{ borderRadius: 14, border: "1px dashed rgba(15,23,42,0.16)", background: "rgba(248,250,252,0.90)", padding: "14px 12px", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
+              {activeTrack === "agent" ? "No agents tracked yet. Add the first referral entry below." : "No vendors in this track yet. Add the first entry below."}
+            </div>
+          ) : (
+            <div role="tablist" aria-label={`${trackMeta.listHeading} list`} style={{ display: "grid", gap: 9 }}>
+              {trackEntities.map((entity) => {
+                const active = entity.key === activeEntity?.key;
+                const secondaryRoles = entity.roles.filter((roleId) => roleId !== activeTrack);
+                const servicePreview = entity.serviceNames.slice(0, 3).join(", ");
+                return (
+                  <button
+                    key={entity.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => selectEntity(entity)}
+                    style={{
+                      borderRadius: 14,
+                      border: active ? "1px solid rgba(30,64,175,0.24)" : "1px solid rgba(15,23,42,0.09)",
+                      background: active ? "rgba(30,64,175,0.08)" : "rgba(248,250,252,0.90)",
+                      padding: "12px 12px 11px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                      <div>
+                        <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                          {entity.name}
+                        </div>
+                        {secondaryRoles.length > 0 && (
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                            {secondaryRoles.map((roleId) => {
+                              const badge = B2B_ROLE_BADGE_META[roleId];
+                              return (
+                                <span
+                                  key={`${entity.key}_${roleId}`}
+                                  style={{
+                                    borderRadius: 999,
+                                    border: `1px solid ${badge.border}`,
+                                    background: badge.background,
+                                    color: badge.color,
+                                    padding: "3px 8px",
+                                    fontFamily: APP_BRAND_STACK,
+                                    fontSize: "0.54rem",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.12em",
+                                    textTransform: "uppercase",
+                                  }}
+                                >
+                                  {badge.label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.40)", fontFamily: APP_BRAND_STACK }}>
+                          {trackMeta.pendingLabel.replace("Total ", "")}
+                        </div>
+                        <div style={{ marginTop: 4, fontSize: "0.82rem", color: "#7c2d12", fontFamily: APP_MONO_STACK, fontWeight: 700 }}>
+                          {formatCurrency(entity.pendingValue)}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: "0.76rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.4 }}>
+                      {activeTrack === "agent" ? `${entity.referredClients.length} client${entity.referredClients.length === 1 ? "" : "s"} referred` : (servicePreview || "No services mapped yet")}
+                    </div>
+                    {entity.latestEntry && (
+                      <div style={{ marginTop: 6, fontSize: "0.72rem", color: "rgba(15,23,42,0.48)", fontFamily: APP_FONT_STACK }}>
+                        Latest: {entity.latestEntry.serviceName || entity.latestEntry.referredClient || "Entry"} on {formatEntryDate(entity.latestEntry.entryDate)}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div style={{ flex: "1 1 560px", minWidth: 320, borderRadius: 18, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.90)", padding: 16 }}>
+          {!activeEntity ? (
+            <div className="csc-empty-state" style={{ padding: "24px 18px" }}>
+              <div className="csc-empty-state-icon">VD</div>
+              <div className="csc-empty-state-title">No profile selected yet.</div>
+              <div className="csc-empty-state-message">
+                Start with a new {activeTrack === "agent" ? "agent" : "vendor"} entry below to build this track.
+              </div>
+              <button type="button" className="csc-empty-state-cta" onClick={() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                {trackMeta.submitLabel}
+              </button>
+            </div>
           ) : (
             <>
-              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.2rem", fontWeight: 300, color: "#0f172a", marginBottom: 6 }}>
-                {activeSummary.vendor}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.45rem", fontWeight: 300, color: "#0f172a", lineHeight: 1.05 }}>
+                    {activeEntity.name}
+                  </div>
+                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 8 }}>
+                    {activeEntity.roles.map((roleId) => {
+                      const badge = B2B_ROLE_BADGE_META[roleId];
+                      return (
+                        <span
+                          key={`${activeEntity.key}_${roleId}_detail`}
+                          style={{
+                            borderRadius: 999,
+                            border: `1px solid ${badge.border}`,
+                            background: badge.background,
+                            color: badge.color,
+                            padding: "4px 9px",
+                            fontFamily: APP_BRAND_STACK,
+                            fontSize: "0.56rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {badge.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)", fontFamily: APP_BRAND_STACK }}>
+                    {trackMeta.heading}
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: "0.86rem", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK }}>
+                    {activeTrack === "agent" ? `${activeEntity.referredClients.length} referred client${activeEntity.referredClients.length === 1 ? "" : "s"}` : `${activeEntity.entries.length} recent entr${activeEntity.entries.length === 1 ? "y" : "ies"}`}
+                  </div>
+                </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 10 }}>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 14 }}>
                 {[
-                  { label: "Purchases", value: activeSummary.purchasesValue, color: "#1d4ed8" },
-                  { label: "Vendor Pending", value: activeSummary.purchasesPending, color: "#0f172a" },
-                  { label: "Sales", value: activeSummary.salesValue, color: "#1d4ed8" },
-                  { label: "Collection Pending", value: activeSummary.salesPending, color: "#0f172a" },
+                  { label: trackMeta.amountLabel, value: activeEntity.amountValue, color: "#1d4ed8" },
+                  { label: trackMeta.settledLabel, value: activeEntity.settledValue, color: "#166534" },
+                  { label: trackMeta.pendingLabel, value: activeEntity.pendingValue, color: "#7c2d12" },
+                  { label: activeTrack === "agent" ? "Clients Referred" : "Services Linked", value: activeTrack === "agent" ? activeEntity.referredClients.length : activeEntity.serviceNames.length, color: "#0f172a" },
                 ].map((item) => (
-                  <div key={item.label} style={{ borderRadius: 10, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.60)", padding: "8px 9px" }}>
-                    <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 4 }}>
+                  <div key={item.label} style={{ borderRadius: 12, border: "1px solid rgba(15,23,42,0.09)", background: "rgba(248,250,252,0.86)", padding: "10px 11px" }}>
+                    <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
                       {item.label}
                     </div>
-                    <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.05rem", fontWeight: 300, color: item.color, lineHeight: 1 }}>
-                      {formatCurrency(item.value)}
+                    <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.06rem", fontWeight: 300, color: item.color, lineHeight: 1 }}>
+                      {item.label === "Clients Referred" || item.label === "Services Linked" ? item.value : formatCurrency(item.value)}
                     </div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
-                <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>
-                  Vendor Services
-                </div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {activeSummary.inboundServices.map((service) => (
-                    <span key={`${activeSummary.id}_in_${service}`} style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "#1f2937", background: "rgba(15,23,42,0.06)", border: "1px solid rgba(15,23,42,0.11)", borderRadius: 999, padding: "4px 8px", fontFamily: APP_BRAND_STACK }}>
-                      IN: {service}
-                    </span>
-                  ))}
-                  {activeSummary.outboundServices.map((service) => (
-                    <span key={`${activeSummary.id}_out_${service}`} style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "#1d4ed8", background: "rgba(59,130,246,0.10)", border: "1px solid rgba(59,130,246,0.24)", borderRadius: 999, padding: "4px 8px", fontFamily: APP_BRAND_STACK }}>
-                      OUT: {service}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, marginBottom: 6 }}>
-                Recent Entries
-              </div>
-              {activeSummary.entries.length === 0 ? (
-                <div className="csc-empty-state" style={{ padding: "16px 14px" }}>
-                  <div className="csc-empty-state-icon">B2</div>
-                  <div className="csc-empty-state-title">No ledger entries yet.</div>
-                  <div className="csc-empty-state-message">
-                    Add a B2B entry below to start tracking vendor payments and service flow.
+
+              <div style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+                {activeEntity.roles.map((roleId) => (
+                  <div key={`${activeEntity.key}_${roleId}_services`} style={{ borderRadius: 14, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(248,250,252,0.90)", padding: "12px 13px" }}>
+                    <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.44)", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
+                      {getRoleHeading(roleId)}
+                    </div>
+                    {(activeEntity.servicesByRole[roleId] || []).length === 0 ? (
+                      <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
+                        No services mapped yet.
+                      </div>
+                    ) : (
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {activeEntity.servicesByRole[roleId].map((group) => (
+                          <div key={`${activeEntity.key}_${roleId}_${group.label}`} style={{ display: "grid", gap: 5 }}>
+                            <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                              {group.label}
+                            </div>
+                            <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontFamily: APP_FONT_STACK, lineHeight: 1.45 }}>
+                              {group.items.join(" • ")}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    className="csc-empty-state-cta"
-                    onClick={() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                  >
-                    Add B2B Entry
-                  </button>
+                ))}
+              </div>
+
+              <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.44)", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
+                {trackMeta.detailEntriesHeading}
+              </div>
+              {activeEntity.entries.length === 0 ? (
+                <div style={{ borderRadius: 14, border: "1px dashed rgba(15,23,42,0.14)", background: "rgba(248,250,252,0.88)", padding: "14px 12px", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
+                  No ledger history yet for this profile.
                 </div>
               ) : (
-                <div style={{ display: "grid", gap: 7 }}>
-                  {activeSummary.entries.slice(0, 8).map((entry) => (
-                    <div key={entry.id} style={{ borderRadius: 10, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.60)", padding: "9px 10px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                          {entry.serviceName}
+                <div style={{ display: "grid", gap: 8 }}>
+                  {activeEntity.entries.slice(0, 6).map((entry) => (
+                    <div key={entry.id} style={{ borderRadius: 12, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(255,255,255,0.78)", padding: "10px 11px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
+                        <div>
+                          <div style={{ fontSize: "0.84rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                            {entry.serviceName || entry.referredClient || "Untitled entry"}
+                          </div>
+                          <div style={{ marginTop: 4, fontSize: "0.74rem", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK }}>
+                            {activeTrack === "agent" ? `Client ${entry.referredClient || "N/A"} | Commission ${formatCurrency(entry.amount)}` : `Qty ${entry.quantity} x Rs. ${entry.rate} = ${formatCurrency(entry.amount)}`}
+                          </div>
                         </div>
-                        <button onClick={() => handleDeleteEntry(entry)} style={{ border: "1px solid rgba(214,5,43,0.28)", borderRadius: 999, background: "rgba(214,5,43,0.08)", color: "#1d4ed8", fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 8px", cursor: "pointer" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEntry(entry)}
+                          style={{
+                            border: "1px solid rgba(185,28,28,0.24)",
+                            borderRadius: 999,
+                            background: "rgba(185,28,28,0.08)",
+                            color: "#991b1b",
+                            fontSize: "0.56rem",
+                            fontFamily: APP_BRAND_STACK,
+                            fontWeight: 700,
+                            letterSpacing: "0.14em",
+                            textTransform: "uppercase",
+                            padding: "5px 9px",
+                            cursor: "pointer",
+                          }}
+                        >
                           Delete
                         </button>
                       </div>
-                      <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.58)", marginTop: 3, fontFamily: APP_FONT_STACK }}>
-                        {entry.flow === "vendor_to_us" ? "From Vendor" : "To Vendor"} | Qty {entry.quantity} x Rs. {entry.rate} = {formatCurrency(entry.amount)}
+                      <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
+                        {entry.paymentStatus} | {trackMeta.settledLabel} {formatCurrency(entry.paidAmount)} | {trackMeta.pendingLabel.replace("Total ", "")} {formatCurrency(entry.pendingAmount)} | {entry.paymentMode} | {formatEntryDate(entry.entryDate)}
                       </div>
-                      <div style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", marginTop: 2, fontFamily: APP_FONT_STACK }}>
-                        {entry.paymentStatus} | Paid {formatCurrency(entry.paidAmount)} | Pending {formatCurrency(entry.pendingAmount)} | {entry.paymentMode} | {formatEntryDate(entry.entryDate)}
-                      </div>
-                      {entry.flow === "us_to_vendor" && entry.includeInDailyRevenue && (
-                        <div style={{ marginTop: 3, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#1d4ed8", fontFamily: APP_BRAND_STACK }}>
+                      {entry.ecosystem === "agent" && Number(entry.businessAmount) > 0 && (
+                        <div style={{ marginTop: 4, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
+                          Referred business {formatCurrency(entry.businessAmount)}
+                        </div>
+                      )}
+                      {entry.ecosystem === "give" && entry.includeInDailyRevenue && (
+                        <div style={{ marginTop: 4, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#1d4ed8", fontFamily: APP_BRAND_STACK }}>
                           Included in daily revenue
                         </div>
                       )}
                       {entry.note && (
-                        <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
+                        <div style={{ marginTop: 4, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
                           Note: {entry.note}
                         </div>
                       )}
@@ -7496,34 +7752,58 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
         </div>
       </div>
 
-      <form ref={b2bFormRef} onSubmit={handleB2BFormSubmit} style={{ background: "rgba(255,255,255,0.72)", borderRadius: 14, border: "1px solid rgba(15,23,42,0.10)", padding: 14 }}>
-        <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
-          Add B2B Entry
+      <form ref={b2bFormRef} onSubmit={(event) => { event.preventDefault(); handleAddEntry(); }} style={{ width: "100%", maxWidth: 760, margin: "0 auto", borderRadius: 18, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.92)", padding: "18px 18px 16px", boxShadow: ELEVATION.raised }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK }}>
+              {trackMeta.heading}
+            </div>
+            <div style={{ marginTop: 6, fontFamily: APP_SERIF_STACK, fontSize: "1.15rem", fontWeight: 300, color: "#0f172a" }}>
+              {trackMeta.submitLabel}
+            </div>
+          </div>
+          <div style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
+            {trackMeta.amountCaption} {formatCurrency(amountPreview)}
+          </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-          <label style={{ display: "grid", gap: 5 }}>
-            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Vendor</span>
-            <select value={activeVendorId} onChange={(e) => setActiveVendorId(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
-              {b2bVendors.map((vendor) => (
-                <option key={`b2b_vendor_select_${vendor.id}`} value={vendor.id} style={MENU_OPTION_STYLE}>{vendor.vendor}</option>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>{activeTrack === "agent" ? "Agent" : "Vendor"}</span>
+            <input
+              list={partnerListId}
+              value={activeForm.partnerName}
+              onChange={(event) => updateActiveForm("partnerName", event.target.value)}
+              placeholder={activeTrack === "agent" ? "Agent name" : "Vendor name"}
+              style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
+            />
+            <datalist id={partnerListId}>
+              {trackEntities.map((entity) => (
+                <option key={`${partnerListId}_${entity.key}`} value={entity.name} />
               ))}
-            </select>
+            </datalist>
           </label>
-          <label style={{ display: "grid", gap: 5 }}>
-            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Flow</span>
-            <select value={flow} onChange={(e) => setFlow(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
-              <option value="vendor_to_us" style={MENU_OPTION_STYLE}>From Vendor (Our Cost)</option>
-              <option value="us_to_vendor" style={MENU_OPTION_STYLE}>To Vendor (Our Revenue)</option>
-            </select>
-          </label>
-          <label style={{ display: "grid", gap: 5 }}>
-            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Service</span>
+
+          {activeTrack === "agent" && (
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Client Referred</span>
+              <input
+                value={activeForm.referredClient}
+                onChange={(event) => updateActiveForm("referredClient", event.target.value)}
+                placeholder="Client name"
+                style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
+              />
+            </label>
+          )}
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>{activeTrack === "agent" ? "Service Referred" : "Service"}</span>
             <input
               list={serviceListId}
-              value={serviceName}
-              onChange={(e) => setServiceName(e.target.value)}
-              placeholder="Service name"
-              style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
+              value={activeForm.serviceName}
+              onChange={(event) => updateActiveForm("serviceName", event.target.value)}
+              placeholder={activeTrack === "agent" ? "Optional service" : "Service name"}
+              style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
             />
             <datalist id={serviceListId}>
               {serviceSuggestions.map((service) => (
@@ -7531,84 +7811,86 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
               ))}
             </datalist>
           </label>
-          <label style={{ display: "grid", gap: 5 }}>
+
+          <label style={{ display: "grid", gap: 6 }}>
             <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Quantity</span>
-            <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+            <input type="number" min="1" value={activeForm.quantity} onChange={(event) => updateActiveForm("quantity", event.target.value)} style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
           </label>
-          <label style={{ display: "grid", gap: 5 }}>
-            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>B2B Rate (Rs.)</span>
-            <input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>{trackMeta.rateFieldLabel}</span>
+            <input type="number" min="0" value={activeForm.rate} onChange={(event) => updateActiveForm("rate", event.target.value)} style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
           </label>
-          <label style={{ display: "grid", gap: 5 }}>
-            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Paid Amount (Rs.)</span>
-            <input type="number" min="0" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+
+          {activeTrack === "agent" && (
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Referred Business (Rs.)</span>
+              <input type="number" min="0" value={activeForm.businessAmount} onChange={(event) => updateActiveForm("businessAmount", event.target.value)} style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+            </label>
+          )}
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>{trackMeta.paidFieldLabel}</span>
+            <input type="number" min="0" value={activeForm.settledAmount} onChange={(event) => updateActiveForm("settledAmount", event.target.value)} style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
           </label>
-          <label style={{ display: "grid", gap: 5 }}>
+
+          <label style={{ display: "grid", gap: 6 }}>
             <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Payment Mode</span>
-            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
-              {["Cash", "UPI", "Bank Transfer", "Credit", "Unspecified"].map((mode) => (
-                <option key={`b2b_mode_${mode}`} value={mode} style={MENU_OPTION_STYLE}>{mode}</option>
+            <select value={activeForm.paymentMode} onChange={(event) => updateActiveForm("paymentMode", event.target.value)} style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
+              {B2B_PAYMENT_MODES.map((mode) => (
+                <option key={`b2b_payment_mode_${mode}`} value={mode} style={MENU_OPTION_STYLE}>{mode}</option>
               ))}
             </select>
           </label>
-          <label style={{ display: "grid", gap: 5 }}>
+
+          <label style={{ display: "grid", gap: 6 }}>
             <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Date</span>
-            <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+            <input type="date" value={activeForm.entryDate} onChange={(event) => updateActiveForm("entryDate", event.target.value)} style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
           </label>
-          <label style={{ display: "grid", gap: 5 }}>
+
+          <label style={{ display: "grid", gap: 6, gridColumn: "1 / -1" }}>
             <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>Note</span>
-            <input value={entryNote} onChange={(e) => setEntryNote(e.target.value)} placeholder="Optional note" style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.85)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }} />
+            <textarea rows="2" value={activeForm.note} onChange={(event) => updateActiveForm("note", event.target.value)} placeholder="Optional note" style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem", resize: "vertical", minHeight: 76 }} />
           </label>
         </div>
 
-        {flow === "us_to_vendor" && (
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 10, padding: "8px 10px", border: "1px solid rgba(37,99,235,0.22)", borderRadius: 9, background: "rgba(37,99,235,0.08)", cursor: "pointer" }}>
-            <input type="checkbox" checked={includeInDailyRevenue} onChange={(e) => setIncludeInDailyRevenue(e.target.checked)} />
-            <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.72)", fontFamily: APP_FONT_STACK }}>
-              Include this sale in daily revenue
+        {activeTrack === "give" && (
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, padding: "8px 10px", border: "1px solid rgba(30,64,175,0.18)", borderRadius: 10, background: "rgba(30,64,175,0.06)", cursor: "pointer" }}>
+            <input type="checkbox" checked={Boolean(activeForm.includeInDailyRevenue)} onChange={(event) => updateActiveForm("includeInDailyRevenue", event.target.checked)} />
+            <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.70)", fontFamily: APP_FONT_STACK }}>
+              Include this sales entry in daily revenue
             </span>
           </label>
         )}
 
-        <div style={{ marginTop: 10, fontSize: "0.80rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
-          Amount {formatCurrency(amountPreview)} | Paid {formatCurrency(paidPreview)} | Pending {formatCurrency(pendingPreview)}
+        <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK }}>
+            {trackMeta.previewVerb} {formatCurrency(amountPreview)} | {trackMeta.settledLabel} {formatCurrency(settledPreview)} | {trackMeta.pendingLabel.replace("Total ", "")} {formatCurrency(pendingPreview)}
+          </div>
+          <button type="submit" style={{ border: "1px solid rgba(30,64,175,0.32)", borderRadius: 999, background: "rgba(30,64,175,0.10)", color: "#1d4ed8", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
+            {trackMeta.submitLabel}
+          </button>
         </div>
         {formError && (
-          <div style={{ marginTop: 8, color: "#1d4ed8", fontSize: "0.80rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+          <div style={{ marginTop: 10, color: "#991b1b", fontSize: "0.80rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
             {formError}
           </div>
         )}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-          <button type="submit" style={{ border: "1px solid rgba(37,99,235,0.40)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: "#1e40af", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
-            Add B2B Entry
-          </button>
-        </div>
       </form>
-      <ConfirmDialog
-        isOpen={confirmDialog.isOpen}
-        title={confirmDialog.title}
-        message={confirmDialog.message}
-        onCancel={closeConfirmDialog}
-        onConfirm={() => confirmDialog.onConfirm?.()}
-        confirmLabel="Continue"
-      />
-      <AccessCodeDialog
-        isOpen={accessCodeDialog.isOpen}
-        title={accessCodeDialog.title}
-        message={accessCodeDialog.message}
-        code={accessCodeDialog.code}
-        error={accessCodeDialog.error}
-        onCodeChange={(nextCode) => setAccessCodeDialog((prev) => ({ ...prev, code: nextCode, error: "" }))}
-        onCancel={closeAccessCodeDialog}
-        onConfirm={submitDeleteAccessCode}
-      />
+
+      <ConfirmDialog isOpen={confirmDialog.isOpen} title={confirmDialog.title} message={confirmDialog.message} onCancel={() => setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null })} onConfirm={() => confirmDialog.onConfirm?.()} confirmLabel="Continue" />
+      <AccessCodeDialog isOpen={accessCodeDialog.isOpen} title={accessCodeDialog.title} message={accessCodeDialog.message} code={accessCodeDialog.code} error={accessCodeDialog.error} onCodeChange={(nextCode) => setAccessCodeDialog((prev) => ({ ...prev, code: nextCode, error: "" }))} onCancel={() => setAccessCodeDialog({ isOpen: false, title: "", message: "", actionLabel: "", code: "", error: "", onAuthorized: null })} onConfirm={() => { const verification = verifyDeleteAccess(accessCodeDialog.actionLabel, accessCodeDialog.code); if (!verification.ok) { setAccessCodeDialog((prev) => ({ ...prev, error: verification.message })); } else { const onAuthorized = accessCodeDialog.onAuthorized; setAccessCodeDialog({ isOpen: false, title: "", message: "", actionLabel: "", code: "", error: "", onAuthorized: null }); onAuthorized?.(); } }} />
     </div>
   );
 }
 
 // --- Monthly Overview ---
-function MonthlyOverview({ tickets, onNavigateTab }) {
+function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
   const normalized = tickets.map((t) => t.structured ? t : withStructuredTicket(t));
+  const b2bNormalized = useMemo(() => hydrateB2BLedger(b2bLedger), [b2bLedger]);
+
+  const fmtINR = (n) => `Rs. ${Math.round(Number(n) || 0).toLocaleString("en-IN")}`;
+  const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
   const byMonth = {};
   normalized.forEach((t) => {
@@ -7620,222 +7902,718 @@ function MonthlyOverview({ tickets, onNavigateTab }) {
   const months = Object.keys(byMonth).sort().reverse();
 
   const allRevenue = normalized.reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
+  const allInvoiced = normalized.reduce((s, t) => s + (Number(t.total) || 0), 0);
   const allPending = normalized.reduce((s, t) => s + (Number(t.structured?.payment?.pendingBalance) || 0), 0);
   const openCount = normalized.filter((t) => t.status !== "Closed").length;
   const closedCount = normalized.filter((t) => t.status === "Closed").length;
 
-  const eb = { fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK, display: "block", marginBottom: 5 };
-  const card = { background: "rgba(255,255,255,0.78)", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 14, boxShadow: ELEVATION.raised };
+  const todayKey = getTicketCounterDateKey(new Date());
+  const daysAgoKey = (n) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return getTicketCounterDateKey(d);
+  };
 
-  const hasData = normalized.length > 0;
+  const ticketDateKey = (t) => toIsoDateKey(t.entryDateKey || t.structured?.meta?.createdDate || t.date || "") || "";
+  const ageDays = (t) => {
+    const k = ticketDateKey(t);
+    if (!k) return 0;
+    const d = new Date(`${k}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return 0;
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  };
+
+  const last30 = normalized.filter((t) => {
+    const k = ticketDateKey(t);
+    return k && k >= daysAgoKey(30) && k <= todayKey;
+  });
+  const prev30 = normalized.filter((t) => {
+    const k = ticketDateKey(t);
+    return k && k >= daysAgoKey(60) && k < daysAgoKey(30);
+  });
+  const last7 = normalized.filter((t) => {
+    const k = ticketDateKey(t);
+    return k && k >= daysAgoKey(7);
+  });
+
+  const sumPaid = (arr) => arr.reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
+  const sumInvoiced = (arr) => arr.reduce((s, t) => s + (Number(t.total) || 0), 0);
+  const sumPending = (arr) => arr.reduce((s, t) => s + (Number(t.structured?.payment?.pendingBalance) || 0), 0);
+
+  const last30Paid = sumPaid(last30);
+  const prev30Paid = sumPaid(prev30);
+  const growthMoM = prev30Paid > 0 ? Math.round(((last30Paid - prev30Paid) / prev30Paid) * 100) : 0;
+
+  const collectionRate = allInvoiced > 0 ? Math.round((allRevenue / allInvoiced) * 100) : 0;
+
+  const openTickets = normalized.filter((t) => t.status !== "Closed");
+  const aging = {
+    fresh: openTickets.filter((t) => ageDays(t) < 1).length,
+    d1to3: openTickets.filter((t) => ageDays(t) >= 1 && ageDays(t) < 3).length,
+    d3to7: openTickets.filter((t) => ageDays(t) >= 3 && ageDays(t) < 7).length,
+    over7: openTickets.filter((t) => ageDays(t) >= 7).length,
+  };
+  const backlogPct = openTickets.length > 0 ? Math.round((aging.over7 / openTickets.length) * 100) : 0;
+
+  const dailyAvg = last30.length > 0 ? last30Paid / 30 : 0;
+
+  // Service performance
+  const serviceStats = {};
+  normalized.forEach((t) => {
+    (t.structured?.items || t.items || []).forEach((item) => {
+      const name = item.serviceName || item.name || "Unknown";
+      if (!serviceStats[name]) {
+        serviceStats[name] = { name, count: 0, revenue: 0, pending: 0, category: item.category || "Other" };
+      }
+      serviceStats[name].count += Number(item.quantity) || 1;
+      serviceStats[name].revenue += Number(item.lineTotal || item.total || 0);
+    });
+  });
+  normalized.forEach((t) => {
+    const pendingT = Number(t.structured?.payment?.pendingBalance) || 0;
+    const items = t.structured?.items || t.items || [];
+    if (items.length === 0 || pendingT === 0) return;
+    const totalT = Number(t.total) || 0;
+    items.forEach((item) => {
+      const name = item.serviceName || item.name || "Unknown";
+      if (!serviceStats[name]) return;
+      const itemTotal = Number(item.lineTotal || item.total || 0);
+      const share = totalT > 0 ? itemTotal / totalT : 0;
+      serviceStats[name].pending += pendingT * share;
+    });
+  });
+  const topServicesByRevenue = Object.values(serviceStats).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
+  const topServicesByCount = Object.values(serviceStats).sort((a, b) => b.count - a.count).slice(0, 5);
+  const top3RevenuePct = topServicesByRevenue.slice(0, 3).reduce((s, x) => s + x.revenue, 0);
+  const concentration = allInvoiced > 0 ? Math.round((top3RevenuePct / allInvoiced) * 100) : 0;
+
+  // Payment mode split
+  const modeStats = { Cash: 0, UPI: 0, "Bank Transfer": 0, Other: 0 };
+  normalized.forEach((t) => {
+    const pays = t.structured?.payment?.paymentRecords || t.payments || [];
+    pays.forEach((p) => {
+      const mode = p.method || p.paymentMode || "Other";
+      const amt = Number(p.amount) || 0;
+      if (modeStats[mode] !== undefined) modeStats[mode] += amt;
+      else modeStats.Other += amt;
+    });
+  });
+  const totalModePaid = Object.values(modeStats).reduce((a, b) => a + b, 0) || allRevenue;
+
+  // B2B integration
+  const b2bPurchases = b2bNormalized.filter((e) => e.flow === "vendor_to_us");
+  const b2bSales = b2bNormalized.filter((e) => e.flow === "us_to_vendor");
+  const b2bAgents = b2bNormalized.filter((e) => e.type === "agent_commission");
+  const b2bPurchaseValue = b2bPurchases.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const b2bSalesValue = b2bSales.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const b2bPayable = b2bPurchases.reduce((s, e) => s + (Number(e.pendingAmount) || 0), 0);
+  const b2bReceivable = b2bSales.reduce((s, e) => s + (Number(e.pendingAmount) || 0), 0);
+  const totalEcosystemRevenue = allRevenue + b2bSalesValue;
+  const b2bRevSharePct = totalEcosystemRevenue > 0 ? Math.round((b2bSalesValue / totalEcosystemRevenue) * 100) : 0;
+  const vendorCostPct = allInvoiced > 0 ? Math.round((b2bPurchaseValue / allInvoiced) * 100) : 0;
+
+  // Vendor concentration
+  const vendorMap = {};
+  b2bPurchases.forEach((e) => {
+    const v = e.vendorName || e.vendor || "Unknown";
+    vendorMap[v] = (vendorMap[v] || 0) + (Number(e.amount) || 0);
+  });
+  const vendorList = Object.entries(vendorMap).map(([name, val]) => ({ name, val })).sort((a, b) => b.val - a.val);
+  const topVendorPct = b2bPurchaseValue > 0 && vendorList.length > 0 ? Math.round((vendorList[0].val / b2bPurchaseValue) * 100) : 0;
+
+  // Expansion Readiness Score
+  const monthlyRevenues = months.slice(0, 6).map((m) => byMonth[m].reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0));
+  const meanRev = monthlyRevenues.length > 0 ? monthlyRevenues.reduce((a, b) => a + b, 0) / monthlyRevenues.length : 0;
+  const variance = monthlyRevenues.length > 0 ? monthlyRevenues.reduce((s, v) => s + Math.pow(v - meanRev, 2), 0) / monthlyRevenues.length : 0;
+  const stdDev = Math.sqrt(variance);
+  const cv = meanRev > 0 ? stdDev / meanRev : 1;
+
+  const f1_revStability = cv < 0.10 ? 14 : cv < 0.15 ? 11 : cv < 0.25 ? 8 : 4;
+  const pendingPctOfMRR = meanRev > 0 ? (allPending / meanRev) * 100 : 100;
+  const f2_collection = collectionRate >= 92 && pendingPctOfMRR < 15 ? 14 : collectionRate >= 85 && pendingPctOfMRR < 20 ? 11 : collectionRate >= 75 ? 8 : 4;
+  const f3_capacity = backlogPct < 2 ? 14 : backlogPct < 5 ? 11 : backlogPct < 10 ? 7 : 3;
+  const f4_serviceMix = concentration >= 50 && concentration <= 65 ? 13 : concentration > 65 && concentration <= 75 ? 10 : concentration < 50 ? 9 : 6;
+  const f5_vendor = vendorList.length === 0 ? 12 : topVendorPct < 50 ? 14 : topVendorPct < 70 ? 10 : 5;
+  const f6_team = 7;
+  const f7_cash = pendingPctOfMRR < 15 ? 14 : pendingPctOfMRR < 25 ? 10 : 5;
+
+  const readinessScore = Math.round(f1_revStability + f2_collection + f3_capacity + f4_serviceMix + f5_vendor + f6_team + f7_cash);
+  const readinessPhase = readinessScore >= 90 ? { label: "IDEAL", color: "#15803d", desc: "Expansion strategically and operationally sound" }
+    : readinessScore >= 75 ? { label: "READY", color: "#16a34a", desc: "Can open second centre in 60-90 days" }
+    : readinessScore >= 60 ? { label: "PREPARE", color: "#ca8a04", desc: "Plan expansion, address gaps in 90 days" }
+    : readinessScore >= 40 ? { label: "HOLD", color: "#ea580c", desc: "Stabilize current operations first" }
+    : { label: "NOT READY", color: "#dc2626", desc: "Foundational issues to fix before scaling" };
+
+  // Health indicators
+  const growthHealth = growthMoM >= 3 && growthMoM <= 15 ? "good" : growthMoM > 0 ? "watch" : "bad";
+  const collectionHealth = collectionRate >= 90 ? "good" : collectionRate >= 80 ? "watch" : "bad";
+  const backlogHealth = backlogPct < 2 ? "good" : backlogPct < 5 ? "watch" : "bad";
+  const readinessHealth = readinessScore >= 75 ? "good" : readinessScore >= 60 ? "watch" : "bad";
+
+  const healthColor = (h) => h === "good" ? "#15803d" : h === "watch" ? "#ca8a04" : "#dc2626";
+  const healthLabel = (h) => h === "good" ? "HEALTHY" : h === "watch" ? "WATCH" : "ACTION";
+
+  // Forecast
+  const projectedRevenue30 = Math.round(dailyAvg * 30);
+  const upsideProjection = Math.round(projectedRevenue30 * 1.08);
+  const conservativeProjection = Math.round(projectedRevenue30 * 0.95);
+
+  // Service category trend
+  const catRevenue = {};
+  CATEGORIES.forEach((c) => { catRevenue[c] = 0; });
+  Object.values(serviceStats).forEach((s) => {
+    if (catRevenue[s.category] !== undefined) catRevenue[s.category] += s.revenue;
+  });
+
+  const styles = {
+    section: { background: "rgba(255,255,255,0.78)", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 12, padding: "18px 20px", marginBottom: 16 },
+    sectionTitle: { fontFamily: APP_FONT_STACK, fontSize: "0.92rem", fontWeight: 700, color: "#0f172a", marginBottom: 4, letterSpacing: "-0.01em" },
+    sectionSubtitle: { fontFamily: APP_FONT_STACK, fontSize: "0.74rem", color: "rgba(15,23,42,0.55)", marginBottom: 14 },
+    eyebrow: { fontFamily: APP_BRAND_STACK, fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", marginBottom: 6 },
+    bigNumber: { fontFamily: APP_FONT_STACK, fontSize: "1.55rem", fontWeight: 700, color: "#0f172a", letterSpacing: "-0.02em", lineHeight: 1.1 },
+    midNumber: { fontFamily: APP_FONT_STACK, fontSize: "1.15rem", fontWeight: 700, color: "#0f172a", letterSpacing: "-0.01em" },
+    label: { fontFamily: APP_FONT_STACK, fontSize: "0.72rem", color: "rgba(15,23,42,0.55)" },
+    chip: { fontFamily: APP_BRAND_STACK, fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 999 },
+    decisionBox: { marginTop: 14, padding: "12px 14px", background: "rgba(15,23,42,0.03)", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 10 },
+  };
+
+  if (normalized.length === 0) {
+    return (
+      <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+        <div style={styles.section}>
+          <div className="csc-empty-state">
+            <div className="csc-empty-state-icon">AN</div>
+            <div className="csc-empty-state-title">No tickets recorded yet.</div>
+            <div className="csc-empty-state-message">
+              Once you start creating service tickets, the Analytics & Growth Dashboard will activate.
+            </div>
+            <button type="button" className="csc-empty-state-cta" onClick={() => onNavigateTab?.("entry")}>Start New Entry</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const HealthCard = ({ title, value, subtitle, health }) => (
+    <div style={{ background: "rgba(255,255,255,0.85)", border: `1px solid ${healthColor(health)}33`, borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${healthColor(health)}` }}>
+      <div style={styles.eyebrow}>{title}</div>
+      <div style={{ ...styles.bigNumber, color: healthColor(health) }}>{value}</div>
+      <div style={{ ...styles.label, marginTop: 4 }}>{subtitle}</div>
+      <div style={{ ...styles.chip, marginTop: 8, display: "inline-block", color: healthColor(health), background: `${healthColor(health)}14`, border: `1px solid ${healthColor(health)}33` }}>
+        {healthLabel(health)}
+      </div>
+    </div>
+  );
+
+  const StatTile = ({ label, value, color = "#0f172a", small = false }) => (
+    <div style={{ background: "rgba(15,23,42,0.03)", border: "1px solid rgba(15,23,42,0.07)", borderRadius: 10, padding: "10px 12px" }}>
+      <div style={styles.eyebrow}>{label}</div>
+      <div style={small ? styles.midNumber : styles.bigNumber}>
+        <span style={{ color }}>{value}</span>
+      </div>
+    </div>
+  );
+
+  const Bar = ({ value, max, color }) => (
+    <div style={{ height: 6, borderRadius: 999, background: "rgba(15,23,42,0.06)", overflow: "hidden" }}>
+      <div style={{ height: "100%", width: `${max > 0 ? Math.min(100, (value / max) * 100) : 0}%`, background: color, borderRadius: 999, transition: "width 0.4s ease" }} />
+    </div>
+  );
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
 
-      {/* Hero summary strip */}
-      <div style={{ ...card, padding: "22px 24px", marginBottom: 24, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(59,130,246,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(37,99,235,0.08), transparent 30%)" }}>
-        <span style={eb}>Centre Performance</span>
-        <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#0f172a", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
-          Monthly <em style={{ fontStyle: "italic", color: "rgba(15,23,42,0.45)" }}>Overview.</em>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
-          {[
-            { label: "Total Tickets", value: normalized.length, color: "#0f172a" },
-            { label: "Open", value: openCount, color: "#2563eb" },
-            { label: "Closed", value: closedCount, color: DS.wine },
-            { label: "Revenue", value: `Rs. ${allRevenue.toLocaleString("en-IN")}`, color: "#2a5a8f" },
-            { label: "Pending", value: `Rs. ${allPending.toLocaleString("en-IN")}`, color: DS.wine },
-            { label: "Months Active", value: months.filter((m) => m !== "Unknown").length, color: "#0f172a" },
-          ].map((s) => (
-            <div key={s.label} style={{ background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 12, padding: "12px 14px" }}>
-              <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 5 }}>{s.label}</div>
-              <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.4rem", fontWeight: 300, color: s.color, lineHeight: 1 }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Category breakdown bar  -  always shown */}
-      <div style={{ ...card, padding: "18px 20px", marginBottom: 24 }}>
-        <span style={eb}>Service Mix  -  All Time</span>
-        <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-          {CATEGORIES.map((cat) => {
-            const count = normalized.filter((t) => (t.structured?.meta?.serviceTypes || []).includes(cat)).length;
-            const pct = normalized.length > 0 ? Math.round((count / normalized.length) * 100) : 0;
-            return (
-              <div key={cat}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: CAT_COLORS[cat], display: "inline-block", flexShrink: 0 }} />
-                    <span style={{ fontSize: "0.80rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.72)" }}>{cat}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: "0.72rem", fontFamily: APP_MONO_STACK, color: CAT_COLORS[cat], fontWeight: 700 }}>{count}</span>
-                    <span style={{ fontSize: "0.66rem", fontFamily: APP_MONO_STACK, color: "rgba(15,23,42,0.35)" }}>{pct}%</span>
-                  </div>
-                </div>
-                <div style={{ height: 5, borderRadius: 999, background: "rgba(15,23,42,0.07)", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: CAT_COLORS[cat], transition: "width 0.6s ease", minWidth: pct > 0 ? 6 : 0 }} />
-                </div>
-              </div>
-            );
-          })}
+      {/* SECTION 1: EXECUTIVE HEALTH CHECK */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Executive Health Check</div>
+        <div style={styles.sectionSubtitle}>Four indicators tell you the state of the business in one glance.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+          <HealthCard
+            title="Growth"
+            value={`${growthMoM > 0 ? "+" : ""}${growthMoM}%`}
+            subtitle="Last 30 vs prior 30 days"
+            health={growthHealth}
+          />
+          <HealthCard
+            title="Collections"
+            value={`${collectionRate}%`}
+            subtitle={`of Rs. ${Math.round(allInvoiced).toLocaleString("en-IN")} invoiced`}
+            health={collectionHealth}
+          />
+          <HealthCard
+            title="Backlog"
+            value={`${aging.over7}`}
+            subtitle={`tickets older than 7 days (${backlogPct}% of open)`}
+            health={backlogHealth}
+          />
+          <HealthCard
+            title="Expansion Ready"
+            value={`${readinessScore}/100`}
+            subtitle={readinessPhase.label}
+            health={readinessHealth}
+          />
         </div>
       </div>
 
-      {/* Empty state */}
-      {!hasData && (
-        <div style={{ ...card, padding: "20px 16px" }}>
-          <div className="csc-empty-state">
-            <div className="csc-empty-state-icon">AN</div>
-            <div className="csc-empty-state-title">
-              No tickets recorded yet.
-            </div>
-            <div className="csc-empty-state-message">
-              Once you start creating service tickets, monthly breakdowns, revenue trends, and category insights appear here automatically.
-            </div>
-            <button
-              type="button"
-              className="csc-empty-state-cta"
-              onClick={() => onNavigateTab?.("entry")}
-            >
-              Start New Entry
-            </button>
+      {/* SECTION 2: REVENUE & COLLECTIONS */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Revenue & Collections</div>
+        <div style={styles.sectionSubtitle}>The flow of real money — what's invoiced, what's collected, what's stuck.</div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 18 }}>
+          <StatTile label="Invoiced (All)" value={fmtINR(allInvoiced)} color="#0f172a" />
+          <StatTile label="Collected" value={fmtINR(allRevenue)} color="#15803d" />
+          <StatTile label="Pending" value={fmtINR(allPending)} color="#dc2626" />
+          <StatTile label="Daily Avg (30d)" value={fmtINR(dailyAvg)} color="#1d4ed8" small />
+          <StatTile label="Last 7 days" value={fmtINR(sumPaid(last7))} color="#1d4ed8" small />
+          <StatTile label="This Month" value={fmtINR(months[0] ? byMonth[months[0]].reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0) : 0)} color="#1d4ed8" small />
+        </div>
+
+        {/* Monthly trend bars */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={styles.eyebrow}>Monthly Revenue Trend (last {Math.min(months.length, 6)})</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", height: 110, paddingTop: 12 }}>
+            {months.slice(0, 6).reverse().map((m) => {
+              const rev = byMonth[m].reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
+              const pen = byMonth[m].reduce((s, t) => s + (Number(t.structured?.payment?.pendingBalance) || 0), 0);
+              const maxRev = Math.max(...months.slice(0, 6).map((mm) => byMonth[mm].reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0) + (Number(t.structured?.payment?.pendingBalance) || 0), 0)), 1);
+              const collH = (rev / maxRev) * 100;
+              const penH = (pen / maxRev) * 100;
+              const label = (() => {
+                if (!/^\d{4}-\d{2}$/.test(m)) return m;
+                const [y, mm] = m.split("-");
+                return new Date(Number(y), Number(mm) - 1, 1).toLocaleString("en-IN", { month: "short" });
+              })();
+              return (
+                <div key={m} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <div style={{ width: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", height: 90 }}>
+                    <div style={{ width: "100%", height: `${penH}%`, background: "rgba(220,38,38,0.55)", borderRadius: "3px 3px 0 0" }} title={`Pending: ${fmtINR(pen)}`} />
+                    <div style={{ width: "100%", height: `${collH}%`, background: "#15803d", borderRadius: penH > 0 ? "0" : "3px 3px 0 0" }} title={`Collected: ${fmtINR(rev)}`} />
+                  </div>
+                  <div style={{ fontSize: "0.66rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>{label}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", gap: 14, marginTop: 8, fontSize: "0.66rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>
+            <span><span style={{ display: "inline-block", width: 8, height: 8, background: "#15803d", marginRight: 5, borderRadius: 2 }} />Collected</span>
+            <span><span style={{ display: "inline-block", width: 8, height: 8, background: "rgba(220,38,38,0.55)", marginRight: 5, borderRadius: 2 }} />Pending</span>
           </div>
         </div>
-      )}
 
-      {/* Per-month cards */}
-      {months.map((month) => {
-        const mTickets = byMonth[month];
-        const mRevenue = mTickets.reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
-        const mPending = mTickets.reduce((s, t) => s + (Number(t.structured?.payment?.pendingBalance) || 0), 0);
-        const mOpen = mTickets.filter((t) => t.status !== "Closed").length;
-        const mClosed = mTickets.filter((t) => t.status === "Closed").length;
-        const paid = mTickets.filter((t) => t.structured?.payment?.status === "Paid").length;
-        const partial = mTickets.filter((t) => t.structured?.payment?.status === "Partial").length;
-        const unpaid = mTickets.filter((t) => ["Unpaid", undefined].includes(t.structured?.payment?.status)).length;
-
-        const catCounts = {};
-        mTickets.forEach((t) => (t.structured?.meta?.serviceTypes || []).forEach((cat) => { catCounts[cat] = (catCounts[cat] || 0) + 1; }));
-
-        const label = (() => {
-          if (!/^\d{4}-\d{2}$/.test(month)) return "Undated";
-          const [y, m] = month.split("-");
-          const parsedMonth = new Date(Number(y), Number(m) - 1, 1);
-          if (Number.isNaN(parsedMonth.getTime())) return "Undated";
-          return parsedMonth.toLocaleString("en-IN", { month: "long", year: "numeric" });
-        })();
-
-        return (
-          <div key={month} style={{ ...card, marginBottom: 18, overflow: "hidden" }}>
-            {/* Month header */}
-            <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(15,23,42,0.07)", backgroundImage: "radial-gradient(circle at 98% 0%, rgba(59,130,246,0.12), transparent 30%)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
-                <div>
-                  <span style={eb}>Period</span>
-                  <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.55rem", fontWeight: 300, color: "#0f172a", letterSpacing: "-0.02em", lineHeight: 1 }}>{label}</div>
+        {/* Payment mode split */}
+        <div>
+          <div style={styles.eyebrow}>Payment Mode Split</div>
+          <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
+            {Object.entries(modeStats).map(([mode, val]) => {
+              const p = totalModePaid > 0 ? Math.round((val / totalModePaid) * 100) : 0;
+              const color = mode === "Cash" ? "#ca8a04" : mode === "UPI" ? "#15803d" : mode === "Bank Transfer" ? "#1d4ed8" : "rgba(15,23,42,0.4)";
+              return (
+                <div key={mode}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.7)", fontFamily: APP_FONT_STACK }}>{mode}</span>
+                    <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", fontWeight: 600, color }}>{fmtINR(val)} <span style={{ color: "rgba(15,23,42,0.4)", fontWeight: 400 }}>({p}%)</span></span>
+                  </div>
+                  <Bar value={val} max={totalModePaid} color={color} />
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {[
-                    { l: "Tickets", v: mTickets.length, c: "#0f172a" },
-                    { l: "Collected", v: `Rs. ${mRevenue.toLocaleString("en-IN")}`, c: "#2a5a8f" },
-                    { l: "Pending", v: `Rs. ${mPending.toLocaleString("en-IN")}`, c: DS.wine },
-                  ].map((s) => (
-                    <div key={s.l} style={{ background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 10, padding: "8px 14px", textAlign: "right" }}>
-                      <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: "rgba(15,23,42,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 3 }}>{s.l}</div>
-                      <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.05rem", fontWeight: 300, color: s.c }}>{s.v}</div>
-                    </div>
-                  ))}
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={styles.decisionBox}>
+          <div style={{ ...styles.eyebrow, color: "rgba(15,23,42,0.55)" }}>Decision Support</div>
+          <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a", lineHeight: 1.5 }}>
+            {collectionRate >= 90
+              ? `Collections are healthy at ${collectionRate}%. Continue current credit terms. Monitor any aging invoices.`
+              : collectionRate >= 80
+                ? `Collection rate at ${collectionRate}% is acceptable but watch closely. Pending balance is Rs. ${Math.round(allPending).toLocaleString("en-IN")} — chase outstanding invoices over 7 days old.`
+                : `Collection discipline weak (${collectionRate}%). Pending Rs. ${Math.round(allPending).toLocaleString("en-IN")} is at risk. Tighten credit, require advance for new customers, follow up on every invoice >7 days.`}
+            {modeStats.Cash > totalModePaid * 0.7 && " Cash dominates — digital adoption (UPI) will improve scalability."}
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 3: SERVICE PERFORMANCE */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Service Performance</div>
+        <div style={styles.sectionSubtitle}>Which services drive the business, which create operational pain, which to push.</div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 18 }}>
+          <StatTile label="Active Services" value={Object.keys(serviceStats).length} color="#0f172a" small />
+          <StatTile label="Top 3 Concentration" value={`${concentration}%`} color={concentration >= 50 && concentration <= 65 ? "#15803d" : concentration > 75 ? "#dc2626" : "#ca8a04"} small />
+          <StatTile label="Most Frequent" value={topServicesByCount[0]?.name?.slice(0, 18) || "—"} color="#1d4ed8" small />
+          <StatTile label="Highest Revenue" value={topServicesByRevenue[0]?.name?.slice(0, 18) || "—"} color="#15803d" small />
+        </div>
+
+        {/* Top services horizontal bars */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={styles.eyebrow}>Top 8 Services by Revenue</div>
+          <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+            {topServicesByRevenue.map((s) => {
+              const maxR = topServicesByRevenue[0]?.revenue || 1;
+              const color = CAT_COLORS[s.category] || "#1d4ed8";
+              return (
+                <div key={s.name}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: "0.80rem", color: "#0f172a", fontFamily: APP_FONT_STACK, fontWeight: 500 }}>{s.name}</span>
+                    <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", fontWeight: 700, color }}>
+                      {fmtINR(s.revenue)} <span style={{ color: "rgba(15,23,42,0.4)", fontWeight: 400, fontSize: "0.70rem" }}>· {s.count} tickets</span>
+                    </span>
+                  </div>
+                  <Bar value={s.revenue} max={maxR} color={color} />
                 </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Category mix */}
+        <div>
+          <div style={styles.eyebrow}>Revenue by Category</div>
+          <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
+            {CATEGORIES.map((c) => {
+              const totalCat = Object.values(catRevenue).reduce((a, b) => a + b, 0);
+              const p = totalCat > 0 ? Math.round((catRevenue[c] / totalCat) * 100) : 0;
+              return (
+                <div key={c}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.7)", fontFamily: APP_FONT_STACK }}>{c}</span>
+                    <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.76rem", fontWeight: 600, color: CAT_COLORS[c] }}>{fmtINR(catRevenue[c])} ({p}%)</span>
+                  </div>
+                  <Bar value={catRevenue[c]} max={totalCat} color={CAT_COLORS[c]} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={styles.decisionBox}>
+          <div style={{ ...styles.eyebrow, color: "rgba(15,23,42,0.55)" }}>Decision Support</div>
+          <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a", lineHeight: 1.5 }}>
+            {concentration >= 50 && concentration <= 65
+              ? `Service mix is healthy — top 3 services contribute ${concentration}% (well-diversified yet focused). Keep core stable, invest in growing services.`
+              : concentration > 75
+                ? `Over-concentrated: top 3 services = ${concentration}% of revenue. Vulnerable if demand drops. Develop secondary services.`
+                : `Too scattered: top 3 services only ${concentration}% of revenue. Hard to scale or train second team. Identify a clear core.`}
+            {topServicesByRevenue[0] && ` Push more "${topServicesByRevenue[0].name}" — your highest-grossing service.`}
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 4: WORKFLOW & OPERATIONS */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Workflow & Operations</div>
+        <div style={styles.sectionSubtitle}>Are we clearing work fast enough? Is backlog growing? Can we handle 2x?</div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 18 }}>
+          <StatTile label="Open Tickets" value={openCount} color="#1d4ed8" />
+          <StatTile label="Closed (All)" value={closedCount} color="#15803d" />
+          <StatTile label="Aging > 7d" value={aging.over7} color={aging.over7 > 0 ? "#dc2626" : "#15803d"} />
+          <StatTile label="Completion Rate" value={`${pct(closedCount, normalized.length)}%`} color="#0f172a" small />
+        </div>
+
+        {/* Aging breakdown */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={styles.eyebrow}>Open Ticket Aging</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 8 }}>
+            {[
+              { l: "< 1 day", v: aging.fresh, c: "#15803d" },
+              { l: "1-3 days", v: aging.d1to3, c: "#ca8a04" },
+              { l: "3-7 days", v: aging.d3to7, c: "#ea580c" },
+              { l: "> 7 days", v: aging.over7, c: "#dc2626" },
+            ].map((a) => (
+              <div key={a.l} style={{ background: `${a.c}10`, border: `1px solid ${a.c}33`, borderRadius: 8, padding: "10px 12px" }}>
+                <div style={{ ...styles.eyebrow, color: a.c }}>{a.l}</div>
+                <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.4rem", fontWeight: 700, color: a.c, lineHeight: 1.1 }}>{a.v}</div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Funnel */}
+        <div>
+          <div style={styles.eyebrow}>Ticket Funnel (All Time)</div>
+          <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+            {[
+              { l: "Total Created", v: normalized.length, c: "#0f172a" },
+              { l: "Closed", v: closedCount, c: "#15803d" },
+              { l: "Fully Paid", v: normalized.filter((t) => t.structured?.payment?.status === "Paid").length, c: "#1d4ed8" },
+            ].map((step) => {
+              const p = pct(step.v, normalized.length);
+              return (
+                <div key={step.l} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.7)", fontFamily: APP_FONT_STACK, width: 110 }}>{step.l}</span>
+                  <div style={{ flex: 1, height: 22, background: "rgba(15,23,42,0.05)", borderRadius: 6, overflow: "hidden", position: "relative" }}>
+                    <div style={{ height: "100%", width: `${p}%`, background: step.c, borderRadius: 6, transition: "width 0.4s ease" }} />
+                    <div style={{ position: "absolute", left: 8, top: 0, bottom: 0, display: "flex", alignItems: "center", fontFamily: APP_FONT_STACK, fontSize: "0.74rem", fontWeight: 700, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}>
+                      {step.v} ({p}%)
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={styles.decisionBox}>
+          <div style={{ ...styles.eyebrow, color: "rgba(15,23,42,0.55)" }}>Decision Support</div>
+          <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a", lineHeight: 1.5 }}>
+            {aging.over7 === 0 && backlogPct < 5
+              ? `Backlog under control. ${aging.fresh} fresh tickets, no aging issues. Capacity available for growth.`
+              : aging.over7 > 5
+                ? `${aging.over7} tickets older than 7 days — scaling red flag. Investigate root cause (missing docs, vendor delay, capacity). Clear before adding intake.`
+                : `Watch backlog: ${aging.over7} tickets >7d. Manageable but address before they accumulate.`}
+            {growthMoM > 8 && " High growth — consider second operator before backlog appears."}
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 5: B2B / VENDOR INTEGRATION */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>B2B & Vendor Integration</div>
+        <div style={styles.sectionSubtitle}>Are partnerships driving growth or hiding margin loss? Are we vendor-dependent?</div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 18 }}>
+          <StatTile label="B2B Sales" value={fmtINR(b2bSalesValue)} color="#15803d" small />
+          <StatTile label="Vendor Cost" value={fmtINR(b2bPurchaseValue)} color="#dc2626" small />
+          <StatTile label="Receivable" value={fmtINR(b2bReceivable)} color="#1d4ed8" small />
+          <StatTile label="Payable" value={fmtINR(b2bPayable)} color="#ea580c" small />
+          <StatTile label="B2B Rev Share" value={`${b2bRevSharePct}%`} color="#0f172a" small />
+          <StatTile label="Agent Entries" value={b2bAgents.length} color="#1d4ed8" small />
+        </div>
+
+        {/* Revenue mix walk-in vs B2B */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={styles.eyebrow}>Total Ecosystem Revenue Mix</div>
+          <div style={{ display: "flex", height: 28, borderRadius: 6, overflow: "hidden", marginTop: 8, background: "rgba(15,23,42,0.05)" }}>
+            <div style={{ width: `${100 - b2bRevSharePct}%`, background: "#15803d", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: APP_FONT_STACK, fontSize: "0.72rem", fontWeight: 700 }}>
+              Walk-in {100 - b2bRevSharePct}%
             </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 0 }}>
-              {/* Payment breakdown */}
-              <div style={{ padding: "14px 20px", borderRight: "1px solid rgba(15,23,42,0.06)" }}>
-                <span style={eb}>Payment Status</span>
-                <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
-                  {[
-                    { l: "Paid", v: paid, bar: "#2a6647", bg: "rgba(42,102,71,0.10)" },
-                    { l: "Partial", v: partial, bar: "#2563eb", bg: "rgba(59,130,246,0.10)" },
-                    { l: "Unpaid", v: unpaid, bar: DS.wine, bg: "rgba(37,99,235,0.10)" },
-                  ].map((p) => (
-                    <div key={p.l} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: 3, background: p.bar, flexShrink: 0 }} />
-                      <span style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.65)", fontFamily: APP_FONT_STACK, flex: 1 }}>{p.l}</span>
-                      <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.88rem", fontWeight: 700, color: p.bar, background: p.bg, borderRadius: 6, padding: "2px 8px" }}>{p.v}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                  {[{ l: "Open", v: mOpen, c: "#2563eb" }, { l: "Closed", v: mClosed, c: DS.wine }].map((s) => (
-                    <div key={s.l} style={{ flex: 1, background: "rgba(15,23,42,0.04)", borderRadius: 8, padding: "7px 10px", border: "1px solid rgba(15,23,42,0.07)" }}>
-                      <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(15,23,42,0.36)", fontFamily: APP_BRAND_STACK, marginBottom: 3 }}>{s.l}</div>
-                      <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.1rem", fontWeight: 300, color: s.c }}>{s.v}</div>
-                    </div>
-                  ))}
-                </div>
+            {b2bRevSharePct > 0 && (
+              <div style={{ width: `${b2bRevSharePct}%`, background: "#1d4ed8", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: APP_FONT_STACK, fontSize: "0.72rem", fontWeight: 700 }}>
+                B2B {b2bRevSharePct}%
               </div>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: "0.72rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>
+            <span>{fmtINR(allRevenue)} organic</span>
+            <span>{fmtINR(b2bSalesValue)} B2B</span>
+          </div>
+        </div>
 
-              {/* Category breakdown */}
-              <div style={{ padding: "14px 20px" }}>
-                <span style={eb}>By Service Category</span>
-                <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
-                  {Object.keys(catCounts).length === 0 ? (
-                    <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.35)", fontFamily: APP_FONT_STACK }}>No category data</div>
-                  ) : Object.entries(catCounts).sort((a, b) => b[1] - a[1]).map(([cat, count]) => {
-                    const pct = Math.round((count / mTickets.length) * 100);
-                    return (
-                      <div key={cat}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: CAT_COLORS[cat] || "#888", flexShrink: 0, display: "inline-block" }} />
-                            <span style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.65)", fontFamily: APP_FONT_STACK }}>{cat}</span>
-                          </div>
-                          <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.76rem", fontWeight: 700, color: CAT_COLORS[cat] || "#0f172a" }}>{count}</span>
-                        </div>
-                        <div style={{ height: 4, borderRadius: 999, background: "rgba(15,23,42,0.07)" }}>
-                          <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: CAT_COLORS[cat] || "#888", minWidth: pct > 0 ? 4 : 0 }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Ticket rows */}
-            <div style={{ borderTop: "1px solid rgba(15,23,42,0.07)" }}>
-              <div style={{ padding: "10px 20px 6px" }}>
-                <span style={{ ...eb, marginBottom: 8 }}>Ticket Log</span>
-              </div>
-              {mTickets.map((t, i) => {
-                const ps = t.structured?.payment?.status || "Unpaid";
-                const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#2563eb" : DS.wine;
+        {/* Vendor concentration */}
+        {vendorList.length > 0 && (
+          <div>
+            <div style={styles.eyebrow}>Vendor Concentration</div>
+            <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+              {vendorList.slice(0, 5).map((v) => {
+                const p = b2bPurchaseValue > 0 ? Math.round((v.val / b2bPurchaseValue) * 100) : 0;
+                const color = p > 70 ? "#dc2626" : p > 50 ? "#ea580c" : "#1d4ed8";
                 return (
-                  <div
-                    key={t.ticketNo}
-                    className="csc-hover-soft-row"
-                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "9px 20px", borderTop: i > 0 ? "1px solid rgba(15,23,42,0.05)" : "none", flexWrap: "wrap", transition: "background 0.15s ease" }}
-                  >
-                    <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
-                      <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.65rem", color: "rgba(15,23,42,0.35)", flexShrink: 0 }}>{t.ticketNo}</span>
-                      <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#0f172a", fontFamily: APP_FONT_STACK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.customerName}</span>
-                      <span style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_FONT_STACK, display: "none" }}>{t.structured?.meta?.primaryType || " - "}</span>
+                  <div key={v.name}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.7)", fontFamily: APP_FONT_STACK }}>{v.name}</span>
+                      <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.76rem", fontWeight: 700, color }}>{fmtINR(v.val)} ({p}%)</span>
                     </div>
-                    <div style={{ display: "flex", gap: 7, alignItems: "center", flexShrink: 0 }}>
-                      <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.80rem", color: "#2a5a8f", fontWeight: 600 }}>Rs. {(t.total || 0).toLocaleString("en-IN")}</span>
-                      <span style={{ fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: psColor, background: `${psColor}15`, border: `1px solid ${psColor}28`, borderRadius: 999, padding: "3px 9px" }}>{ps}</span>
-                      <span style={{ fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#2563eb", background: t.status === "Closed" ? "rgba(37,99,235,0.07)" : "rgba(59,130,246,0.10)", border: `1px solid ${t.status === "Closed" ? "rgba(37,99,235,0.20)" : "rgba(59,130,246,0.24)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
-                    </div>
+                    <Bar value={v.val} max={b2bPurchaseValue} color={color} />
                   </div>
                 );
               })}
             </div>
           </div>
-        );
-      })}
+        )}
+
+        <div style={styles.decisionBox}>
+          <div style={{ ...styles.eyebrow, color: "rgba(15,23,42,0.55)" }}>Decision Support</div>
+          <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a", lineHeight: 1.5 }}>
+            {b2bSalesValue === 0 && b2bPurchaseValue === 0
+              ? "No B2B activity yet. Consider partnerships to extend reach without customer acquisition cost."
+              : b2bRevSharePct > 0 && b2bRevSharePct < 25
+                ? `B2B contributing ${b2bRevSharePct}% — healthy leverage without dependency. Vendor cost ${vendorCostPct}% of invoiced.`
+                : b2bRevSharePct >= 25
+                  ? `B2B dependence rising (${b2bRevSharePct}%). Strengthen organic walk-in to balance.`
+                  : `Vendor cost ${vendorCostPct}% — monitor margin impact.`}
+            {topVendorPct > 70 && vendorList.length > 0 && ` ⚠ Vendor "${vendorList[0].name}" is ${topVendorPct}% of outsourcing — find a backup.`}
+            {b2bPayable > 0 && ` Pay vendors: ${fmtINR(b2bPayable)}.`}
+            {b2bReceivable > 0 && ` Collect from partners: ${fmtINR(b2bReceivable)}.`}
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 6: EXPANSION READINESS */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Expansion Readiness</div>
+        <div style={styles.sectionSubtitle}>The single number that tells you: should we open a second centre?</div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 1fr) 2fr", gap: 18, marginTop: 8 }}>
+          {/* Score gauge */}
+          <div style={{ background: `${readinessPhase.color}10`, border: `1px solid ${readinessPhase.color}33`, borderRadius: 12, padding: "20px 18px", textAlign: "center" }}>
+            <div style={styles.eyebrow}>Readiness Score</div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "3.2rem", fontWeight: 700, color: readinessPhase.color, letterSpacing: "-0.04em", lineHeight: 1, margin: "8px 0" }}>
+              {readinessScore}
+              <span style={{ fontSize: "1rem", color: "rgba(15,23,42,0.4)", fontWeight: 500 }}> / 100</span>
+            </div>
+            <div style={{ ...styles.chip, display: "inline-block", color: readinessPhase.color, background: `${readinessPhase.color}1c`, border: `1px solid ${readinessPhase.color}55`, marginTop: 6 }}>
+              {readinessPhase.label}
+            </div>
+            <div style={{ ...styles.label, marginTop: 12, fontSize: "0.74rem" }}>{readinessPhase.desc}</div>
+          </div>
+
+          {/* Factor breakdown */}
+          <div>
+            <div style={styles.eyebrow}>Factor Breakdown</div>
+            <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+              {[
+                { l: "Revenue Stability", v: f1_revStability, max: 15 },
+                { l: "Collection Discipline", v: f2_collection, max: 15 },
+                { l: "Operational Capacity", v: f3_capacity, max: 15 },
+                { l: "Service Mix Maturity", v: f4_serviceMix, max: 15 },
+                { l: "Vendor Stability", v: f5_vendor, max: 15 },
+                { l: "Team Independence", v: f6_team, max: 10 },
+                { l: "Cash Health", v: f7_cash, max: 15 },
+              ].map((f) => {
+                const p = f.v / f.max;
+                const color = p >= 0.85 ? "#15803d" : p >= 0.6 ? "#ca8a04" : "#dc2626";
+                return (
+                  <div key={f.l}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                      <span style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.7)", fontFamily: APP_FONT_STACK }}>{f.l}</span>
+                      <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.74rem", fontWeight: 700, color }}>{f.v}/{f.max}</span>
+                    </div>
+                    <Bar value={f.v} max={f.max} color={color} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.decisionBox}>
+          <div style={{ ...styles.eyebrow, color: "rgba(15,23,42,0.55)" }}>Recommended Action</div>
+          <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.86rem", color: "#0f172a", lineHeight: 1.55, fontWeight: 500 }}>
+            {readinessScore >= 75 && "✓ Open second centre in 60–90 days. Mirror playbook. Don't let centre 1 slip during transition."}
+            {readinessScore >= 60 && readinessScore < 75 && "Prepare for expansion in 90 days: address weak factors below 11/15. Document SOPs, cross-train team, secure backup vendor."}
+            {readinessScore >= 40 && readinessScore < 60 && "Hold expansion plans. Stabilize operations for 60–120 days, fix weak factors, then reassess."}
+            {readinessScore < 40 && "Not ready. Foundational issues must be resolved (collections, backlog, or service mix). Reassess in 6 months."}
+          </div>
+          <div style={{ ...styles.label, marginTop: 8, lineHeight: 1.5 }}>
+            Top gaps to address:
+            {[
+              { l: "Revenue Stability", v: f1_revStability, max: 15 },
+              { l: "Collection Discipline", v: f2_collection, max: 15 },
+              { l: "Operational Capacity", v: f3_capacity, max: 15 },
+              { l: "Service Mix Maturity", v: f4_serviceMix, max: 15 },
+              { l: "Vendor Stability", v: f5_vendor, max: 15 },
+              { l: "Team Independence", v: f6_team, max: 10 },
+              { l: "Cash Health", v: f7_cash, max: 15 },
+            ].sort((a, b) => (a.v / a.max) - (b.v / b.max)).slice(0, 3).map((f) => ` ${f.l} (${f.v}/${f.max})`).join(",")}.
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 7: FORWARD VIEW */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Forward View</div>
+        <div style={styles.sectionSubtitle}>Simple projections — what's coming if current trends hold.</div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
+          <StatTile label="Conservative (30d)" value={fmtINR(conservativeProjection)} color="#ea580c" small />
+          <StatTile label="Baseline (30d)" value={fmtINR(projectedRevenue30)} color="#1d4ed8" />
+          <StatTile label="Upside (30d)" value={fmtINR(upsideProjection)} color="#15803d" small />
+          <StatTile label="Confidence" value={last30.length >= 20 ? "HIGH" : last30.length >= 10 ? "MED" : "LOW"} color="#0f172a" small />
+        </div>
+
+        <div style={{ display: "grid", gap: 10 }}>
+          <div style={{ padding: "10px 12px", background: "rgba(21,128,61,0.06)", border: "1px solid rgba(21,128,61,0.2)", borderRadius: 8 }}>
+            <div style={{ ...styles.eyebrow, color: "#15803d" }}>Revenue Trajectory</div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a", lineHeight: 1.5 }}>
+              At Rs. {Math.round(dailyAvg).toLocaleString("en-IN")}/day average, next 30 days projects to {fmtINR(projectedRevenue30)}.
+              {growthMoM > 0 ? ` Growing ${growthMoM}% MoM — sustainable trend.` : growthMoM < 0 ? ` Contracting ${Math.abs(growthMoM)}% — investigate cause.` : " Holding flat."}
+            </div>
+          </div>
+          <div style={{ padding: "10px 12px", background: "rgba(29,78,216,0.06)", border: "1px solid rgba(29,78,216,0.2)", borderRadius: 8 }}>
+            <div style={{ ...styles.eyebrow, color: "#1d4ed8" }}>Backlog Risk</div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a", lineHeight: 1.5 }}>
+              {aging.over7 === 0 && backlogPct < 2
+                ? "No accumulation risk. Current capacity comfortably handles intake."
+                : `${aging.over7} tickets aging >7d. If trend continues, expect +${Math.round(aging.over7 * 1.5)} aging tickets in 30 days. Act before it doubles.`}
+            </div>
+          </div>
+          <div style={{ padding: "10px 12px", background: "rgba(202,138,4,0.06)", border: "1px solid rgba(202,138,4,0.2)", borderRadius: 8 }}>
+            <div style={{ ...styles.eyebrow, color: "#ca8a04" }}>Cash Health Outlook</div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a", lineHeight: 1.5 }}>
+              Pending Rs. {Math.round(allPending).toLocaleString("en-IN")} ({Math.round(pendingPctOfMRR)}% of monthly).
+              {pendingPctOfMRR < 15
+                ? " Healthy. Working capital safe."
+                : pendingPctOfMRR < 25
+                  ? " Watch zone. Tighten collections to keep below 15%."
+                  : " Risk zone. Working capital strain — recover pending balances urgently."}
+              {b2bPayable > 0 && ` Vendor payable Rs. ${Math.round(b2bPayable).toLocaleString("en-IN")} due.`}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 8: HISTORICAL MONTHLY DETAIL */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Historical Monthly Detail</div>
+        <div style={styles.sectionSubtitle}>Per-month breakdown of revenue, payment status, and ticket log.</div>
+
+        {months.map((month) => {
+          const mTickets = byMonth[month];
+          const mRevenue = mTickets.reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0);
+          const mPending = mTickets.reduce((s, t) => s + (Number(t.structured?.payment?.pendingBalance) || 0), 0);
+          const mOpen = mTickets.filter((t) => t.status !== "Closed").length;
+          const mClosed = mTickets.filter((t) => t.status === "Closed").length;
+          const paid = mTickets.filter((t) => t.structured?.payment?.status === "Paid").length;
+          const partial = mTickets.filter((t) => t.structured?.payment?.status === "Partial").length;
+          const unpaid = mTickets.filter((t) => ["Unpaid", undefined].includes(t.structured?.payment?.status)).length;
+
+          const label = (() => {
+            if (!/^\d{4}-\d{2}$/.test(month)) return "Undated";
+            const [y, m] = month.split("-");
+            const parsedMonth = new Date(Number(y), Number(m) - 1, 1);
+            if (Number.isNaN(parsedMonth.getTime())) return "Undated";
+            return parsedMonth.toLocaleString("en-IN", { month: "long", year: "numeric" });
+          })();
+
+          return (
+            <div key={month} style={{ marginTop: 14, padding: "14px 16px", background: "rgba(15,23,42,0.025)", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+                <div>
+                  <div style={styles.eyebrow}>Period</div>
+                  <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#0f172a" }}>{label}</div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <StatTile label="Tickets" value={mTickets.length} small />
+                  <StatTile label="Collected" value={fmtINR(mRevenue)} color="#15803d" small />
+                  <StatTile label="Pending" value={fmtINR(mPending)} color="#dc2626" small />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 10 }}>
+                <div style={{ padding: "8px 10px", background: "rgba(21,128,61,0.08)", borderRadius: 6, fontFamily: APP_FONT_STACK }}>
+                  <div style={{ fontSize: "0.66rem", color: "#15803d", fontWeight: 700, letterSpacing: "0.1em" }}>PAID</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 700, color: "#15803d" }}>{paid}</div>
+                </div>
+                <div style={{ padding: "8px 10px", background: "rgba(29,78,216,0.08)", borderRadius: 6, fontFamily: APP_FONT_STACK }}>
+                  <div style={{ fontSize: "0.66rem", color: "#1d4ed8", fontWeight: 700, letterSpacing: "0.1em" }}>PARTIAL</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 700, color: "#1d4ed8" }}>{partial}</div>
+                </div>
+                <div style={{ padding: "8px 10px", background: "rgba(220,38,38,0.08)", borderRadius: 6, fontFamily: APP_FONT_STACK }}>
+                  <div style={{ fontSize: "0.66rem", color: "#dc2626", fontWeight: 700, letterSpacing: "0.1em" }}>UNPAID</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 700, color: "#dc2626" }}>{unpaid}</div>
+                </div>
+                <div style={{ padding: "8px 10px", background: "rgba(15,23,42,0.05)", borderRadius: 6, fontFamily: APP_FONT_STACK }}>
+                  <div style={{ fontSize: "0.66rem", color: "rgba(15,23,42,0.55)", fontWeight: 700, letterSpacing: "0.1em" }}>OPEN / CLOSED</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>{mOpen} / {mClosed}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -8217,9 +8995,6 @@ function WalkInModal({ onClose, onStart }) {
         <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.65rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1 }}>
           Start <em style={{ fontStyle: "italic" }}>instantly.</em>
         </div>
-        <div style={{ fontSize: "0.84rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.65, marginBottom: 22 }}>
-          Enter the customer name and start the ticket immediately  -  no WhatsApp needed.
-        </div>
 
         <form onSubmit={handleStartSubmit}>
           <div style={{ display: "grid", gap: 14, marginBottom: 18 }}>
@@ -8368,7 +9143,6 @@ export default function CSCBilling() {
       hasReference: false,
       referenceName: "",
       referenceLabel: "",
-      providedDocIds: [],
       items: [],
       documents: [],
     });
@@ -8451,7 +9225,6 @@ export default function CSCBilling() {
       {
         id: `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         name,
-        description: "Custom quick access link",
         url,
         isDefault: false,
       },
@@ -9103,12 +9876,6 @@ export default function CSCBilling() {
               }}>
                 {activeTabConfig.label}
               </div>
-              <div style={{
-                fontSize: "0.68rem", color: "rgba(15,23,42,0.38)",
-                fontFamily: APP_FONT_STACK, fontWeight: 400,
-              }}>
-                {activeTabConfig.description}
-              </div>
             </div>
 
             {/* Stats strip + WhatsApp CTA */}
@@ -9186,7 +9953,7 @@ export default function CSCBilling() {
 
           {/* Page title / hero area */}
           <div style={{
-            padding: "28px 32px 22px",
+            padding: "24px 32px 18px",
             borderBottom: `1px solid rgba(15,23,42,0.09)`,
             background: tab === "entry" ? "#f4f6f9" : "#f8fafc",
             position: "relative",
@@ -9215,17 +9982,6 @@ export default function CSCBilling() {
               }}>
                 {activeTabConfig.label}
               </h1>
-              <p style={{
-                margin: "10px 0 0",
-                fontSize: "0.86rem",
-                lineHeight: 1.72,
-                color: "rgba(15,23,42,0.60)",
-                maxWidth: 520,
-                fontFamily: APP_FONT_STACK,
-                fontWeight: 400,
-              }}>
-                {activeTabConfig.description}
-              </p>
             </div>
           </div>
           </>
@@ -9270,7 +10026,7 @@ export default function CSCBilling() {
               />
             </TabPanel>
             <TabPanel active={tab === "monthly"}>
-              <MonthlyOverview tickets={tickets} onNavigateTab={navigateTab} />
+              <MonthlyOverview tickets={tickets} b2bLedger={b2bLedger} onNavigateTab={navigateTab} />
             </TabPanel>
             <TabPanel active={tab === "database"}>
               <DatabaseWorkspace
