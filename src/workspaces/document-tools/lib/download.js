@@ -35,6 +35,31 @@ export function stripExtension(filename) {
 }
 
 /**
+ * Read the extension (without dot) from a filename. Empty string when absent.
+ * @param {string} filename
+ * @returns {string}
+ */
+export function getExtension(filename) {
+  const name = String(filename || "");
+  const idx = name.lastIndexOf(".");
+  if (idx <= 0 || idx === name.length - 1) return "";
+  return name.slice(idx + 1);
+}
+
+/**
+ * Combine a user-edited base name with the original extension, stripping any
+ * extension the user typed so we never lose the correct one.
+ * @param {string} nextBase
+ * @param {string} originalFilename
+ * @returns {string}
+ */
+export function joinWithOriginalExtension(nextBase, originalFilename) {
+  const ext = getExtension(originalFilename);
+  const cleaned = stripExtension(String(nextBase || "").trim()) || "file";
+  return ext ? `${cleaned}.${ext}` : cleaned;
+}
+
+/**
  * Trigger a browser download for a blob by creating a temporary anchor.
  * @param {Blob} blob
  * @param {string} filename

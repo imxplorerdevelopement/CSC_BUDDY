@@ -111,6 +111,7 @@ export function DocumentToolsWorkspace() {
           outputs={queue.outputs}
           onRemove={queue.remove}
           onClear={queue.clear}
+          onRename={queue.rename}
         />
       </div>
     </div>
