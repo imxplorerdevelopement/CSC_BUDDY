@@ -3,6 +3,7 @@
  * short helper text, and the React component key used to render it.
  */
 export const TOOL_CATEGORIES = [
+  { id: "portal_prep", label: "Portal Prep" },
   { id: "compress", label: "Compress" },
   { id: "resize", label: "Resize" },
   { id: "convert", label: "Convert" },
@@ -11,6 +12,14 @@ export const TOOL_CATEGORIES = [
 ];
 
 export const TOOL_META = {
+  portal_prep: {
+    id: "portal_prep",
+    label: "Portal Prep",
+    description: "One-click prep for Aadhaar, PAN, NSP, passport, and other portal uploads.",
+    accepts: "image/jpeg,image/png,image/webp,image/jpg",
+    acceptsLabel: "JPG · PNG · WEBP",
+    kind: "image",
+  },
   compress: {
     id: "compress",
     label: "Image Compressor",

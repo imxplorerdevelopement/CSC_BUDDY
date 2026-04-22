@@ -5,14 +5,20 @@ import { ResizeTool } from "../tools/ResizeTool.jsx";
 import { FormatConvertTool } from "../tools/FormatConvertTool.jsx";
 import { PdfToImageTool } from "../tools/PdfToImageTool.jsx";
 import { ImageToPdfTool } from "../tools/ImageToPdfTool.jsx";
+import { PortalPrepTool } from "../tools/PortalPrepTool.jsx";
 
 /**
  * Central workbench. Only one tool renders at a time — we switch on toolId.
  * Unknown tool ids render the empty state shipped by the consumer.
  *
- * @param {{ toolId: string, onQueue: (entry: any) => any, emptyState?: React.ReactNode }} props
+ * @param {{
+ *   toolId: string,
+ *   onQueue: (entry: any) => any,
+ *   emptyState?: React.ReactNode,
+ *   toolContext?: Record<string, any>,
+ * }} props
  */
-export function Workbench({ toolId, onQueue, emptyState }) {
+export function Workbench({ toolId, onQueue, emptyState, toolContext }) {
   return (
     <section style={{
       border: `1px solid ${DT.border}`,
@@ -24,13 +30,23 @@ export function Workbench({ toolId, onQueue, emptyState }) {
       display: "grid",
       alignContent: "start",
     }}>
-      {renderTool(toolId, onQueue, emptyState)}
+      {renderTool(toolId, onQueue, emptyState, toolContext)}
     </section>
   );
 }
 
-function renderTool(toolId, onQueue, emptyState) {
+function renderTool(toolId, onQueue, emptyState, toolContext) {
+  const ctx = toolContext || {};
   switch (toolId) {
+    case "portal_prep":
+      // Remount when the requested preset changes so the picker reflects it.
+      return (
+        <PortalPrepTool
+          key={`portal_prep:${ctx.presetId || "default"}`}
+          onQueue={onQueue}
+          initialPresetId={ctx.presetId}
+        />
+      );
     case "compress":
       return <CompressTool onQueue={onQueue} />;
     case "resize":
