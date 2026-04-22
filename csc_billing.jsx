@@ -244,8 +244,8 @@ const TAB_CONFIG = [
   { id: "home", label: "Dashboard Home", shortLabel: "HM", navGroup: "home" },
   { id: "entry", label: "New Service Entry", shortLabel: "NS", navGroup: "primary" },
   { id: "rates", label: "Rate List", shortLabel: "RL", navGroup: "primary" },
-  { id: "b2b", label: "Vendor Dashboard", shortLabel: "VD", navGroup: "primary" },
   { id: "monthly", label: "Analytics", shortLabel: "AN", navGroup: "primary" },
+  { id: "b2b", label: "Vendor Dashboard", shortLabel: "VD", navGroup: "panel" },
   { id: "database", label: "Database", shortLabel: "DB", navGroup: "panel" },
   { id: "log", label: "Ticket Dashboard", shortLabel: "TD", navGroup: "panel" },
   { id: "quick_links", label: "Quick Website Links", shortLabel: "QL", navGroup: "panel" },
@@ -360,8 +360,8 @@ const HOME_NAV_BUTTONS = [
     ),
   },
 ];
-const CORE_WORKSPACE_TAB_IDS = ["entry", "rates", "b2b", "monthly"];
-const TOOL_WORKSPACE_TAB_IDS = ["database", "log", "quick_links", "doc_tools", "services_dashboard"];
+const CORE_WORKSPACE_TAB_IDS = ["entry", "rates", "monthly"];
+const TOOL_WORKSPACE_TAB_IDS = ["b2b", "database", "log", "quick_links", "doc_tools", "services_dashboard"];
 const DATABASE_SECTION_CONFIG = [
   {
     id: "aadhaar",
@@ -6594,21 +6594,19 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     if (typeof onDeleteTicket !== "function" || !ticket?.ticketNo) return;
     const ticketNo = ticket.ticketNo;
     const customerName = ticket.customerName || "Unknown customer";
-    requestDeleteAccess({
-      title: "Delete Ticket",
-      message: `Delete ticket ${ticketNo} for ${customerName}? This cannot be undone.`,
-      actionLabel: `delete ticket ${ticketNo}`,
-      onAuthorized: () => {
-        onDeleteTicket(ticketNo);
-        setViewTicketNo((prev) => (prev === ticketNo ? null : prev));
-        setEditTicketNo((prev) => (prev === ticketNo ? null : prev));
-        setExpandedTickets((prev) => {
-          if (!prev[ticketNo]) return prev;
-          const next = { ...prev };
-          delete next[ticketNo];
-          return next;
-        });
-      },
+    setOpenMenuTicketNo(null);
+    const confirmed = typeof window !== "undefined" && typeof window.confirm === "function"
+      ? window.confirm(`Delete ticket ${ticketNo} for ${customerName}?\n\nThis cannot be undone.`)
+      : true;
+    if (!confirmed) return;
+    onDeleteTicket(ticketNo);
+    setViewTicketNo((prev) => (prev === ticketNo ? null : prev));
+    setEditTicketNo((prev) => (prev === ticketNo ? null : prev));
+    setExpandedTickets((prev) => {
+      if (!prev[ticketNo]) return prev;
+      const next = { ...prev };
+      delete next[ticketNo];
+      return next;
     });
   };
   useEffect(() => {
