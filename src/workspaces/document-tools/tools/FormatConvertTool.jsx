@@ -42,7 +42,9 @@ export function FormatConvertTool({ onQueue }) {
     setBusy(true);
     setError("");
     try {
+      let index = 0;
       for (const file of files) {
+        index += 1;
         // eslint-disable-next-line no-await-in-loop
         const info = await loadImage(file);
         try {
@@ -55,7 +57,18 @@ export function FormatConvertTool({ onQueue }) {
             target.value === "image/jpeg" ? 0.95 : target.value === "image/webp" ? 0.92 : undefined,
           );
           const name = `${stripExtension(file.name)}.${target.ext}`;
-          onQueue({ name, blob, toolId: "convert", meta: target.ext.toUpperCase() });
+          // Batch runs use an index so customer-prefixed names stay unique.
+          const descriptor = files.length > 1
+            ? `converted_${target.ext}_${String(index).padStart(2, "0")}`
+            : `converted_${target.ext}`;
+          onQueue({
+            name,
+            descriptor,
+            ext: target.ext,
+            blob,
+            toolId: "convert",
+            meta: target.ext.toUpperCase(),
+          });
         } finally {
           URL.revokeObjectURL(info.url);
         }

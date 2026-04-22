@@ -100,9 +100,12 @@ export function ResizeTool({ onQueue }) {
       const canvas = drawToCanvas(sourceInfo.image, targetPx.w, targetPx.h, fill);
       const blob = await canvasToBlob(canvas, outputMime, outputMime === "image/jpeg" ? 0.92 : undefined);
       const ext = extensionForMime(outputMime, "jpg");
+      const descriptor = `resized_${widthCm}x${heightCm}cm_${dpi}dpi`;
       const name = `${stripExtension(file.name)}_${widthCm}x${heightCm}cm_${dpi}dpi.${ext}`;
       onQueue({
         name,
+        descriptor,
+        ext,
         blob,
         toolId: "resize",
         meta: `${targetPx.w}×${targetPx.h}px`,

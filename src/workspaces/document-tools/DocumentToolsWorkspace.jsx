@@ -38,17 +38,30 @@ export function DocumentToolsWorkspace() {
 
   /**
    * Wrap the raw queue push so every output produced while a customer is set
-   * gets the customer slug prepended to the filename. Tools keep their API
-   * (`onQueue({ name, blob, toolId, meta })`) — they don't need to know the
-   * customer context exists.
+   * is renamed to `{slug}_{descriptor}.{ext}` — the original source filename is
+   * dropped because it's usually phone/CMS noise (IMG_2025…, hash_name, etc.)
+   * and stacks up visually when combined with the slug.
+   *
+   * Tools optionally pass `descriptor` + `ext` alongside `name`; the fallback
+   * (no customer set, or a legacy tool that only passes `name`) preserves
+   * today's behaviour. Tools keep their simple API — they don't need to know
+   * the customer context exists.
    */
   const handleToolOutput = useCallback((entry) => {
     customer.touch();
     const slug = customer.slug;
-    const name = slug && entry.name && !entry.name.startsWith(`${slug}_`)
-      ? `${slug}_${entry.name}`
-      : entry.name;
-    return queue.push({ ...entry, name });
+
+    let name = entry.name;
+    if (slug && entry.descriptor && entry.ext) {
+      name = `${slug}_${entry.descriptor}.${entry.ext}`;
+    } else if (slug && entry.name && !entry.name.startsWith(`${slug}_`)) {
+      // Legacy path: no descriptor provided, so we prepend rather than replace.
+      name = `${slug}_${entry.name}`;
+    }
+
+    // Never persist descriptor/ext on the queue entry — they're a naming hint only.
+    const { descriptor, ext, ...rest } = entry;
+    return queue.push({ ...rest, name });
   }, [customer, queue]);
 
   /**

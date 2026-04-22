@@ -145,8 +145,11 @@ export function PdfToImageTool({ onQueue }) {
           quality: outputMime === "image/jpeg" ? 0.92 : undefined,
           password: password || undefined,
         });
+        const pageStr = String(pageNumber).padStart(2, "0");
         onQueue({
-          name: `${base}_page${String(pageNumber).padStart(2, "0")}.${ext}`,
+          name: `${base}_page${pageStr}.${ext}`,
+          descriptor: `page${pageStr}`,
+          ext,
           blob,
           toolId: "pdf_to_image",
           meta: `page ${pageNumber}`,

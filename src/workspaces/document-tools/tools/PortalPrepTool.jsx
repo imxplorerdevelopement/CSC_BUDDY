@@ -54,6 +54,8 @@ export function PortalPrepTool({ onQueue, initialPresetId }) {
       const name = `${stripExtension(file.name)}_${preset.id}.${preset.ext}`;
       onQueue({
         name,
+        descriptor: preset.id,
+        ext: preset.ext,
         blob: prep.blob,
         toolId: "portal_prep",
         meta: `${preset.portal} · ${Math.round(prep.finalBytes / 1024)} KB`,

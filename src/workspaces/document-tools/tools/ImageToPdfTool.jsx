@@ -95,16 +95,31 @@ export function ImageToPdfTool({ onQueue }) {
 
       if (combine) {
         const blob = await buildPdfFromImages(imageBuffers, { pageSize, marginPt: pageSize === "Fit" ? 0 : 18 });
+        const dateStamp = new Date().toISOString().slice(0, 10);
         const name = entries.length === 1
           ? `${stripExtension(entries[0].file.name)}.pdf`
-          : `documents_${new Date().toISOString().slice(0, 10)}.pdf`;
-        onQueue({ name, blob, toolId: "image_to_pdf", meta: `${entries.length} page${entries.length === 1 ? "" : "s"}` });
+          : `documents_${dateStamp}.pdf`;
+        onQueue({
+          name,
+          descriptor: `documents_${dateStamp}`,
+          ext: "pdf",
+          blob,
+          toolId: "image_to_pdf",
+          meta: `${entries.length} page${entries.length === 1 ? "" : "s"}`,
+        });
       } else {
+        let index = 0;
         for (const img of imageBuffers) {
+          index += 1;
           // eslint-disable-next-line no-await-in-loop
           const blob = await buildPdfFromImages([img], { pageSize, marginPt: pageSize === "Fit" ? 0 : 18 });
+          const descriptor = imageBuffers.length > 1
+            ? `document_${String(index).padStart(2, "0")}`
+            : "document";
           onQueue({
             name: `${stripExtension(img.source)}.pdf`,
+            descriptor,
+            ext: "pdf",
             blob,
             toolId: "image_to_pdf",
             meta: "1 page",

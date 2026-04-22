@@ -65,11 +65,12 @@ export function CompressTool({ onQueue }) {
           mime: outputMime,
         });
         const ext = extensionForMime(outputMime, "jpg");
+        const descriptor = `compressed_${targetKB}kb`;
         const name = `${stripExtension(file.name)}_${targetKB}kb.${ext}`;
         const meta = out.reachedTarget
           ? `-${percentReduction(file.size, out.blob.size)}%`
           : "best effort";
-        const entry = onQueue({ name, blob: out.blob, toolId: "compress", meta });
+        const entry = onQueue({ name, descriptor, ext, blob: out.blob, toolId: "compress", meta });
         completed.push({
           source: file.name,
           original: file.size,
