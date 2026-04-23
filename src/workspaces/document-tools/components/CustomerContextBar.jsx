@@ -127,7 +127,7 @@ function InlineEditor({ inputRef, value, onChange, onCommit, onCancel, hasExisti
         if (e.key === "Enter") { e.preventDefault(); onCommit(); }
         if (e.key === "Escape" && hasExisting) { e.preventDefault(); onCancel(); }
       }}
-      placeholder="Enter customer name (e.g. Ramesh K.)"
+      placeholder=""
       style={{
         width: 260,
         maxWidth: "100%",

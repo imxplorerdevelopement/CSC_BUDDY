@@ -33,13 +33,11 @@ export function LeftRail({ activeId, onSelect }) {
               onClick={() => onSelect(cat.id)}
               style={{
                 textAlign: "left",
-                padding: "10px 12px",
+                padding: "9px 12px",
                 borderRadius: DT.rSm,
                 border: `1px solid ${isActive ? DT.borderAccent : "transparent"}`,
                 background: isActive ? DT.surfaceActive : "transparent",
                 cursor: "pointer",
-                display: "grid",
-                gap: 2,
                 transition: "background 120ms ease",
               }}
               onMouseEnter={(e) => {
@@ -56,12 +54,6 @@ export function LeftRail({ activeId, onSelect }) {
                 color: isActive ? DT.primary : DT.text,
                 letterSpacing: "0.02em",
               }}>{meta.label}</span>
-              <span style={{
-                fontFamily: DT.font,
-                fontSize: "0.72rem",
-                color: DT.textSubtle,
-                lineHeight: 1.35,
-              }}>{meta.description}</span>
             </button>
           );
         })}
