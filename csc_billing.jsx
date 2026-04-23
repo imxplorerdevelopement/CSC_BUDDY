@@ -294,8 +294,8 @@ const TAB_CONFIG = [
   { id: "database", label: "Database", shortLabel: "DB", navGroup: "panel" },
   { id: "log", label: "Ticket Dashboard", shortLabel: "TD", navGroup: "panel" },
   { id: "quick_links", label: "Quick Website Links", shortLabel: "QL", navGroup: "panel" },
-  { id: "doc_tools", label: "Document Tools", shortLabel: "DT", navGroup: "panel" },
   { id: "services_dashboard", label: "Services Dashboard", shortLabel: "SD", navGroup: "panel" },
+  { id: "doc_tools", label: "Document Tools", shortLabel: "DT", navGroup: "panel" },
 ];
 const PRIMARY_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "primary");
 const PANEL_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "panel");
@@ -10499,11 +10499,16 @@ export default function CSCBilling() {
           minWidth: 0,
           display: "flex",
           flexDirection: "column",
-          background: "#eef2f7",
+          background: tab === "database" ? "#010d03" : "#eef2f7",
           position: "relative",
+          transition: "background 0.3s ease",
         }}>
-          {/* Subtle grid texture */}
-          <div style={{ display: isHomeTab || tab === "entry" ? "none" : "block", position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.12, backgroundImage: "linear-gradient(90deg, rgba(13,27,42,0.05) 1px, transparent 1px), linear-gradient(rgba(13,27,42,0.05) 1px, transparent 1px)", backgroundSize: "80px 80px" }} />
+          {/* Subtle grid texture / scanlines */}
+          {tab === "database" ? (
+            <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", backgroundImage: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,70,0.015) 2px,rgba(0,255,70,0.015) 4px)" }} />
+          ) : (
+            <div style={{ display: isHomeTab || tab === "entry" ? "none" : "block", position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.12, backgroundImage: "linear-gradient(90deg, rgba(13,27,42,0.05) 1px, transparent 1px), linear-gradient(rgba(13,27,42,0.05) 1px, transparent 1px)", backgroundSize: "80px 80px" }} />
+          )}
 
           {!isHomeTab && (
           <>
@@ -10512,31 +10517,32 @@ export default function CSCBilling() {
             position: "sticky",
             top: 0,
             zIndex: 10,
-            background: `rgba(255,255,255,0.96)`,
+            background: tab === "database" ? "rgba(1,10,3,0.97)" : `rgba(255,255,255,0.96)`,
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
-            borderBottom: `1px solid rgba(13,27,42,0.09)`,
+            borderBottom: tab === "database" ? `1px solid rgba(0,255,70,0.18)` : `1px solid rgba(13,27,42,0.09)`,
             padding: "0 28px",
             height: 56,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             gap: 16,
+            transition: "background 0.3s ease, border-color 0.3s ease",
           }}>
             {/* Active view label */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 onClick={() => setIsSidebarOpen((prev) => !prev)}
                 style={{
-                  border: "1px solid rgba(13,27,42,0.13)",
+                  border: tab === "database" ? "1px solid rgba(0,255,70,0.22)" : "1px solid rgba(13,27,42,0.13)",
                   borderRadius: 7,
                   padding: "5px 10px",
-                  background: "#f4f7fa",
-                  color: "rgba(13,27,42,0.70)",
-                  fontFamily: APP_BRAND_STACK,
+                  background: tab === "database" ? "rgba(0,255,70,0.06)" : "#f4f7fa",
+                  color: tab === "database" ? "rgba(0,255,70,0.80)" : "rgba(13,27,42,0.70)",
+                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
                   fontWeight: 700,
                   fontSize: "0.68rem",
-                  letterSpacing: "0.04em",
+                  letterSpacing: tab === "database" ? "0.08em" : "0.04em",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                   display: "inline-flex",
@@ -10550,9 +10556,9 @@ export default function CSCBilling() {
                   <span style={{ fontSize: "0.7rem", lineHeight: 1 }}>{"<"}</span>
                 ) : (
                   <span style={{ display: "grid", gap: 2 }}>
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(13,27,42,0.65)", display: "block" }} />
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(13,27,42,0.65)", display: "block" }} />
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(13,27,42,0.65)", display: "block" }} />
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.65)" : "rgba(13,27,42,0.65)", display: "block" }} />
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.65)" : "rgba(13,27,42,0.65)", display: "block" }} />
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.65)" : "rgba(13,27,42,0.65)", display: "block" }} />
                   </span>
                 )}
                 {isSidebarOpen ? "Hide Menu" : "Menu"}
@@ -10560,15 +10566,15 @@ export default function CSCBilling() {
               <button
                 onClick={() => navigateTab("home")}
                 style={{
-                  border: "1px solid rgba(26,86,219,0.24)",
+                  border: tab === "database" ? "1px solid rgba(0,255,70,0.22)" : "1px solid rgba(26,86,219,0.24)",
                   borderRadius: 7,
                   padding: "5px 10px",
-                  background: "rgba(26,86,219,0.08)",
-                  color: "#1a56db",
-                  fontFamily: APP_BRAND_STACK,
+                  background: tab === "database" ? "rgba(0,255,70,0.06)" : "rgba(26,86,219,0.08)",
+                  color: tab === "database" ? "rgba(0,255,70,0.80)" : "#1a56db",
+                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
                   fontWeight: 700,
                   fontSize: "0.68rem",
-                  letterSpacing: "0.04em",
+                  letterSpacing: tab === "database" ? "0.08em" : "0.04em",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                 }}
@@ -10581,21 +10587,21 @@ export default function CSCBilling() {
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               {headerStats.map((stat) => (
                 <div key={stat.label} style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,27,42,0.40)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
+                  <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: tab === "database" ? "rgba(0,255,70,0.38)" : "rgba(13,27,42,0.40)", fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK, marginBottom: 2 }}>
                     {stat.label}
                   </div>
-                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: stat.accent || "#0d1b2a", fontFamily: APP_MONO_STACK, letterSpacing: "-0.01em" }}>
+                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: tab === "database" ? (stat.accent === "#1a56db" ? "rgba(0,255,70,0.90)" : "rgba(0,255,70,0.90)") : (stat.accent || "#0d1b2a"), fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_MONO_STACK, letterSpacing: "-0.01em", textShadow: tab === "database" ? "0 0 8px rgba(0,255,70,0.40)" : "none" }}>
                     {stat.value}
                   </div>
                 </div>
               ))}
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 7, padding: "4px 9px", border: `1px solid ${cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.26)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.26)" : "rgba(13,27,42,0.13)"}`, background: cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.07)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.07)" : "rgba(13,27,42,0.04)" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: cloudSyncAccent, display: "inline-block" }} />
-                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: cloudSyncAccent, fontFamily: APP_BRAND_STACK, letterSpacing: "0.06em" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 7, padding: "4px 9px", border: tab === "database" ? `1px solid rgba(0,255,70,0.22)` : `1px solid ${cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.26)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.26)" : "rgba(13,27,42,0.13)"}`, background: tab === "database" ? "rgba(0,255,70,0.06)" : (cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.07)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.07)" : "rgba(13,27,42,0.04)") }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: tab === "database" ? "rgba(0,255,70,0.85)" : cloudSyncAccent, display: "inline-block" }} />
+                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: tab === "database" ? "rgba(0,255,70,0.85)" : cloudSyncAccent, fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK, letterSpacing: "0.06em" }}>
                   {cloudSyncLabel}
                 </span>
                 {cloudSyncState === "synced" && cloudLastSyncedAt && (
-                  <span style={{ fontSize: "0.68rem", color: "rgba(13,27,42,0.40)", fontFamily: APP_MONO_STACK }}>
+                  <span style={{ fontSize: "0.68rem", color: tab === "database" ? "rgba(0,255,70,0.45)" : "rgba(13,27,42,0.40)", fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_MONO_STACK }}>
                     {formatSyncTime(cloudLastSyncedAt)}
                   </span>
                 )}
@@ -10604,12 +10610,12 @@ export default function CSCBilling() {
                 <button
                   onClick={lockDatabaseAccess}
                   style={{
-                    border: "1px solid rgba(220,38,38,0.34)",
+                    border: "1px solid rgba(255,60,60,0.40)",
                     borderRadius: 999,
                     padding: "10px 16px",
-                    background: "rgba(220,38,38,0.10)",
-                    color: "#991b1b",
-                    fontFamily: APP_BRAND_STACK,
+                    background: "rgba(255,60,60,0.08)",
+                    color: "rgba(255,80,80,0.90)",
+                    fontFamily: "'Courier New','Consolas',monospace",
                     fontWeight: 700,
                     fontSize: "0.56rem",
                     letterSpacing: "0.20em",
@@ -10625,12 +10631,12 @@ export default function CSCBilling() {
               <button
                 onClick={openCscWhatsApp}
                 style={{
-                  border: "1px solid rgba(22,163,74,0.40)",
+                  border: tab === "database" ? "1px solid rgba(0,255,70,0.30)" : "1px solid rgba(22,163,74,0.40)",
                   borderRadius: 999,
                   padding: "10px 18px",
-                  background: "rgba(22,163,74,0.11)",
-                  color: "#166534",
-                  fontFamily: APP_BRAND_STACK,
+                  background: tab === "database" ? "rgba(0,255,70,0.07)" : "rgba(22,163,74,0.11)",
+                  color: tab === "database" ? "rgba(0,255,70,0.85)" : "#166534",
+                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
                   fontWeight: 700,
                   fontSize: "0.56rem",
                   letterSpacing: "0.22em",
@@ -10648,8 +10654,8 @@ export default function CSCBilling() {
           {/* Page title / hero area */}
           <div style={{
             padding: "22px 32px 16px",
-            borderBottom: `1px solid rgba(13,27,42,0.09)`,
-            background: "#ffffff",
+            borderBottom: tab === "database" ? `1px solid rgba(0,255,70,0.14)` : `1px solid rgba(13,27,42,0.09)`,
+            background: tab === "database" ? "rgba(1,12,4,0.98)" : "#ffffff",
             position: "relative",
             zIndex: 1,
           }}>
@@ -10660,20 +10666,22 @@ export default function CSCBilling() {
                   fontWeight: 700,
                   letterSpacing: "0.18em",
                   textTransform: "uppercase",
-                  color: "rgba(13,27,42,0.42)",
-                  fontFamily: APP_BRAND_STACK,
+                  color: tab === "database" ? "rgba(0,255,70,0.40)" : "rgba(13,27,42,0.42)",
+                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
                   marginBottom: 8,
                 }}>
-                  CSC Centre Workspace
+                  {tab === "database" ? "❯ SYSTEM / DATABASE" : "CSC Centre Workspace"}
                 </div>
                 <h1 style={{
                   margin: 0,
-                  fontFamily: APP_BRAND_STACK,
+                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
                   fontSize: "clamp(1.4rem, 2.4vw, 1.9rem)",
                   fontWeight: 800,
                   lineHeight: 1.0,
-                  letterSpacing: "-0.01em",
-                  color: "#0d1b2a",
+                  letterSpacing: tab === "database" ? "0.06em" : "-0.01em",
+                  color: tab === "database" ? "rgba(0,255,70,0.92)" : "#0d1b2a",
+                  textShadow: tab === "database" ? "0 0 18px rgba(0,255,70,0.30)" : "none",
+                  textTransform: tab === "database" ? "uppercase" : "none",
                 }}>
                   {activeTabConfig.label}
                 </h1>
@@ -10709,10 +10717,11 @@ export default function CSCBilling() {
           {/* Tab Content */}
           <div className="csc-content-scroll" style={{
             flex: 1,
-            padding: isHomeTab ? 0 : "24px 28px 48px",
+            padding: isHomeTab ? 0 : tab === "database" ? "16px 20px 32px" : "24px 28px 48px",
             overflowY: "auto",
             position: "relative",
             zIndex: 1,
+            background: "transparent",
           }}>
             {isHomeTab && (
               <HomeLaunchpad
