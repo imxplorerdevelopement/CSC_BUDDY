@@ -145,7 +145,7 @@ export function CompressTool({ onQueue }) {
         onFiles={handleFiles}
       />
 
-      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", alignItems: "end" }}>
         <Field
           label="Custom size (KB)"
           hint="Enter a number or pick a preset below."
