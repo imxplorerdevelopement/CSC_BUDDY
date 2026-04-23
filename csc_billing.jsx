@@ -3034,123 +3034,234 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
     );
   }
 
+  // ── Hacker theme tokens (scoped entirely to DatabaseWorkspace) ──────────
+  const HK = {
+    bg:           "#020b03",
+    bgPanel:      "rgba(0,14,4,0.97)",
+    bgInput:      "rgba(0,20,6,0.85)",
+    bgRow:        "rgba(0,18,5,0.70)",
+    bgRowHover:   "rgba(0,255,70,0.04)",
+    border:       "rgba(0,255,70,0.14)",
+    borderStrong: "rgba(0,255,70,0.28)",
+    borderActive: "rgba(0,255,70,0.55)",
+    green:        "rgba(0,255,70,1)",
+    greenBright:  "rgba(0,255,70,0.95)",
+    greenMid:     "rgba(0,255,70,0.65)",
+    greenDim:     "rgba(0,255,70,0.40)",
+    greenFaint:   "rgba(0,255,70,0.18)",
+    greenGhost:   "rgba(0,255,70,0.07)",
+    red:          "rgba(255,60,60,0.90)",
+    redBorder:    "rgba(255,60,60,0.28)",
+    redBg:        "rgba(255,60,60,0.08)",
+    amber:        "rgba(251,191,36,0.85)",
+    amberBorder:  "rgba(251,191,36,0.28)",
+    amberBg:      "rgba(251,191,36,0.07)",
+    textPrimary:  "rgba(0,255,70,0.95)",
+    textSub:      "rgba(0,255,70,0.55)",
+    textMuted:    "rgba(0,255,70,0.35)",
+    textFaint:    "rgba(0,255,70,0.20)",
+    mono:         "'Courier New','Consolas','Monaco',monospace",
+    glow:         "0 0 8px rgba(0,255,70,0.35)",
+    glowStrong:   "0 0 16px rgba(0,255,70,0.50), 0 0 40px rgba(0,255,70,0.18)",
+    scanlines:    "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,70,0.018) 2px,rgba(0,255,70,0.018) 4px)",
+    rSm: 7,
+    rMd: 11,
+    rLg: 14,
+  };
+
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div style={{ border: "1px solid rgba(13,27,42,0.11)", borderRadius: 14, background: "#ffffff", padding: 12 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
-          <button
-            type="button"
-            onClick={handleExportRecordsToExcel}
-            style={{
-              border: "1px solid rgba(21,128,61,0.32)",
-              borderRadius: 8,
-              background: "#ffffff",
-              color: "#166534",
-              fontFamily: APP_BRAND_STACK,
-              fontSize: "0.76rem",
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              cursor: "pointer",
-              padding: "9px 14px",
-              whiteSpace: "nowrap",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              boxShadow: "0 1px 3px rgba(21,128,61,0.10)",
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <rect width="16" height="16" rx="3" fill="#217346"/>
-              <path d="M2 4h5v1.5H2V4zm0 2.5h5V8H2V6.5zm0 2.5h5v1.5H2V9zm6-5h6v1.5H8V4zm0 2.5h6V8H8V6.5zm0 2.5h6v1.5H8V9zm-6 2.5h12V13H2v-1.5z" fill="white"/>
-              <text x="3.5" y="14.5" fontSize="4.5" fontWeight="bold" fill="white" fontFamily="sans-serif">XLS</text>
-            </svg>
-            Export to Excel
-          </button>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+    <div style={{
+      display: "grid",
+      gap: 14,
+      background: HK.bg,
+      borderRadius: HK.rLg,
+      padding: 14,
+      border: `1px solid ${HK.border}`,
+      boxShadow: `inset 0 0 60px rgba(0,255,70,0.03), 0 0 0 1px rgba(0,255,70,0.06)`,
+      position: "relative",
+      overflow: "hidden",
+      fontFamily: HK.mono,
+    }}>
+      {/* Scanline overlay */}
+      <div style={{ position: "absolute", inset: 0, backgroundImage: HK.scanlines, pointerEvents: "none", zIndex: 0, borderRadius: HK.rLg }} />
+
+      {/* ── Toolbar row ─────────────────────────────────────────────────── */}
+      <div style={{
+        position: "relative", zIndex: 1,
+        border: `1px solid ${HK.border}`,
+        borderRadius: HK.rMd,
+        background: HK.bgPanel,
+        padding: "10px 14px",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 10,
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}>
+        {/* Export button */}
+        <button
+          type="button"
+          onClick={handleExportRecordsToExcel}
+          style={{
+            border: `1px solid rgba(0,255,70,0.30)`,
+            borderRadius: HK.rSm,
+            background: HK.greenGhost,
+            color: HK.greenMid,
+            fontFamily: HK.mono,
+            fontSize: "0.68rem",
+            fontWeight: 700,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            padding: "8px 14px",
+            whiteSpace: "nowrap",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            transition: "background 0.15s, color 0.15s, box-shadow 0.15s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = HK.greenFaint; e.currentTarget.style.color = HK.greenBright; e.currentTarget.style.boxShadow = HK.glow; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = HK.greenGhost; e.currentTarget.style.color = HK.greenMid; e.currentTarget.style.boxShadow = "none"; }}
+        >
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect width="16" height="16" rx="3" fill="rgba(0,255,70,0.18)"/>
+            <path d="M2 4h5v1.5H2V4zm0 2.5h5V8H2V6.5zm0 2.5h5v1.5H2V9zm6-5h6v1.5H8V4zm0 2.5h6V8H8V6.5zm0 2.5h6v1.5H8V9zm-6 2.5h12V13H2v-1.5z" fill="rgba(0,255,70,0.80)"/>
+          </svg>
+          Export CSV
+        </button>
+
+        {/* Section tabs */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {DATABASE_SECTION_CONFIG.map((section) => {
-            const count = records.filter((record) => record.sectionId === section.id).length;
+            const count = records.filter((r) => r.sectionId === section.id).length;
             const active = section.id === activeSectionId;
             return (
               <button
                 key={section.id}
                 onClick={() => setActiveSectionId(section.id)}
                 style={{
-                  border: active ? "1px solid rgba(26,86,219,0.30)" : "1px solid rgba(13,27,42,0.12)",
-                  borderRadius: 8,
-                  background: active ? "rgba(26,86,219,0.09)" : "#ffffff",
-                  color: active ? "#1540b0" : "#0d1b2a",
-                  padding: "8px 12px",
-                  fontFamily: APP_BRAND_STACK,
-                  fontSize: "0.78rem",
+                  border: active ? `1px solid ${HK.borderActive}` : `1px solid ${HK.border}`,
+                  borderRadius: HK.rSm,
+                  background: active ? HK.greenFaint : "transparent",
+                  color: active ? HK.greenBright : HK.greenDim,
+                  padding: "7px 12px",
+                  fontFamily: HK.mono,
+                  fontSize: "0.70rem",
                   fontWeight: 700,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  boxShadow: active ? "none" : "0 1px 2px rgba(13,27,42,0.05)",
+                  boxShadow: active ? HK.glow : "none",
+                  transition: "all 0.15s",
                 }}
+                onMouseEnter={(e) => { if (!active) { e.currentTarget.style.color = HK.greenMid; e.currentTarget.style.borderColor = HK.borderStrong; } }}
+                onMouseLeave={(e) => { if (!active) { e.currentTarget.style.color = HK.greenDim; e.currentTarget.style.borderColor = HK.border; } }}
               >
                 <span>{section.label}</span>
-                <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: active ? "#1a56db" : "rgba(13,27,42,0.46)" }}>{count}</span>
+                <span style={{
+                  fontSize: "0.62rem",
+                  color: active ? HK.greenMid : HK.textFaint,
+                  background: active ? "rgba(0,255,70,0.12)" : "rgba(0,255,70,0.05)",
+                  border: `1px solid ${active ? "rgba(0,255,70,0.25)" : "rgba(0,255,70,0.08)"}`,
+                  borderRadius: 4,
+                  padding: "1px 5px",
+                  fontFamily: HK.mono,
+                }}>
+                  {count}
+                </span>
               </button>
             );
           })}
-          </div>
         </div>
       </div>
 
-      <div className="csc-db-main-grid">
-        <form onSubmit={handleFormSubmit} style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 14, display: "grid", gap: 10, alignContent: "start" }}>
-          <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>
-            {sectionConfig.label} Details
+      {/* ── Main two-column grid ─────────────────────────────────────────── */}
+      <div className="csc-db-main-grid" style={{ position: "relative", zIndex: 1 }}>
+
+        {/* LEFT — Entry form */}
+        <form onSubmit={handleFormSubmit} style={{
+          border: `1px solid ${HK.border}`,
+          borderRadius: HK.rLg,
+          background: HK.bgPanel,
+          padding: 16,
+          display: "grid",
+          gap: 12,
+          alignContent: "start",
+        }}>
+          {/* Form eyebrow */}
+          <div style={{
+            fontSize: "0.58rem",
+            fontWeight: 700,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: HK.greenDim,
+            fontFamily: HK.mono,
+            borderBottom: `1px solid ${HK.border}`,
+            paddingBottom: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}>
+            <span style={{ color: HK.greenMid }}>❯</span>
+            {sectionConfig.label} — {editingRecordId ? "editing record" : "new entry"}
           </div>
+
+          {/* OCR section */}
           {ocrEnabledForSection && (
-            <div style={{ border: "1px solid rgba(37,99,235,0.22)", borderRadius: 10, background: "rgba(37,99,235,0.06)", padding: 10, display: "grid", gap: 8 }}>
-              <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#1d4ed8", fontFamily: APP_BRAND_STACK }}>
-                Auto Extract From Document
+            <div style={{
+              border: `1px solid rgba(0,255,70,0.20)`,
+              borderRadius: HK.rMd,
+              background: "rgba(0,255,70,0.04)",
+              padding: 12,
+              display: "grid",
+              gap: 8,
+            }}>
+              <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: HK.greenMid, fontFamily: HK.mono }}>
+                ◈ Auto-Extract From Document
               </div>
               <div
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  if (!ocrBusy) setOcrDropActive(true);
-                }}
-                onDragLeave={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setOcrDropActive(false);
-                }}
+                onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); if (!ocrBusy) setOcrDropActive(true); }}
+                onDragLeave={(event) => { event.preventDefault(); event.stopPropagation(); setOcrDropActive(false); }}
                 onDrop={handleOcrDrop}
                 style={{
-                  border: ocrDropActive ? "1px solid rgba(37,99,235,0.54)" : "1px dashed rgba(37,99,235,0.34)",
-                  borderRadius: 9,
-                  background: ocrDropActive ? "rgba(37,99,235,0.12)" : "rgba(255,255,255,0.86)",
-                  padding: "10px 11px",
-                  color: "rgba(15,23,42,0.65)",
-                  fontSize: "0.80rem",
-                  fontFamily: APP_FONT_STACK,
+                  border: ocrDropActive ? `1px solid ${HK.borderActive}` : `1px dashed rgba(0,255,70,0.22)`,
+                  borderRadius: HK.rSm,
+                  background: ocrDropActive ? "rgba(0,255,70,0.08)" : "rgba(0,255,70,0.02)",
+                  padding: "10px 12px",
+                  color: ocrDropActive ? HK.greenMid : HK.textMuted,
+                  fontSize: "0.76rem",
+                  fontFamily: HK.mono,
                   lineHeight: 1.5,
+                  transition: "all 0.15s",
+                  boxShadow: ocrDropActive ? HK.glow : "none",
+                  textAlign: "center",
                 }}
               >
-                Drop Aadhaar/PAN/Passport image here, or choose a file and extract.
+                drop image here to scan
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button
                   type="button"
                   onClick={() => ocrFileInputRef.current?.click()}
                   style={{
-                    border: "1px solid rgba(15,23,42,0.18)",
-                    borderRadius: 9,
-                    background: "rgba(255,255,255,0.92)",
-                    color: "rgba(15,23,42,0.76)",
-                    fontFamily: APP_BRAND_STACK,
+                    border: `1px solid ${HK.border}`,
+                    borderRadius: HK.rSm,
+                    background: "transparent",
+                    color: HK.textSub,
+                    fontFamily: HK.mono,
                     fontWeight: 700,
-                    fontSize: "0.56rem",
+                    fontSize: "0.58rem",
                     letterSpacing: "0.14em",
                     textTransform: "uppercase",
-                    padding: "9px 11px",
+                    padding: "7px 10px",
                     cursor: "pointer",
+                    transition: "all 0.15s",
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = HK.greenBright; e.currentTarget.style.borderColor = HK.borderStrong; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = HK.textSub; e.currentTarget.style.borderColor = HK.border; }}
                 >
                   Choose File
                 </button>
@@ -3159,214 +3270,305 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                   onClick={handleRunOcrExtraction}
                   disabled={ocrBusy || !ocrFile}
                   style={{
-                    border: "1px solid rgba(37,99,235,0.42)",
-                    borderRadius: 9,
-                    background: ocrBusy || !ocrFile ? "rgba(37,99,235,0.06)" : "rgba(37,99,235,0.13)",
-                    color: ocrBusy || !ocrFile ? "rgba(37,99,235,0.50)" : "#1e40af",
-                    fontFamily: APP_BRAND_STACK,
+                    border: `1px solid ${ocrBusy || !ocrFile ? "rgba(0,255,70,0.10)" : "rgba(0,255,70,0.35)"}`,
+                    borderRadius: HK.rSm,
+                    background: ocrBusy || !ocrFile ? "transparent" : "rgba(0,255,70,0.10)",
+                    color: ocrBusy || !ocrFile ? HK.textFaint : HK.greenMid,
+                    fontFamily: HK.mono,
                     fontWeight: 700,
-                    fontSize: "0.56rem",
+                    fontSize: "0.58rem",
                     letterSpacing: "0.14em",
                     textTransform: "uppercase",
-                    padding: "9px 11px",
+                    padding: "7px 10px",
                     cursor: ocrBusy || !ocrFile ? "not-allowed" : "pointer",
+                    transition: "all 0.15s",
                   }}
                 >
-                  {ocrBusy ? "Reading..." : "Extract & Create Entry"}
+                  {ocrBusy ? "Scanning..." : "Extract & Save"}
                 </button>
               </div>
               {ocrFile && (
-                <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.64)", fontFamily: APP_FONT_STACK }}>
-                  Selected: {ocrFile.name}
+                <div style={{ fontSize: "0.68rem", color: HK.textMuted, fontFamily: HK.mono }}>
+                  <span style={{ color: HK.greenDim }}>file: </span>{ocrFile.name}
                 </div>
               )}
               {ocrBusy && (
-                <div style={{ fontSize: "0.76rem", color: "#1d4ed8", fontFamily: APP_FONT_STACK }}>
-                  OCR in progress... {Math.min(100, Math.max(0, ocrProgress))}%
+                <div style={{ fontSize: "0.70rem", color: HK.greenMid, fontFamily: HK.mono }}>
+                  scanning... {Math.min(100, Math.max(0, ocrProgress))}%
+                  <div style={{ marginTop: 4, height: 2, background: "rgba(0,255,70,0.10)", borderRadius: 2 }}>
+                    <div style={{ height: "100%", width: `${ocrProgress}%`, background: HK.greenMid, borderRadius: 2, boxShadow: HK.glow, transition: "width 0.2s" }} />
+                  </div>
                 </div>
               )}
               {ocrStatus && (
-                <div style={{ fontSize: "0.76rem", color: "#166534", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
-                  {ocrStatus}
+                <div style={{ fontSize: "0.70rem", color: HK.greenMid, fontFamily: HK.mono, fontWeight: 600 }}>
+                  ✓ {ocrStatus}
                 </div>
               )}
               {ocrError && (
-                <div style={{ fontSize: "0.76rem", color: "#b91c1c", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
-                  {ocrError}
+                <div style={{ fontSize: "0.70rem", color: HK.red, fontFamily: HK.mono, fontWeight: 600 }}>
+                  ✗ {ocrError}
                 </div>
               )}
-              <input
-                ref={ocrFileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp,image/bmp,image/tiff"
-                onChange={handleOcrInputChange}
-                style={{ display: "none" }}
-              />
+              <input ref={ocrFileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/bmp,image/tiff" onChange={handleOcrInputChange} style={{ display: "none" }} />
             </div>
           )}
+
+          {/* Fields */}
           {sectionConfig.fields.map((field) => (
             <label key={field.key} style={{ display: "grid", gap: 5 }}>
-              <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.62)", fontWeight: 600 }}>{field.label}</span>
+              <span style={{ fontFamily: HK.mono, fontSize: "0.62rem", color: HK.textMuted, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                {field.label}
+              </span>
               <input
                 type="text"
                 value={formValues[field.key] || ""}
                 onChange={(event) => handleFieldChange(field.key, event.target.value)}
-                placeholder={field.key === "dateOfBirth" ? "DD/MM/YYYY" : field.label}
+                placeholder={field.key === "dateOfBirth" ? "DD/MM/YYYY" : `enter ${field.label.toLowerCase()}`}
                 inputMode={field.key === "dateOfBirth" || field.key === "aadhaarNumber" ? "numeric" : undefined}
                 maxLength={field.key === "dateOfBirth" ? 10 : field.key === "aadhaarNumber" ? 14 : undefined}
                 style={{
-                  padding: "10px 12px",
-                  borderRadius: 9,
-                  border: "1px solid rgba(15,23,42,0.14)",
-                  background: "rgba(255,255,255,0.92)",
-                  color: "#0f172a",
-                  fontFamily: field.key === "dateOfBirth" ? APP_MONO_STACK : APP_FONT_STACK,
-                  fontSize: "0.84rem",
+                  padding: "9px 12px",
+                  borderRadius: HK.rSm,
+                  border: `1px solid ${HK.border}`,
+                  background: HK.bgInput,
+                  color: HK.greenBright,
+                  fontFamily: HK.mono,
+                  fontSize: "0.82rem",
                   outline: "none",
+                  caretColor: HK.green,
+                  transition: "border-color 0.15s, box-shadow 0.15s",
                 }}
+                onFocus={(e) => { e.target.style.borderColor = HK.borderActive; e.target.style.boxShadow = HK.glow; }}
+                onBlur={(e) => { e.target.style.borderColor = HK.border; e.target.style.boxShadow = "none"; }}
               />
             </label>
           ))}
+
           {formError && (
-            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.76rem", color: "#b91c1c", fontWeight: 600 }}>
-              {formError}
+            <div style={{ fontSize: "0.72rem", color: HK.red, fontFamily: HK.mono, fontWeight: 600 }}>
+              ✗ {formError}
             </div>
           )}
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 2, fontFamily: APP_FONT_STACK, fontSize: "0.80rem", color: "rgba(15,23,42,0.70)", fontWeight: 600, cursor: "pointer" }}>
+
+          {/* Active client toggle */}
+          <label style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            cursor: "pointer",
+            fontFamily: HK.mono,
+            fontSize: "0.70rem",
+            color: isActiveClient ? HK.greenMid : HK.textMuted,
+            letterSpacing: "0.08em",
+            transition: "color 0.15s",
+          }}>
             <input
               type="checkbox"
               checked={isActiveClient}
               onChange={(event) => setIsActiveClient(event.target.checked)}
-              style={{ width: 15, height: 15 }}
+              style={{ accentColor: HK.green, width: 14, height: 14 }}
             />
-            Active Client
+            active client
           </label>
-          <div style={{ display: "flex", gap: 8 }}>
+
+          {/* Action buttons */}
+          <div style={{ display: "flex", gap: 8, paddingTop: 4 }}>
             <button
               type="submit"
               style={{
-                border: "1px solid rgba(22,163,74,0.34)",
-                borderRadius: 9,
-                background: "rgba(22,163,74,0.12)",
-                color: "#166534",
-                fontFamily: APP_BRAND_STACK,
+                border: `1px solid rgba(0,255,70,0.40)`,
+                borderRadius: HK.rSm,
+                background: "rgba(0,255,70,0.12)",
+                color: HK.greenBright,
+                fontFamily: HK.mono,
                 fontWeight: 700,
-                fontSize: "0.60rem",
-                letterSpacing: "0.14em",
+                fontSize: "0.62rem",
+                letterSpacing: "0.16em",
                 textTransform: "uppercase",
-                padding: "10px 12px",
+                padding: "9px 14px",
                 cursor: "pointer",
+                transition: "all 0.15s",
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,255,70,0.20)"; e.currentTarget.style.boxShadow = HK.glow; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,255,70,0.12)"; e.currentTarget.style.boxShadow = "none"; }}
             >
-              {editingRecordId ? "Update Entry" : "Save Entry"}
+              {editingRecordId ? "▶ Update" : "▶ Save Entry"}
             </button>
             <button
               type="button"
               onClick={() => resetForm(activeSectionId)}
               style={{
-                border: "1px solid rgba(15,23,42,0.18)",
-                borderRadius: 9,
-                background: "rgba(15,23,42,0.05)",
-                color: "rgba(15,23,42,0.72)",
-                fontFamily: APP_BRAND_STACK,
+                border: `1px solid ${HK.border}`,
+                borderRadius: HK.rSm,
+                background: "transparent",
+                color: HK.textMuted,
+                fontFamily: HK.mono,
                 fontWeight: 700,
-                fontSize: "0.60rem",
-                letterSpacing: "0.14em",
+                fontSize: "0.62rem",
+                letterSpacing: "0.16em",
                 textTransform: "uppercase",
-                padding: "10px 12px",
+                padding: "9px 14px",
                 cursor: "pointer",
+                transition: "all 0.15s",
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = HK.textSub; e.currentTarget.style.borderColor = HK.borderStrong; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = HK.textMuted; e.currentTarget.style.borderColor = HK.border; }}
             >
               Clear
             </button>
           </div>
         </form>
 
-      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 14, display: "grid", gap: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK }}>
+        {/* RIGHT — Records list */}
+        <div style={{
+          border: `1px solid ${HK.border}`,
+          borderRadius: HK.rLg,
+          background: HK.bgPanel,
+          padding: 16,
+          display: "grid",
+          gap: 10,
+          alignContent: "start",
+        }}>
+          {/* Records header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", borderBottom: `1px solid ${HK.border}`, paddingBottom: 10 }}>
+            <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: HK.greenDim, fontFamily: HK.mono, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ color: HK.greenMid }}>❯</span>
               Saved {sectionConfig.label} Records
+              <span style={{
+                fontSize: "0.60rem",
+                color: HK.greenMid,
+                background: "rgba(0,255,70,0.10)",
+                border: `1px solid rgba(0,255,70,0.22)`,
+                borderRadius: 4,
+                padding: "1px 6px",
+                fontFamily: HK.mono,
+              }}>
+                {filteredSectionRecords.length}
+              </span>
             </div>
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={`Search ${sectionConfig.label}`}
+              placeholder={`search ${sectionConfig.label.toLowerCase()}...`}
               style={{
-                width: "min(240px, 100%)",
-                padding: "9px 10px",
-                borderRadius: 8,
-                border: "1px solid rgba(15,23,42,0.14)",
-                background: "rgba(255,255,255,0.88)",
-                color: "#0f172a",
-                fontFamily: APP_FONT_STACK,
-                fontSize: "0.82rem",
+                width: "min(220px, 100%)",
+                padding: "7px 10px",
+                borderRadius: HK.rSm,
+                border: `1px solid ${search ? HK.borderStrong : HK.border}`,
+                background: HK.bgInput,
+                color: HK.greenBright,
+                fontFamily: HK.mono,
+                fontSize: "0.74rem",
                 outline: "none",
+                caretColor: HK.green,
+                transition: "border-color 0.15s, box-shadow 0.15s",
               }}
+              onFocus={(e) => { e.target.style.borderColor = HK.borderActive; e.target.style.boxShadow = HK.glow; }}
+              onBlur={(e) => { e.target.style.borderColor = search ? HK.borderStrong : HK.border; e.target.style.boxShadow = "none"; }}
             />
           </div>
-          <div style={{ maxHeight: 460, overflowY: "auto", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 10, background: "rgba(248,250,252,0.84)" }}>
+
+          {/* Records scroll area */}
+          <div style={{ maxHeight: 480, overflowY: "auto", display: "grid", gap: 6 }}>
             {filteredSectionRecords.length === 0 ? (
-              <div style={{ padding: 14, color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}>
-                No entries yet for {sectionConfig.label}.
+              <div style={{ padding: "20px 0", color: HK.textMuted, fontFamily: HK.mono, fontSize: "0.76rem", textAlign: "center", letterSpacing: "0.08em" }}>
+                <div style={{ fontSize: "1.4rem", marginBottom: 8, opacity: 0.4 }}>◫</div>
+                no records for {sectionConfig.label.toLowerCase()}
               </div>
             ) : (
               filteredSectionRecords.map((record) => (
-                <div key={record.id} style={{ padding: "10px 12px", borderBottom: "1px solid rgba(15,23,42,0.08)", display: "grid", gap: 8 }}>
+                <div
+                  key={record.id}
+                  style={{
+                    border: `1px solid ${editingRecordId === record.id ? HK.borderActive : HK.border}`,
+                    borderRadius: HK.rMd,
+                    background: editingRecordId === record.id ? "rgba(0,255,70,0.06)" : HK.bgRow,
+                    padding: "10px 12px",
+                    display: "grid",
+                    gap: 8,
+                    boxShadow: editingRecordId === record.id ? HK.glow : "none",
+                    transition: "border-color 0.15s, box-shadow 0.15s",
+                  }}
+                >
+                  {/* Record meta row */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <div style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(15,23,42,0.54)" }}>
-                      {new Date(record.createdAt).toLocaleString("en-IN")}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ fontFamily: HK.mono, fontSize: "0.64rem", color: HK.textMuted }}>
+                        {new Date(record.createdAt).toLocaleString("en-IN")}
+                      </div>
+                      {record.isActiveClient && (
+                        <span style={{
+                          fontSize: "0.56rem",
+                          fontFamily: HK.mono,
+                          fontWeight: 700,
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          color: HK.greenMid,
+                          background: "rgba(0,255,70,0.10)",
+                          border: `1px solid rgba(0,255,70,0.25)`,
+                          borderRadius: 4,
+                          padding: "2px 6px",
+                        }}>
+                          active
+                        </span>
+                      )}
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button
                         onClick={() => handleEditRecord(record)}
                         style={{
-                          border: "1px solid rgba(37,99,235,0.28)",
-                          borderRadius: 7,
-                          background: "rgba(37,99,235,0.10)",
-                          color: "#1d4ed8",
-                          fontFamily: APP_BRAND_STACK,
+                          border: `1px solid ${HK.borderStrong}`,
+                          borderRadius: HK.rSm,
+                          background: "rgba(0,255,70,0.07)",
+                          color: HK.greenMid,
+                          fontFamily: HK.mono,
                           fontSize: "0.56rem",
                           fontWeight: 700,
-                          letterSpacing: "0.10em",
+                          letterSpacing: "0.12em",
                           textTransform: "uppercase",
                           cursor: "pointer",
-                          padding: "6px 8px",
+                          padding: "5px 9px",
+                          transition: "all 0.15s",
                         }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = HK.greenFaint; e.currentTarget.style.boxShadow = HK.glow; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,255,70,0.07)"; e.currentTarget.style.boxShadow = "none"; }}
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteRecord(record)}
                         style={{
-                          border: "1px solid rgba(220,38,38,0.28)",
-                          borderRadius: 7,
-                          background: "rgba(220,38,38,0.10)",
-                          color: "#991b1b",
-                          fontFamily: APP_BRAND_STACK,
+                          border: `1px solid ${HK.redBorder}`,
+                          borderRadius: HK.rSm,
+                          background: HK.redBg,
+                          color: HK.red,
+                          fontFamily: HK.mono,
                           fontSize: "0.56rem",
                           fontWeight: 700,
-                          letterSpacing: "0.10em",
+                          letterSpacing: "0.12em",
                           textTransform: "uppercase",
                           cursor: "pointer",
-                          padding: "6px 8px",
+                          padding: "5px 9px",
+                          transition: "all 0.15s",
                         }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,60,60,0.14)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = HK.redBg; }}
                       >
                         Delete
                       </button>
                     </div>
                   </div>
-                  <div style={{ display: "grid", gap: 5 }}>
-                    <div className="csc-record-row">
-                      <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.52)", fontWeight: 600 }}>Active Client</span>
-                      <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: record.isActiveClient ? "#166534" : "rgba(15,23,42,0.72)", fontWeight: 600 }}>
-                        {record.isActiveClient ? "Yes" : "No"}
-                      </span>
-                    </div>
+
+                  {/* Record fields */}
+                  <div style={{ display: "grid", gap: 4 }}>
                     {sectionConfig.fields.map((field) => (
-                      <div key={`${record.id}_${field.key}`} className="csc-record-row">
-                        <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.52)", fontWeight: 600 }}>{field.label}</span>
-                        <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a" }}>
-                          {record.values[field.key] || "-"}
+                      <div key={`${record.id}_${field.key}`} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                        <span style={{ fontFamily: HK.mono, fontSize: "0.62rem", color: HK.textMuted, minWidth: 110, flexShrink: 0, letterSpacing: "0.04em" }}>
+                          {field.label.toLowerCase()}
+                        </span>
+                        <span style={{ fontFamily: HK.mono, fontSize: "0.78rem", color: record.values[field.key] ? HK.greenBright : HK.textFaint }}>
+                          {record.values[field.key] || "—"}
                         </span>
                       </div>
                     ))}
