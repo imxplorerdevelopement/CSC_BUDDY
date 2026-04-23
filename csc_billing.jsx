@@ -3,42 +3,77 @@ import { dbLoad, dbSave, supabase } from "./supabase.js";
 import { DS } from "./design-tokens.js";
 import { DocumentToolsWorkspace } from "./src/workspaces/document-tools/DocumentToolsWorkspace.jsx";
 import { ServicesDashboardWorkspace } from "./src/workspaces/services-dashboard/ServicesDashboardWorkspace.jsx";
+import { SERVICE_REGISTRY, SERVICE_CATEGORIES } from "./src/workspaces/services-dashboard/registry.js";
 
-const INITIAL_SERVICES = [
-  { id: "aadhaar", name: "Aadhaar Update / Correction", category: "Government ID", price: 0, unit: "per application", variable: false },
-  { id: "pan_new", name: "PAN Card (New)", category: "Government ID", price: 0, unit: "per application", variable: false },
-  { id: "pan_correction", name: "PAN Card (Correction)", category: "Government ID", price: 0, unit: "per application", variable: false },
-  { id: "passport", name: "Passport Form Filling", category: "Government ID", price: 0, unit: "per application", variable: false },
-  { id: "voter_id", name: "Voter ID Card", category: "Government ID", price: 0, unit: "per application", variable: false },
-  { id: "driving_license", name: "Driving License", category: "Government ID", price: 0, unit: "per application", variable: false },
-  { id: "income_cert", name: "Income Certificate", category: "Certificates", price: 0, unit: "per certificate", variable: false },
-  { id: "caste_cert", name: "Caste Certificate", category: "Certificates", price: 0, unit: "per certificate", variable: false },
-  { id: "domicile_cert", name: "Domicile Certificate", category: "Certificates", price: 0, unit: "per certificate", variable: false },
-  { id: "date_cert", name: "Date Certificate", category: "Certificates", price: 0, unit: "per certificate", variable: false },
-  { id: "life_cert", name: "Life Certificate", category: "Certificates", price: 0, unit: "per certificate", variable: false },
-  { id: "ayushman", name: "Ayushman Card", category: "Certificates", price: 0, unit: "per card", variable: false },
-  { id: "affidavit", name: "Affidavit / Stamp Paper", category: "Legal & Docs", price: 0, unit: "per document", variable: true },
-  { id: "gazette", name: "Gazette Notification", category: "Legal & Docs", price: 0, unit: "per application", variable: true },
-  { id: "rent_agreement", name: "Rent Agreement", category: "Legal & Docs", price: 0, unit: "per agreement", variable: true },
-  { id: "deed", name: "Deed / Agreement Work", category: "Legal & Docs", price: 0, unit: "per document", variable: true },
-  { id: "ration_card", name: "Ration Card", category: "Government Services", price: 0, unit: "per application", variable: false },
-  { id: "pf", name: "Provident Fund (PF)", category: "Government Services", price: 0, unit: "per application", variable: false },
-  { id: "pension", name: "Pension", category: "Government Services", price: 0, unit: "per application", variable: false },
-  { id: "resume", name: "Resume / Biodata Making", category: "Typing & Print", price: 0, unit: "per resume", variable: false },
-  { id: "typing_hindi", name: "Hindi Typing", category: "Typing & Print", price: 0, unit: "per page", variable: true },
-  { id: "typing_english", name: "English Typing", category: "Typing & Print", price: 0, unit: "per page", variable: true },
-  { id: "photocopy", name: "Photocopy", category: "Typing & Print", price: 0, unit: "per page", variable: true },
-  { id: "lamination", name: "Lamination", category: "Typing & Print", price: 0, unit: "per piece", variable: false },
-  { id: "pvc_card", name: "PVC Card (Aadhaar/PAN)", category: "Typing & Print", price: 0, unit: "per card", variable: false },
-];
+// Map registry category IDs to the billing category names used by
+// CATEGORY_DETAIL_SCHEMA_IDS and the service-entry dropdown grouping.
+const REGISTRY_CAT_TO_BILLING = {
+  pan:          "PAN Card",
+  aadhaar:      "Aadhaar Card",
+  certificates: "Certificates",
+  more_gov_ids: "Government IDs",
+  in_house:     "In House",
+  agreements:   "Agreements & Affidavits",
+};
 
-const CATEGORIES = ["Government ID", "Certificates", "Legal & Docs", "Government Services", "Typing & Print"];
+// Variable pricing: services whose final amount is entered by the operator.
+const VARIABLE_SERVICE_IDS = new Set([
+  "inhouse_stamp_paper",
+  "inhouse_typing_english",
+  "inhouse_typing_hindi",
+  "legal_rent_agreement",
+  "legal_sale_agreement",
+  "legal_indemnity_bond",
+  "legal_affidavits",
+]);
+
+// Unit labels per service id; defaults to "per application".
+const SERVICE_UNIT_MAP = {
+  inhouse_photocopy_bw:    "per page",
+  inhouse_photocopy_color: "per page",
+  inhouse_print_bw:        "per page",
+  inhouse_print_color:     "per page",
+  inhouse_typing_english:  "per job",
+  inhouse_typing_hindi:    "per job",
+  inhouse_passport_photo:  "per set",
+  inhouse_pvc_card:        "per card",
+  inhouse_lamination:      "per piece",
+  inhouse_stamp_paper:     "per document",
+  legal_rent_agreement:    "per agreement",
+  legal_sale_agreement:    "per agreement",
+  legal_indemnity_bond:    "per document",
+  legal_affidavits:        "per document",
+  cert_income:             "per certificate",
+  cert_death:              "per certificate",
+  cert_caste:              "per certificate",
+  cert_domicile:           "per certificate",
+  cert_marriage:           "per certificate",
+  cert_age:                "per certificate",
+  cert_disability:         "per certificate",
+};
+
+const INITIAL_SERVICES = SERVICE_REGISTRY.map((entry) => ({
+  id:       entry.id,
+  name:     entry.label,
+  category: REGISTRY_CAT_TO_BILLING[entry.categoryId] || entry.categoryId,
+  price:    0,
+  unit:     SERVICE_UNIT_MAP[entry.id] || "per application",
+  variable: VARIABLE_SERVICE_IDS.has(entry.id),
+}));
+
+const CATEGORIES = SERVICE_CATEGORIES.map((c) => REGISTRY_CAT_TO_BILLING[c.id] || c.id);
 const CAT_COLORS = {
-  "Government ID":       "#2563eb",
-  "Certificates":        "#0ea5e9",
-  "Legal & Docs":        "#1d4ed8",
-  "Government Services": "#3b82f6",
-  "Typing & Print":      "#60a5fa",
+  "PAN Card":               "#2563eb",
+  "Aadhaar Card":           "#0284c7",
+  "Certificates":           "#0ea5e9",
+  "Government IDs":         "#1d4ed8",
+  "In House":               "#6d28d9",
+  "Agreements & Affidavits":"#1540b0",
+  // legacy fallbacks for any old stored ticket data
+  "Government ID":          "#2563eb",
+  "Legal & Docs":           "#1d4ed8",
+  "Government Services":    "#3b82f6",
+  "Typing & Print":         "#60a5fa",
 };
 
 const OPERATOR_DIRECTORY = [
@@ -49,7 +84,7 @@ const OPERATOR_DIRECTORY = [
     desk: "Front Counter",
     status: "Available",
     focus: "Fast walk-in intake and ID submissions",
-    specialties: ["Government ID", "Certificates"],
+    specialties: ["PAN Card", "Aadhaar Card", "Certificates"],
   },
   {
     id: "navneet_mam",
@@ -58,7 +93,7 @@ const OPERATOR_DIRECTORY = [
     desk: "Verification Counter",
     status: "Available",
     focus: "Corrections, legal work, and follow-up cases",
-    specialties: ["Legal & Docs", "Government Services"],
+    specialties: ["Agreements & Affidavits", "Government IDs", "Certificates"],
   },
 ];
 const OPERATORS = OPERATOR_DIRECTORY.map((operator) => operator.name);
@@ -140,11 +175,17 @@ const SERVICE_DETAIL_LIBRARY = {
   },
 };
 const CATEGORY_DETAIL_SCHEMA_IDS = {
-  "Government ID": "government_id",
-  "Certificates": "certificate",
-  "Legal & Docs": "legal_docs",
-  "Government Services": "government_service",
-  "Typing & Print": "typing_print",
+  "PAN Card":               "government_id",
+  "Aadhaar Card":           "government_id",
+  "Certificates":           "certificate",
+  "Government IDs":         "government_id",
+  "In House":               "typing_print",
+  "Agreements & Affidavits":"legal_docs",
+  // legacy names kept for any stored tickets that reference them
+  "Government ID":          "government_id",
+  "Legal & Docs":           "legal_docs",
+  "Government Services":    "government_service",
+  "Typing & Print":         "typing_print",
 };
 
 const PHONE_REGEX = /^[0-9]{10}$/;
@@ -248,7 +289,6 @@ const STORAGE_KEYS = {
 const TAB_CONFIG = [
   { id: "home", label: "Dashboard Home", shortLabel: "HM", navGroup: "home" },
   { id: "entry", label: "New Service Entry", shortLabel: "NS", navGroup: "primary" },
-  { id: "rates", label: "Rate List", shortLabel: "RL", navGroup: "primary" },
   { id: "monthly", label: "Analytics", shortLabel: "AN", navGroup: "primary" },
   { id: "b2b", label: "Vendor Dashboard", shortLabel: "VD", navGroup: "panel" },
   { id: "database", label: "Database", shortLabel: "DB", navGroup: "panel" },
@@ -269,20 +309,6 @@ const HOME_NAV_BUTTONS = [
         <path d="M9 2.5h6v2H9z" />
         <path d="M12 9v6" />
         <path d="M9 12h6" />
-      </svg>
-    ),
-  },
-  {
-    id: "rates",
-    label: "Rate List",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
-        <rect x="4.5" y="3.5" width="15" height="17" rx="2.5" />
-        <path d="M8 7.5h8" />
-        <path d="M8 11.5h5.5" />
-        <path d="M9 16.5h6" />
-        <path d="M10.8 9.8 9 12.2h2.2l-1.2 1.8" />
-        <path d="M8.6 9.8h3.8" />
       </svg>
     ),
   },
@@ -365,7 +391,7 @@ const HOME_NAV_BUTTONS = [
     ),
   },
 ];
-const CORE_WORKSPACE_TAB_IDS = ["entry", "rates", "monthly"];
+const CORE_WORKSPACE_TAB_IDS = ["entry", "monthly"];
 const TOOL_WORKSPACE_TAB_IDS = ["b2b", "database", "log", "quick_links", "doc_tools", "services_dashboard"];
 const DATABASE_SECTION_CONFIG = [
   {
@@ -706,7 +732,7 @@ function getOperatorTicketMetrics(tickets, operatorName) {
 function getDefaultQuantityModeForService(service) {
   const id = String(service?.id || "").trim();
   const unit = String(service?.unit || "").toLowerCase();
-  if (["resume", "passport", "gazette", "rent_agreement", "deed", "affidavit"].includes(id)) return "fixed";
+  if (["legal_rent_agreement", "legal_sale_agreement", "legal_indemnity_bond", "legal_affidavits", "inhouse_stamp_paper"].includes(id)) return "fixed";
   if (unit.includes("page") || unit.includes("piece")) return "multiple";
   if (unit.includes("card") || unit.includes("application") || unit.includes("certificate") || unit.includes("document") || unit.includes("agreement")) return "people";
   return "fixed";
@@ -1180,6 +1206,7 @@ function toStructuredTicket(ticket) {
       paidTotal,
       pendingBalance,
       status: paymentStatus,
+      vendorAmount: Number.isFinite(Number(ticket.vendorAmount)) ? Math.max(0, Number(ticket.vendorAmount)) : null,
       breakdown: {
         cash,
         upi,
@@ -1477,15 +1504,20 @@ function hydrateServices(storedServices) {
       .map((service) => [service.id, service])
   );
 
+  // Merge saved price/settings onto registry defaults (preserves operator-set rates).
   const mergedDefaults = INITIAL_SERVICES.map((service) => (
     savedById.has(service.id) ? normalizeService({ ...service, ...savedById.get(service.id) }) : normalizeService(service)
   ));
 
+  // Only keep operator-created custom services — not old built-in IDs that no
+  // longer exist in the registry (those would appear as unclickable orphans).
   const customServices = storedServices.filter((service) => (
     service &&
     typeof service === "object" &&
     typeof service.id === "string" &&
-    !defaultIds.has(service.id)
+    !defaultIds.has(service.id) &&
+    String(service.name || "").trim() !== "" &&
+    service._custom === true
   ));
 
   return [...mergedDefaults, ...customServices.map((service) => normalizeService(service))];
@@ -2579,7 +2611,8 @@ function QuickLinksWorkspace({
   );
 }
 
-function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpsertRecord, onDeleteRecord }) {
+function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpsertRecord, onDeleteRecord, cloudSyncState = "local_only" }) {
+  const isOffline = cloudSyncState === "local_only";
   const [activeSectionId, setActiveSectionId] = useState(() => DATABASE_SECTION_CONFIG[0].id);
   const [formValues, setFormValues] = useState(() => createEmptyDatabaseRecordValues(DATABASE_SECTION_CONFIG[0].id));
   const [isActiveClient, setIsActiveClient] = useState(false);
@@ -2857,6 +2890,149 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
     closeAccessCodeDialog();
     onAuthorized?.();
   };
+
+  if (isOffline) {
+    return (
+      <div style={{ display: "grid", gap: 14 }}>
+        {/* Header bar — same chrome as online, export button dimmed */}
+        <div style={{ border: "1px solid rgba(13,27,42,0.11)", borderRadius: 14, background: "#ffffff", padding: 12 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+            <button
+              type="button"
+              disabled
+              style={{
+                border: "1px solid rgba(21,128,61,0.14)",
+                borderRadius: 8,
+                background: "#ffffff",
+                color: "rgba(22,101,52,0.35)",
+                fontFamily: APP_BRAND_STACK,
+                fontSize: "0.76rem",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                cursor: "not-allowed",
+                padding: "9px 14px",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                opacity: 0.45,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect width="16" height="16" rx="3" fill="#217346" opacity="0.4"/>
+                <path d="M2 4h5v1.5H2V4zm0 2.5h5V8H2V6.5zm0 2.5h5v1.5H2V9zm6-5h6v1.5H8V4zm0 2.5h6V8H8V6.5zm0 2.5h6v1.5H8V9zm-6 2.5h12V13H2v-1.5z" fill="white" opacity="0.5"/>
+              </svg>
+              Export to Excel
+            </button>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {DATABASE_SECTION_CONFIG.map((section, i) => (
+                <div
+                  key={section.id}
+                  style={{
+                    border: i === 0 ? "1px solid rgba(26,86,219,0.18)" : "1px solid rgba(13,27,42,0.08)",
+                    borderRadius: 8,
+                    background: i === 0 ? "rgba(26,86,219,0.05)" : "#ffffff",
+                    color: i === 0 ? "rgba(21,64,176,0.45)" : "rgba(13,27,42,0.35)",
+                    padding: "8px 12px",
+                    fontFamily: APP_BRAND_STACK,
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    opacity: 0.6,
+                  }}
+                >
+                  <span>{section.label}</span>
+                  <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(13,27,42,0.28)" }}>—</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Offline notice */}
+        <div style={{
+          border: "1px solid rgba(180,83,9,0.20)",
+          borderRadius: 14,
+          background: "rgba(255,251,235,0.80)",
+          padding: "18px 20px",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 14,
+        }}>
+          <div style={{
+            flexShrink: 0,
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: "rgba(180,83,9,0.10)",
+            border: "1px solid rgba(180,83,9,0.18)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 1,
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(180,83,9,0.75)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 6s4-2 11-2 11 2 11 2"/>
+              <path d="M5 10s2.5-1 7-1 7 1 7 1"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+              <path d="M10.72 14.28A2 2 0 0 1 12 14a2 2 0 0 1 0 4"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.90rem", fontWeight: 700, color: "#92400e", marginBottom: 4 }}>
+              Supabase not connected
+            </div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "rgba(120,53,15,0.80)", lineHeight: 1.55, maxWidth: 480 }}>
+              The database requires a live Supabase connection. Add your <code style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", background: "rgba(180,83,9,0.08)", padding: "1px 5px", borderRadius: 4 }}>VITE_SUPABASE_URL</code> and <code style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", background: "rgba(180,83,9,0.08)", padding: "1px 5px", borderRadius: 4 }}>VITE_SUPABASE_ANON_KEY</code> environment variables, then reload the app. Records will load automatically once connected.
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton grid matching the real layout */}
+        <div className="csc-db-main-grid">
+          {/* Left: skeleton form */}
+          <div style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 14, background: "rgba(255,255,255,0.80)", padding: 14, display: "grid", gap: 12, alignContent: "start" }}>
+            <div style={{ height: 10, width: 120, borderRadius: 6, background: "rgba(15,23,42,0.07)" }} />
+            {[100, 80, 100, 80, 100].map((w, i) => (
+              <div key={i} style={{ display: "grid", gap: 6 }}>
+                <div style={{ height: 8, width: `${w * 0.55}%`, borderRadius: 4, background: "rgba(15,23,42,0.06)" }} />
+                <div style={{ height: 38, borderRadius: 8, background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.07)" }} />
+              </div>
+            ))}
+            <div style={{ height: 38, borderRadius: 8, background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.06)", marginTop: 4 }} />
+          </div>
+
+          {/* Right: skeleton records list */}
+          <div style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 14, background: "rgba(255,255,255,0.80)", padding: 14, display: "grid", gap: 10, alignContent: "start" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <div style={{ height: 10, width: 140, borderRadius: 6, background: "rgba(15,23,42,0.07)" }} />
+              <div style={{ height: 32, width: 160, borderRadius: 8, background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.07)" }} />
+            </div>
+            <div style={{ border: "1px solid rgba(15,23,42,0.08)", borderRadius: 10, background: "rgba(248,250,252,0.60)", overflow: "hidden" }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} style={{ padding: "12px 14px", borderBottom: i < 3 ? "1px solid rgba(15,23,42,0.06)" : "none", display: "grid", gap: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ height: 8, width: 110, borderRadius: 4, background: "rgba(15,23,42,0.07)" }} />
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ height: 26, width: 42, borderRadius: 7, background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.10)" }} />
+                      <div style={{ height: 26, width: 46, borderRadius: 7, background: "rgba(220,38,38,0.05)", border: "1px solid rgba(220,38,38,0.08)" }} />
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {[80, 55, 70, 45].map((w, j) => (
+                      <div key={j} style={{ height: 8, width: `${w}%`, borderRadius: 4, background: "rgba(15,23,42,0.05)" }} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -3223,6 +3399,393 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
   );
 }
 
+// ---------------------------------------------------------------------------
+// HackerUnlockAnimation
+// Displayed between "Unlock" click and database reveal. Runs hacker-terminal
+// theatrics while the real API request completes in parallel.
+// phase: "running" | "success" | "error"
+// ---------------------------------------------------------------------------
+const HACKER_BOOT_LINES = [
+  "$ init secure_handshake --proto=TLSv1.3",
+  "$ connect supabase://csc-db.internal:5432",
+  "Resolving host... done",
+  "$ AUTH verify --2fa --operator-key",
+  "Reading operator token from vault...",
+  "$ decrypt index.csc.db --algo=AES-256-GCM",
+  "Checking certificate chain... OK",
+  "$ scan --deep records/*.enc",
+  "Mounting encrypted partition /db/csc_records",
+  "Validating operator code... ████████ OK",
+  "$ handshake supabase --credentials=env",
+  "Supabase handshake established ✓",
+  "$ load schema csc_buddy.public.*",
+  "Fetching row-level security policies...",
+  "Decrypting database index... ██████████ OK",
+  "$ verify --integrity sha256:a3f9c1...",
+  "Integrity check passed ✓",
+  "Mounting CSC records... done",
+  "$ grant access --scope=operator --level=full",
+];
+
+const HACKER_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*<>/\\|{}[]";
+
+function seededRand(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+function HackerUnlockAnimation({ phase, onDone }) {
+  const [visibleLines, setVisibleLines] = useState([]);
+  const [scrambleText, setScrambleText] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState(0);
+  const [cursor, setCursor] = useState(true);
+  const [showGranted, setShowGranted] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
+  const timers = React.useRef([]);
+  const intervals = React.useRef([]);
+  const lineIndexRef = React.useRef(0);
+  const rand = React.useRef(seededRand(42));
+
+  const clear = () => {
+    timers.current.forEach(clearTimeout);
+    intervals.current.forEach(clearInterval);
+    timers.current = [];
+    intervals.current = [];
+  };
+
+  React.useEffect(() => {
+    return () => clear();
+  }, []);
+
+  // Cursor blink
+  React.useEffect(() => {
+    const id = setInterval(() => setCursor((c) => !c), 530);
+    intervals.current.push(id);
+    return () => clearInterval(id);
+  }, []);
+
+  // Scrolling log lines
+  React.useEffect(() => {
+    if (phase !== "running" && phase !== "success") return;
+    const addLine = () => {
+      const idx = lineIndexRef.current;
+      if (idx >= HACKER_BOOT_LINES.length) return;
+      lineIndexRef.current = idx + 1;
+      setVisibleLines((prev) => {
+        const next = [...prev, { text: HACKER_BOOT_LINES[idx], id: idx }];
+        return next.slice(-12);
+      });
+    };
+    addLine();
+    const id = setInterval(() => {
+      addLine();
+      setProgress((p) => Math.min(p + rand.current() * 8 + 3, 94));
+    }, 220);
+    intervals.current.push(id);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  // Scramble text effect on a rotating string
+  React.useEffect(() => {
+    if (phase !== "running") return;
+    const targets = ["DECRYPTING...", "AUTH CHECK..", "VALIDATING..", "HANDSHAKE...", "MOUNTING DB."];
+    let targetIdx = 0;
+    let charPos = 0;
+    const id = setInterval(() => {
+      const target = targets[targetIdx % targets.length];
+      let out = "";
+      for (let i = 0; i < target.length; i++) {
+        if (i < charPos) {
+          out += target[i];
+        } else {
+          out += HACKER_CHARS[Math.floor(rand.current() * HACKER_CHARS.length)];
+        }
+      }
+      setScrambleText(out);
+      charPos++;
+      if (charPos > target.length + 4) {
+        charPos = 0;
+        targetIdx++;
+      }
+    }, 55);
+    intervals.current.push(id);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  // Stage progression (for the segmented progress bar labels)
+  React.useEffect(() => {
+    if (phase !== "running" && phase !== "success") return;
+    const delays = [0, 400, 850, 1300, 1700];
+    delays.forEach((d, i) => {
+      const id = setTimeout(() => setStage(i + 1), d);
+      timers.current.push(id);
+    });
+  }, [phase]);
+
+  // Success sequence
+  React.useEffect(() => {
+    if (phase !== "success") return;
+    clear();
+    setProgress(100);
+    const t1 = setTimeout(() => setShowGranted(true), 280);
+    const t2 = setTimeout(() => setFadeOut(true), 1200);
+    const t3 = setTimeout(() => onDone?.(), 1700);
+    timers.current = [t1, t2, t3];
+  }, [phase]);
+
+  const stageLabels = ["INIT", "AUTH", "DECRYPT", "MOUNT", "VERIFY"];
+
+  return (
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 130,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "rgba(0,0,0,0.92)",
+      opacity: fadeOut ? 0 : 1,
+      transition: fadeOut ? "opacity 0.5s ease" : "opacity 0.2s ease",
+    }}>
+      {/* Scanlines overlay */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,70,0.025) 2px, rgba(0,255,70,0.025) 4px)",
+        pointerEvents: "none",
+        zIndex: 1,
+      }} />
+
+      {/* Main terminal panel */}
+      <div style={{
+        position: "relative",
+        zIndex: 2,
+        width: "min(600px, 94vw)",
+        background: "rgba(0,10,2,0.97)",
+        border: showGranted ? "1px solid rgba(0,255,70,0.7)" : "1px solid rgba(0,255,70,0.28)",
+        borderRadius: 12,
+        boxShadow: showGranted
+          ? "0 0 0 1px rgba(0,255,70,0.18), 0 0 60px rgba(0,255,70,0.22), 0 0 120px rgba(0,255,70,0.10), inset 0 0 40px rgba(0,255,70,0.04)"
+          : "0 0 0 1px rgba(0,255,70,0.08), 0 0 40px rgba(0,255,70,0.12), inset 0 0 20px rgba(0,255,70,0.03)",
+        transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+        fontFamily: "'Courier New', 'Consolas', 'Monaco', monospace",
+        overflow: "hidden",
+      }}>
+        {/* Terminal title bar */}
+        <div style={{
+          background: "rgba(0,255,70,0.07)",
+          borderBottom: "1px solid rgba(0,255,70,0.14)",
+          padding: "8px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+        }}>
+          <div style={{ display: "flex", gap: 6 }}>
+            {["rgba(255,95,86,0.7)", "rgba(255,189,46,0.7)", "rgba(39,201,63,0.7)"].map((c, i) => (
+              <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
+            ))}
+          </div>
+          <span style={{ fontSize: "0.64rem", color: "rgba(0,255,70,0.55)", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+            CSC-BUDDY SECURE TERMINAL — v2.1.0
+          </span>
+          <span style={{ fontSize: "0.60rem", color: "rgba(0,255,70,0.35)", letterSpacing: "0.10em" }}>
+            {showGranted ? "SESSION ACTIVE" : "AUTHENTICATING"}
+          </span>
+        </div>
+
+        <div style={{ padding: "14px 16px", minHeight: 280 }}>
+          {/* Scrolling log */}
+          <div style={{ marginBottom: 14, minHeight: 180, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            {visibleLines.map((line, i) => {
+              const isNew = i === visibleLines.length - 1;
+              return (
+                <div key={line.id} style={{
+                  fontSize: "0.72rem",
+                  lineHeight: 1.7,
+                  color: line.text.startsWith("$") ? "rgba(0,255,70,0.95)" : "rgba(0,255,70,0.55)",
+                  fontWeight: line.text.startsWith("$") ? 600 : 400,
+                  opacity: isNew ? 1 : Math.max(0.25, 1 - (visibleLines.length - 1 - i) * 0.07),
+                  animation: isNew ? "termFadeIn 0.12s ease-out" : "none",
+                }}>
+                  {line.text.startsWith("$") ? (
+                    <span>
+                      <span style={{ color: "rgba(0,255,70,0.40)" }}>❯ </span>
+                      {line.text.slice(2)}
+                    </span>
+                  ) : (
+                    <span style={{ paddingLeft: 14 }}>{line.text}</span>
+                  )}
+                </div>
+              );
+            })}
+            {/* Blinking cursor line */}
+            {!showGranted && (
+              <div style={{ fontSize: "0.72rem", color: "rgba(0,255,70,0.95)", lineHeight: 1.7 }}>
+                <span style={{ color: "rgba(0,255,70,0.40)" }}>❯ </span>
+                <span style={{ letterSpacing: "0.08em" }}>{scrambleText}</span>
+                <span style={{
+                  display: "inline-block",
+                  width: 7,
+                  height: 13,
+                  background: cursor ? "rgba(0,255,70,0.9)" : "transparent",
+                  marginLeft: 2,
+                  verticalAlign: "middle",
+                  transition: "background 0.1s",
+                }} />
+              </div>
+            )}
+          </div>
+
+          {/* Stage progress bar */}
+          {!showGranted && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                {stageLabels.map((label, i) => (
+                  <div key={label} style={{
+                    flex: 1,
+                    height: 3,
+                    borderRadius: 2,
+                    background: stage > i ? "rgba(0,255,70,0.80)" : "rgba(0,255,70,0.10)",
+                    transition: "background 0.3s ease",
+                    boxShadow: stage > i ? "0 0 6px rgba(0,255,70,0.5)" : "none",
+                  }} />
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {stageLabels.map((label, i) => (
+                  <div key={label} style={{
+                    flex: 1,
+                    textAlign: "center",
+                    fontSize: "0.52rem",
+                    letterSpacing: "0.10em",
+                    color: stage > i ? "rgba(0,255,70,0.70)" : "rgba(0,255,70,0.22)",
+                    transition: "color 0.3s ease",
+                  }}>
+                    {label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Progress bar */}
+          {!showGranted && (
+            <div style={{
+              background: "rgba(0,255,70,0.07)",
+              border: "1px solid rgba(0,255,70,0.14)",
+              borderRadius: 4,
+              height: 6,
+              overflow: "hidden",
+              marginBottom: 10,
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${progress}%`,
+                background: "linear-gradient(90deg, rgba(0,200,50,0.7) 0%, rgba(0,255,70,0.95) 100%)",
+                borderRadius: 4,
+                transition: "width 0.35s ease",
+                boxShadow: "0 0 8px rgba(0,255,70,0.6)",
+              }} />
+            </div>
+          )}
+
+          {/* Bottom status line */}
+          {!showGranted && (
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "0.60rem",
+              color: "rgba(0,255,70,0.38)",
+              letterSpacing: "0.10em",
+            }}>
+              <span>SUPABASE://CSC-DB.INTERNAL</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+          )}
+
+          {/* ACCESS GRANTED reveal */}
+          {showGranted && (
+            <div style={{
+              textAlign: "center",
+              padding: "20px 0 10px",
+              animation: "grantedReveal 0.4s ease-out",
+            }}>
+              <div style={{
+                fontSize: "2.2rem",
+                fontWeight: 900,
+                color: "rgba(0,255,70,1)",
+                letterSpacing: "0.18em",
+                textShadow: "0 0 20px rgba(0,255,70,0.8), 0 0 50px rgba(0,255,70,0.4), 0 0 90px rgba(0,255,70,0.2)",
+                marginBottom: 8,
+                lineHeight: 1,
+              }}>
+                ACCESS GRANTED
+              </div>
+              <div style={{
+                fontSize: "0.68rem",
+                color: "rgba(0,255,70,0.60)",
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                marginBottom: 16,
+              }}>
+                DATABASE UNLOCKED — OPERATOR SESSION ACTIVE
+              </div>
+              <div style={{
+                width: "100%",
+                height: 1,
+                background: "linear-gradient(90deg, transparent, rgba(0,255,70,0.5), transparent)",
+                marginBottom: 16,
+              }} />
+              <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "rgba(0,255,70,0.8)",
+                    boxShadow: "0 0 8px rgba(0,255,70,0.7)",
+                    animation: `dotPulse 0.6s ease ${i * 0.1}s both`,
+                  }} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom glow strip */}
+        <div style={{
+          height: 2,
+          background: showGranted
+            ? "linear-gradient(90deg, transparent, rgba(0,255,70,0.9), transparent)"
+            : "linear-gradient(90deg, transparent, rgba(0,255,70,0.35), transparent)",
+          transition: "background 0.3s ease",
+        }} />
+      </div>
+
+      <style>{`
+        @keyframes termFadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes grantedReveal {
+          from { opacity: 0; transform: scale(0.94); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes dotPulse {
+          0%   { opacity: 0; transform: scale(0.4); }
+          60%  { opacity: 1; transform: scale(1.2); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function DatabaseAccessModal({ onClose, onVerify }) {
   const [securityCode, setSecurityCode] = useState("");
   const [authCode, setAuthCode] = useState("");
@@ -3250,7 +3813,7 @@ function DatabaseAccessModal({ onClose, onVerify }) {
         setError(result?.message || "Verification failed.");
         return;
       }
-      onClose?.();
+      // onVerify signals success; animation+close is handled by the parent
     } finally {
       setChecking(false);
     }
@@ -3301,7 +3864,8 @@ function DatabaseAccessModal({ onClose, onVerify }) {
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
           <button
             onClick={onClose}
-            style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 10, background: "rgba(15,23,42,0.06)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", padding: "9px 12px" }}
+            disabled={checking}
+            style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 10, background: "rgba(15,23,42,0.06)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: checking ? "not-allowed" : "pointer", padding: "9px 12px", opacity: checking ? 0.4 : 1 }}
           >
             Cancel
           </button>
@@ -3609,11 +4173,11 @@ function RateCard({ services, setServices }) {
   const [search, setSearch] = useState("");
   const [addingCustom, setAddingCustom] = useState(false);
   const [customName, setCustomName] = useState("");
-  const [customCat, setCustomCat] = useState("Typing & Print");
+  const [customCat, setCustomCat] = useState("In House");
   const [customPrice, setCustomPrice] = useState("");
   const [customUnit, setCustomUnit] = useState("per service");
   const [customQuantityMode, setCustomQuantityMode] = useState("fixed");
-  const [customDetailSchemaId, setCustomDetailSchemaId] = useState(getDefaultDetailSchemaId("Typing & Print"));
+  const [customDetailSchemaId, setCustomDetailSchemaId] = useState(getDefaultDetailSchemaId("In House"));
   const [customVariable, setCustomVariable] = useState(false);
 
   const updateService = (id, updates) => {
@@ -3638,6 +4202,7 @@ function RateCard({ services, setServices }) {
       variable: customVariable,
       quantityMode: customQuantityMode,
       detailSchemaId: customDetailSchemaId,
+      _custom: true,
     });
     setServices((prev) => [...prev, newService]);
     setCustomName("");
@@ -3895,7 +4460,7 @@ function RateCard({ services, setServices }) {
       {CATEGORIES.map((cat) => {
         const catServices = services.filter((s) => s.category === cat);
         if (catServices.length === 0) return null;
-        const color = CAT_COLORS[cat];
+        const color = CAT_COLORS[cat] || "#1a56db";
         const rgb = color.replace("#","").match(/.{2}/g).map(h=>parseInt(h,16)).join(",");
         return (
           <div key={cat} style={{
@@ -4574,6 +5139,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   });
   const [paymentCash, setPaymentCash] = useState(() => draftSeed.paymentCash || "");
   const [paymentUpi, setPaymentUpi] = useState(() => draftSeed.paymentUpi || "");
+  const [ticketTotal, setTicketTotal] = useState(() => draftSeed.ticketTotal ?? "");
+  const [vendorAmount, setVendorAmount] = useState(() => draftSeed.vendorAmount ?? "");
   const [docName, setDocName] = useState(() => draftSeed.docName || "");
   const [docRequired, setDocRequired] = useState(() => (
     typeof draftSeed.docRequired === "boolean" ? draftSeed.docRequired : true
@@ -4650,12 +5217,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       : {})
     : {};
 
-  const total = items.reduce((sum, it) => sum + it.amount, 0);
+  const total = Math.max(0, Number(ticketTotal) || 0);
   const cashCollected = Math.max(0, Number(paymentCash) || 0);
   const upiCollected = Math.max(0, Number(paymentUpi) || 0);
   const paidTotal = cashCollected + upiCollected;
   const pendingBalance = Math.max(total - paidTotal, 0);
-  const isOverpaid = paidTotal > total;
+  const isOverpaid = total > 0 && paidTotal > total;
   const requiredDocsCount = documents.filter((doc) => doc.required).length;
   const submittedRequiredDocsCount = documents.filter((doc) => doc.required && doc.submitted).length;
   const uniqueServiceItems = useMemo(() => {
@@ -4676,8 +5243,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     [uniqueServiceItems, documents]
   );
   const sanitizePhone = (value) => value.replace(/\D/g, "").slice(0, 10);
-  const hasOnlyZeroPricedItems = items.length > 0 && total === 0;
-  const canSaveTicket = items.length > 0 && !isOverpaid && !hasOnlyZeroPricedItems;
+  const hasNoTotal = ticketTotal === "" || ticketTotal === null;
+  const canSaveTicket = items.length > 0 && !isOverpaid && !hasNoTotal;
   const ENTRY_ACCENT = "#1a56db";
   const ENTRY_ACCENT_TEXT = "#1540b0";
   const ENTRY_ACCENT_SOFT = "rgba(26,86,219,0.10)";
@@ -4806,6 +5373,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     serviceDetailErrors: selectedServiceDetailErrors,
     paymentCash,
     paymentUpi,
+    ticketTotal,
+    vendorAmount,
     docName,
     docRequired,
     documents,
@@ -5026,13 +5595,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       setError(`${quantityConfig.inputLabel} must stay between ${minQty} and ${maxQty} for ${svc.name}.`);
       return;
     }
-    const unitPrice = svc.variable ? Number(customAmt) || 0 : svc.price;
     const detailValues = createDetailDraftForService(svc, selectedDetailDraft);
     setItems((prev) => [...prev, {
       ...svc,
       qty: qtyNum,
-      unitPrice,
-      amount: unitPrice * qtyNum,
+      unitPrice: 0,
+      amount: 0,
       detailValues,
       detailSummary: buildServiceDetailSummary(svc, detailValues),
       done: false,
@@ -5126,14 +5694,14 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       setError("Add at least one service before saving ticket.");
       return;
     }
-    if (isOverpaid) {
-      setSubStep(3);
-      setError("Collected amount cannot exceed ticket total.");
+    if (hasNoTotal) {
+      setSubStep(4);
+      setError("Enter the total amount charged before saving.");
       return;
     }
-    if (hasOnlyZeroPricedItems) {
-      setSubStep(3);
-      setError("This ticket is still fully unpriced. Set at least one rate before saving.");
+    if (isOverpaid) {
+      setSubStep(4);
+      setError("Collected amount cannot exceed ticket total.");
       return;
     }
 
@@ -5150,6 +5718,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         ? "Partial"
         : "Unpaid";
 
+    const vendorAmountVal = vendorAmount !== "" && vendorAmount !== null
+      ? Math.max(0, Number(vendorAmount) || 0)
+      : null;
     const ticket = withStructuredTicket({
       ...ticketMeta,
       status,
@@ -5159,6 +5730,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       upiCollected,
       paidTotal,
       pendingBalance,
+      vendorAmount: vendorAmountVal,
       operator,
       items: [...items],
       documents: [...documents],
@@ -5188,6 +5760,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     setServiceDetailErrorMap({});
     setPaymentCash("");
     setPaymentUpi("");
+    setTicketTotal("");
+    setVendorAmount("");
     setDocName("");
     setDocRequired(true);
     setDocuments([]);
@@ -5311,7 +5885,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
           ),
           2: items.length === 0,
           3: false,
-          4: isOverpaid || hasOnlyZeroPricedItems,
+          4: isOverpaid || hasNoTotal,
         };
 
         const goNextSubStep = () => {
@@ -5630,12 +6204,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                           style={{ ...inputStyle, textAlign: "center", background: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.82)", color: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.40)" : "#0f172a" }}
                         />
                       </label>
-                      {selectedServiceConfig?.variable && (
-                        <label style={{ display: "grid", gap: 7 }}>
-                          <span style={sectionEyebrowStyle}>Custom Amount (Rs.)</span>
-                          <input type="number" value={customAmt} onChange={(e) => setCustomAmt(e.target.value)} placeholder="0" style={inputStyle} />
-                        </label>
-                      )}
                     </>
                   )}
                 </div>
@@ -5709,10 +6277,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <button onClick={addTask} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
                       + Add to Ticket
                     </button>
-                    <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
-                      {selectedServiceConfig?.variable ? "Variable price" : `Rs. ${selectedServiceConfig?.price || 0}`}
-                      {selectedServiceConfig?.quantityMode !== "fixed" ? `  |  max qty ${selectedServiceConfig.maxQty}` : ""}
-                    </span>
+                    {selectedServiceConfig?.quantityMode !== "fixed" && (
+                      <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
+                        max qty {selectedServiceConfig.maxQty}
+                      </span>
+                    )}
                   </div>
                 )}
 
@@ -5720,7 +6289,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   <div style={sectionEyebrowStyle}>Added Services</div>
                   {items.length > 0 && (
                     <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
-                      Rs. {total}
+                      {items.length} item{items.length === 1 ? "" : "s"}
                     </div>
                   )}
                 </div>
@@ -5735,13 +6304,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.90rem", fontFamily: APP_FONT_STACK }}>{it.name}</div>
                           <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", marginTop: 2 }}>
-                            {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty}  |  Unit Rs. {it.unitPrice}
+                            {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty}
                           </div>
                           {!!it.detailSummary && (
                             <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.48)", lineHeight: 1.5, marginTop: 3 }}>{it.detailSummary}</div>
                           )}
                         </div>
-                        <div style={{ fontWeight: 700, fontSize: "0.95rem", color: ENTRY_ACCENT_TEXT, whiteSpace: "nowrap" }}>Rs. {it.amount}</div>
                         <button onClick={() => removeTask(i)} style={{ width: 30, height: 30, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
                           x
                         </button>
@@ -5886,36 +6454,63 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <div style={sectionEyebrowStyle}>Services Summary</div>
                     <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
                       {items.map((it, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.86rem", color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                          <span>{it.name} x{it.qty}</span>
-                          <span style={{ fontWeight: 700 }}>Rs. {it.amount}</span>
+                        <div key={i} style={{ fontSize: "0.86rem", color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                          {it.name} ×{it.qty}
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div style={{ maxWidth: 760, margin: "0 auto 14px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 280px))", justifyContent: "center", gap: 12 }}>
+                  <div style={{ maxWidth: 760, margin: "0 auto 14px", display: "grid", gap: 12 }}>
                     <label style={{ display: "grid", gap: 7 }}>
-                      <span style={sectionEyebrowStyle}>Cash Collected</span>
-                      <input type="number" min="0" value={paymentCash} onChange={(e) => setPaymentCash(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
+                      <span style={{ ...sectionEyebrowStyle, color: ENTRY_ACCENT_TEXT }}>Total Amount (Rs.) <span style={{ fontSize: "0.70rem", fontWeight: 400, color: "rgba(15,23,42,0.50)", textTransform: "none", letterSpacing: 0 }}>— final amount billed to customer</span></span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={ticketTotal}
+                        onChange={(e) => setTicketTotal(e.target.value)}
+                        placeholder="Enter total amount charged"
+                        style={{ ...inputStyle, fontSize: "1.15rem", fontWeight: 700, padding: "14px 16px", textAlign: "right", border: ticketTotal ? `1px solid ${ENTRY_ACCENT_BORDER}` : inputStyle.border }}
+                      />
                     </label>
-                    <label style={{ display: "grid", gap: 7 }}>
-                      <span style={sectionEyebrowStyle}>UPI Collected</span>
-                      <input type="number" min="0" value={paymentUpi} onChange={(e) => setPaymentUpi(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
-                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                      <label style={{ display: "grid", gap: 7 }}>
+                        <span style={sectionEyebrowStyle}>Cash Collected</span>
+                        <input type="number" min="0" value={paymentCash} onChange={(e) => setPaymentCash(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
+                      </label>
+                      <label style={{ display: "grid", gap: 7 }}>
+                        <span style={sectionEyebrowStyle}>UPI Collected</span>
+                        <input type="number" min="0" value={paymentUpi} onChange={(e) => setPaymentUpi(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
+                      </label>
+                      <label style={{ display: "grid", gap: 7 }}>
+                        <span style={sectionEyebrowStyle}>Vendor Amount <span style={{ fontSize: "0.70rem", fontWeight: 400, color: "rgba(15,23,42,0.45)", textTransform: "none", letterSpacing: 0 }}>(our actual cost)</span></span>
+                        <input type="number" min="0" value={vendorAmount} onChange={(e) => setVendorAmount(e.target.value)} placeholder="Rs. 0 (optional)" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
+                      </label>
+                    </div>
                   </div>
 
                   <div style={{ ...softPanelStyle, marginBottom: 14 }}>
                     <div style={{ display: "grid", gap: 10 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
-                        <span>Ticket Amount</span><span style={{ color: "#0f172a", fontWeight: 700 }}>Rs. {total}</span>
+                        <span>Total Amount</span>
+                        <span style={{ color: total > 0 ? "#0f172a" : "rgba(15,23,42,0.35)", fontWeight: 700 }}>
+                          {total > 0 ? `Rs. ${total}` : "—"}
+                        </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
                         <span>Collected</span><span style={{ color: "#0f172a", fontWeight: 700 }}>Rs. {paidTotal}</span>
                       </div>
-                      <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.02rem", fontFamily: APP_FONT_STACK, color: ENTRY_ACCENT_TEXT }}>
-                        <span>Pending Balance</span><span>Rs. {pendingBalance}</span>
-                      </div>
+                      {total > 0 && (
+                        <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.02rem", fontFamily: APP_FONT_STACK, color: ENTRY_ACCENT_TEXT }}>
+                          <span>Pending Balance</span><span>Rs. {pendingBalance}</span>
+                        </div>
+                      )}
+                      {vendorAmount !== "" && vendorAmount !== null && (
+                        <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
+                          <span>Vendor Amount (our cost)</span>
+                          <span style={{ color: "#0f172a", fontWeight: 700 }}>Rs. {Math.max(0, Number(vendorAmount) || 0)}</span>
+                        </div>
+                      )}
                       <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10 }}>
                         <div style={{ fontSize: "0.74rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.48)", marginBottom: 8 }}>
                           Documents Collected
@@ -6210,8 +6805,10 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       referenceName: ticket.referenceName || "",
       referenceLabel: getReferenceLabelValue(ticket),
       operator: ticket.operator || DEFAULT_OPERATOR,
+      total: String(Number(ticket.total) || 0),
       cashCollected: String(Number(ticket.cashCollected) || 0),
       upiCollected: String(Number(ticket.upiCollected) || 0),
+      vendorAmount: ticket.vendorAmount != null ? String(ticket.vendorAmount) : "",
     });
     setEditError("");
   };
@@ -6226,7 +6823,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     const cashCollected = Math.max(0, Number(editDraft.cashCollected) || 0);
     const upiCollected = Math.max(0, Number(editDraft.upiCollected) || 0);
     const paidTotal = cashCollected + upiCollected;
-    const total = Number(editingTicket?.total) || 0;
+    const total = Math.max(0, Number(editDraft.total) || 0);
     const pendingBalance = Math.max(0, total - paidTotal);
 
     if (!name) {
@@ -6258,6 +6855,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
         ? "Partial"
         : "Unpaid";
 
+    const editVendorAmount = editDraft.vendorAmount !== "" && editDraft.vendorAmount != null
+      ? Math.max(0, Number(editDraft.vendorAmount) || 0)
+      : null;
     onUpdateTicket(editTicketNo, {
       customerName: name,
       customerPhone: phone,
@@ -6267,12 +6867,14 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       referenceType: "",
       referenceTypeLabel: referenceEnabled ? referenceLabel : "",
       operator: editDraft.operator,
+      total,
       payMode,
       paymentStatus,
       cashCollected,
       upiCollected,
       paidTotal,
       pendingBalance,
+      vendorAmount: editVendorAmount,
     });
     setEditTicketNo(null);
     setEditError("");
@@ -6287,7 +6889,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
             { label: "Document Holder", main: structured.parties.documentHolder.name, sub: structured.parties.documentHolder.phone || "No contact saved" },
             { label: "Reference Contact", main: structured.parties.reference.hasReference ? structured.parties.reference.name : "No reference", sub: structured.parties.reference.hasReference ? (structured.parties.reference.label || "No label") : "Optional" },
             { label: "Meta", main: `Status: ${structured.meta.status}`, sub: `Updated: ${structured.meta.updatedAt || "N/A"}` },
-            { label: "Payment", main: `Status: ${structured.payment.status}`, sub: `Paid Rs. ${structured.payment.paidTotal} | Pending Rs. ${structured.payment.pendingBalance}` },
+            { label: "Payment", main: `Status: ${structured.payment.status}`, sub: `Paid Rs. ${structured.payment.paidTotal} | Pending Rs. ${structured.payment.pendingBalance}${structured.payment.vendorAmount != null ? ` | Vendor Rs. ${structured.payment.vendorAmount}` : ""}` },
           ].map((info) => (
             <div key={info.label} style={{ ...detailCardStyle, padding: 10 }}>
               <div style={dashEyebrowStyle}>{info.label}</div>
@@ -6526,8 +7128,10 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
               <select value={editDraft.operator} onChange={(e) => setEditDraft((prev) => ({ ...prev, operator: e.target.value }))} style={compactInput}>
                 {OPERATORS.map((op) => <option key={`edit_op_${op}`} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
               </select>
+              <input type="number" min="0" value={editDraft.total ?? ""} onChange={(e) => setEditDraft((prev) => ({ ...prev, total: e.target.value }))} placeholder="Total amount billed" style={compactInput} />
               <input type="number" min="0" value={editDraft.cashCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, cashCollected: e.target.value }))} placeholder="Cash collected" style={compactInput} />
               <input type="number" min="0" value={editDraft.upiCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, upiCollected: e.target.value }))} placeholder="UPI collected" style={compactInput} />
+              <input type="number" min="0" value={editDraft.vendorAmount ?? ""} onChange={(e) => setEditDraft((prev) => ({ ...prev, vendorAmount: e.target.value }))} placeholder="Vendor amount (our cost, optional)" style={compactInput} />
             </div>
             {editError && <div style={{ color: OPS.danger, fontSize: "0.8rem", fontFamily: APP_FONT_STACK }}>{editError}</div>}
             <button onClick={saveEdit} style={{ ...listActionStyle, background: OPS.primary, color: "#ffffff" }}>Save Changes</button>
@@ -6803,11 +7407,13 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
             <select value={editDraft.operator} onChange={(e) => setEditDraft((prev) => ({ ...prev, operator: e.target.value }))} style={dashInputStyle}>
               {OPERATORS.map((op) => <option key={`editop_${op}`} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
             </select>
+            <input type="number" min="0" value={editDraft.total ?? ""} onChange={(e) => setEditDraft((prev) => ({ ...prev, total: e.target.value }))} placeholder="Total amount billed" style={dashInputStyle} />
             <input type="number" min="0" value={editDraft.cashCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, cashCollected: e.target.value }))} placeholder="Cash collected" style={dashInputStyle} />
             <input type="number" min="0" value={editDraft.upiCollected} onChange={(e) => setEditDraft((prev) => ({ ...prev, upiCollected: e.target.value }))} placeholder="UPI collected" style={dashInputStyle} />
+            <input type="number" min="0" value={editDraft.vendorAmount ?? ""} onChange={(e) => setEditDraft((prev) => ({ ...prev, vendorAmount: e.target.value }))} placeholder="Vendor amount (our cost, optional)" style={dashInputStyle} />
           </div>
           <div style={{ marginTop: 8, fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>
-            Ticket total Rs. {editingTicket?.total || 0} | Collected Rs. {(Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)} | Pending Rs. {Math.max((Number(editingTicket?.total) || 0) - ((Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)), 0)}
+            Ticket total Rs. {Number(editDraft.total) || 0} | Collected Rs. {(Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)} | Pending Rs. {Math.max((Number(editDraft.total) || 0) - ((Number(editDraft.cashCollected) || 0) + (Number(editDraft.upiCollected) || 0)), 0)}
           </div>
           {editError && <div style={{ marginTop: 8, color: "#FCA5A5", fontSize: 12 }}>{editError}</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -7841,6 +8447,20 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
   const upsideProjection = Math.round(projectedRevenue30 * 1.08);
   const conservativeProjection = Math.round(projectedRevenue30 * 0.95);
 
+  // Profit / Loss from ticket-level vendor amounts only
+  const ticketsWithVendorAmount = normalized.filter((t) => {
+    const va = t.vendorAmount ?? t.structured?.payment?.vendorAmount;
+    return va !== null && va !== undefined && va !== "" && Number.isFinite(Number(va));
+  });
+  const totalTicketVendorCost = ticketsWithVendorAmount.reduce((s, t) => {
+    const va = t.vendorAmount ?? t.structured?.payment?.vendorAmount ?? 0;
+    return s + Math.max(0, Number(va) || 0);
+  }, 0);
+  const totalTicketRevenue = normalized.reduce((s, t) => s + (Number(t.total) || 0), 0);
+  const netProfitLoss = totalTicketRevenue - totalTicketVendorCost;
+  const grossMarginPct = totalTicketRevenue > 0 ? Math.round((netProfitLoss / totalTicketRevenue) * 100) : null;
+  const vendorCoverageCount = ticketsWithVendorAmount.length;
+
   // Service category trend
   const catRevenue = {};
   CATEGORIES.forEach((c) => { catRevenue[c] = 0; });
@@ -7936,6 +8556,53 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             health={readinessHealth}
           />
         </div>
+      </div>
+
+      {/* SECTION: PROFIT / LOSS */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Profit / Loss</div>
+        <div style={styles.sectionSubtitle}>
+          Based on ticket-level Vendor Amount entries only. Service Dashboard reference prices are not used here.
+          {vendorCoverageCount < normalized.length && (
+            <span style={{ color: "#ca8a04", fontWeight: 600 }}>
+              {" "}({vendorCoverageCount} of {normalized.length} tickets have a vendor amount entered.)
+            </span>
+          )}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 14 }}>
+          <StatTile label="Total Revenue" value={fmtINR(totalTicketRevenue)} color="#15803d" />
+          <StatTile label="Total Vendor Cost" value={fmtINR(totalTicketVendorCost)} color="#dc2626" />
+          <StatTile
+            label="Net Profit / Loss"
+            value={fmtINR(netProfitLoss)}
+            color={netProfitLoss >= 0 ? "#15803d" : "#dc2626"}
+          />
+          {grossMarginPct !== null && (
+            <StatTile
+              label="Gross Margin"
+              value={`${grossMarginPct}%`}
+              color={grossMarginPct >= 30 ? "#15803d" : grossMarginPct >= 10 ? "#ca8a04" : "#dc2626"}
+              small
+            />
+          )}
+        </div>
+        {vendorCoverageCount === 0 && (
+          <div style={{ ...styles.decisionBox, borderColor: "rgba(202,138,4,0.30)", background: "rgba(202,138,4,0.05)" }}>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#92400e", lineHeight: 1.5 }}>
+              No vendor amounts recorded yet. Enter a Vendor Amount when creating or editing a ticket to track actual profit/loss per job.
+            </div>
+          </div>
+        )}
+        {vendorCoverageCount > 0 && (
+          <div style={styles.decisionBox}>
+            <div style={{ ...styles.eyebrow, color: "rgba(15,23,42,0.55)" }}>How this is calculated</div>
+            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "#0f172a", lineHeight: 1.5 }}>
+              Profit / Loss = Total ticket revenue − Total vendor amounts entered per ticket.
+              Tickets without a vendor amount contribute to revenue but not to vendor cost.
+              To improve accuracy, enter vendor amounts on all tickets.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* SECTION 2: REVENUE & COLLECTIONS */}
@@ -8824,6 +9491,7 @@ export default function CSCBilling() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => getStoredSidePanelExpanded());
   const [showDatabaseGate, setShowDatabaseGate] = useState(false);
   const [databaseUnlocked, setDatabaseUnlocked] = useState(false);
+  const [unlockAnimPhase, setUnlockAnimPhase] = useState(null); // null | "running" | "success"
   const [services, setServices] = useState(() => (
     hydrateServices(readStoredJSON(STORAGE_KEYS.services, INITIAL_SERVICES))
   ));
@@ -9083,12 +9751,25 @@ export default function CSCBilling() {
     window.location.href = appUrl;
   };
   const handleDatabaseVerification = async ({ securityCode, authenticatorCode }) => {
+    // Start hacker animation immediately — it renders over the modal.
+    setUnlockAnimPhase("running");
     const result = await verifyDatabaseAccessOnServer({ securityCode, authenticatorCode });
-    if (!result?.ok) return result;
+    if (!result?.ok) {
+      // Kill the animation; the modal stays mounted and will surface the error.
+      setUnlockAnimPhase(null);
+      return result;
+    }
+    // API succeeded. Lock in the unlocked state and cue the success reveal.
+    // The modal will be closed after the animation finishes via handleUnlockAnimDone.
     setDatabaseUnlocked(true);
+    setUnlockAnimPhase("success");
+    return { ok: true };
+  };
+
+  const handleUnlockAnimDone = () => {
+    setUnlockAnimPhase(null);
     setShowDatabaseGate(false);
     navigateTab("database", "push", { bypassDatabaseGate: true });
-    return { ok: true };
   };
   const lockDatabaseAccess = async () => {
     try {
@@ -9400,6 +10081,12 @@ export default function CSCBilling() {
           onVerify={handleDatabaseVerification}
         />
       )}
+      {unlockAnimPhase && (
+        <HackerUnlockAnimation
+          phase={unlockAnimPhase}
+          onDone={handleUnlockAnimDone}
+        />
+      )}
       <style>{`
         :root { color-scheme: light; }
         * { box-sizing: border-box; }
@@ -9686,19 +10373,6 @@ export default function CSCBilling() {
               >
                 Home
               </button>
-              <div style={{
-                width: 5, height: 5, borderRadius: "50%",
-                background: "#1a56db", opacity: 0.5, flexShrink: 0,
-              }} />
-              <div style={{
-                fontFamily: APP_BRAND_STACK,
-                fontSize: "0.84rem",
-                fontWeight: 700,
-                color: "#0d1b2a",
-                letterSpacing: "0.02em",
-              }}>
-                {activeTabConfig.label}
-              </div>
             </div>
 
             {/* Stats strip + WhatsApp CTA */}
@@ -9713,21 +10387,16 @@ export default function CSCBilling() {
                   </div>
                 </div>
               ))}
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,27,42,0.40)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
-                  Data Sync
-                </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 7, padding: "4px 9px", border: `1px solid ${cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.26)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.26)" : "rgba(13,27,42,0.13)"}`, background: cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.07)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.07)" : "rgba(13,27,42,0.04)" }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: cloudSyncAccent, display: "inline-block" }} />
-                  <span style={{ fontSize: "0.68rem", fontWeight: 700, color: cloudSyncAccent, fontFamily: APP_BRAND_STACK, letterSpacing: "0.06em" }}>
-                    {cloudSyncLabel}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 7, padding: "4px 9px", border: `1px solid ${cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.26)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.26)" : "rgba(13,27,42,0.13)"}`, background: cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.07)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.07)" : "rgba(13,27,42,0.04)" }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: cloudSyncAccent, display: "inline-block" }} />
+                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: cloudSyncAccent, fontFamily: APP_BRAND_STACK, letterSpacing: "0.06em" }}>
+                  {cloudSyncLabel}
+                </span>
+                {cloudSyncState === "synced" && cloudLastSyncedAt && (
+                  <span style={{ fontSize: "0.68rem", color: "rgba(13,27,42,0.40)", fontFamily: APP_MONO_STACK }}>
+                    {formatSyncTime(cloudLastSyncedAt)}
                   </span>
-                  {cloudSyncState === "synced" && cloudLastSyncedAt && (
-                    <span style={{ fontSize: "0.68rem", color: "rgba(13,27,42,0.40)", fontFamily: APP_MONO_STACK }}>
-                      {formatSyncTime(cloudLastSyncedAt)}
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
               {tab === "database" && databaseUnlocked && (
                 <button
@@ -9782,29 +10451,54 @@ export default function CSCBilling() {
             position: "relative",
             zIndex: 1,
           }}>
-            <div style={{ width: "100%", maxWidth: 1240, margin: "0 auto" }}>
-              <div style={{
-                fontSize: "0.62rem",
-                fontWeight: 700,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "rgba(13,27,42,0.42)",
-                fontFamily: APP_BRAND_STACK,
-                marginBottom: 8,
-              }}>
-                CSC Centre Workspace
+            <div style={{ width: "100%", maxWidth: 1240, margin: "0 auto", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+              <div>
+                <div style={{
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "rgba(13,27,42,0.42)",
+                  fontFamily: APP_BRAND_STACK,
+                  marginBottom: 8,
+                }}>
+                  CSC Centre Workspace
+                </div>
+                <h1 style={{
+                  margin: 0,
+                  fontFamily: APP_BRAND_STACK,
+                  fontSize: "clamp(1.4rem, 2.4vw, 1.9rem)",
+                  fontWeight: 800,
+                  lineHeight: 1.0,
+                  letterSpacing: "-0.01em",
+                  color: "#0d1b2a",
+                }}>
+                  {activeTabConfig.label}
+                </h1>
               </div>
-              <h1 style={{
-                margin: 0,
-                fontFamily: APP_BRAND_STACK,
-                fontSize: "clamp(1.4rem, 2.4vw, 1.9rem)",
-                fontWeight: 800,
-                lineHeight: 1.0,
-                letterSpacing: "-0.01em",
-                color: "#0d1b2a",
-              }}>
-                {activeTabConfig.label}
-              </h1>
+              {tab === "doc_tools" && (
+                <div style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 10px",
+                  border: "1px solid rgba(22,101,52,0.20)",
+                  background: "rgba(22,101,52,0.07)",
+                  color: "#166534",
+                  borderRadius: 8,
+                  fontFamily: APP_BRAND_STACK,
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  flexShrink: 0,
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+                    <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5" />
+                  </svg>
+                  Files stay on this device
+                </div>
+              )}
             </div>
           </div>
           </>
@@ -9827,9 +10521,6 @@ export default function CSCBilling() {
               <div style={{ width: "100%", maxWidth: 1240, margin: "0 auto" }}>
                 <TicketWorkspace key={entryWorkspaceKey} services={services} tickets={tickets} onSaveTicket={saveTicket} onNavigateTab={navigateTab} isActive={tab === "entry"} />
               </div>
-            </TabPanel>
-            <TabPanel active={tab === "rates"}>
-              <RateCard services={services} setServices={setServices} />
             </TabPanel>
             <TabPanel active={tab === "log"}>
               <TicketDashboard
@@ -9859,6 +10550,7 @@ export default function CSCBilling() {
                 records={databaseRecords}
                 onUpsertRecord={upsertDatabaseRecord}
                 onDeleteRecord={deleteDatabaseRecord}
+                cloudSyncState={cloudSyncState}
               />
             </TabPanel>
             <TabPanel active={tab === "quick_links"}>
@@ -9883,7 +10575,7 @@ export default function CSCBilling() {
               <DocumentToolsWorkspace />
             </TabPanel>
             <TabPanel active={tab === "services_dashboard"}>
-              <ServicesDashboardWorkspace services={services} />
+              <ServicesDashboardWorkspace />
             </TabPanel>
             <TabPanel active={tab === "customers"}>
               <CustomersWorkspace tickets={tickets} onDeleteCustomer={deleteCustomerTickets} onNavigateTab={navigateTab} />
