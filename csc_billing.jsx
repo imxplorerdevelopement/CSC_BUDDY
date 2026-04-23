@@ -289,12 +289,12 @@ const STORAGE_KEYS = {
 const TAB_CONFIG = [
   { id: "home", label: "Dashboard Home", shortLabel: "HM", navGroup: "home" },
   { id: "entry", label: "New Service Entry", shortLabel: "NS", navGroup: "primary" },
+  { id: "services_dashboard", label: "Services Dashboard", shortLabel: "SD", navGroup: "primary" },
   { id: "monthly", label: "Analytics", shortLabel: "AN", navGroup: "primary" },
   { id: "b2b", label: "Vendor Dashboard", shortLabel: "VD", navGroup: "panel" },
   { id: "database", label: "Database", shortLabel: "DB", navGroup: "panel" },
   { id: "log", label: "Ticket Dashboard", shortLabel: "TD", navGroup: "panel" },
   { id: "quick_links", label: "Quick Website Links", shortLabel: "QL", navGroup: "panel" },
-  { id: "services_dashboard", label: "Services Dashboard", shortLabel: "SD", navGroup: "panel" },
   { id: "doc_tools", label: "Document Tools", shortLabel: "DT", navGroup: "panel" },
 ];
 const PRIMARY_TAB_CONFIG = TAB_CONFIG.filter((item) => item.navGroup === "primary");
