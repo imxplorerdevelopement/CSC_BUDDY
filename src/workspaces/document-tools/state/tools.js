@@ -4,26 +4,27 @@
  */
 export const TOOL_CATEGORIES = [
   { id: "portal_prep", label: "Portal Prep" },
-  { id: "compress", label: "Compress" },
-  { id: "resize", label: "Resize" },
-  { id: "convert", label: "Convert" },
-  { id: "pdf_to_image", label: "PDF to Image" },
-  { id: "image_to_pdf", label: "Image to PDF" },
+  { id: "compress", label: "Infinite Compressor" },
+  { id: "resize", label: "Image Resizer" },
+  { id: "pdf_to_image", label: "PDF to PNG/JPG" },
+  { id: "image_to_pdf", label: "JPG/PNG/JPEG to PDF" },
+  { id: "word_to_pdf", label: "Word to PDF" },
+  { id: "word_to_image", label: "Word to JPG/PNG" },
 ];
 
 export const TOOL_META = {
   portal_prep: {
     id: "portal_prep",
     label: "Portal Prep",
-    description: "One-click prep for Aadhaar, PAN, NSP, passport, and other portal uploads.",
-    accepts: "image/jpeg,image/png,image/webp,image/jpg",
-    acceptsLabel: "JPG · PNG · WEBP",
+    description: "Select a service preset, upload all required documents, get portal-ready files in one click.",
+    accepts: "image/jpeg,image/png,image/webp,image/jpg,application/pdf",
+    acceptsLabel: "JPG · PNG · PDF",
     kind: "image",
   },
   compress: {
     id: "compress",
-    label: "Image Compressor",
-    description: "Shrink JPG / PNG to a target size in KB — ideal for portal uploads.",
+    label: "Infinite Compressor",
+    description: "Shrink JPG / PNG to a custom size in KB — ideal for portal uploads.",
     accepts: "image/jpeg,image/png,image/webp,image/jpg",
     acceptsLabel: "JPG · PNG · WEBP",
     kind: "image",
@@ -36,17 +37,9 @@ export const TOOL_META = {
     acceptsLabel: "JPG · PNG · WEBP",
     kind: "image",
   },
-  convert: {
-    id: "convert",
-    label: "Change Format",
-    description: "Swap between JPG, PNG, JPEG, and WebP without quality loss where possible.",
-    accepts: "image/jpeg,image/png,image/webp,image/jpg",
-    acceptsLabel: "JPG · PNG · WEBP",
-    kind: "image",
-  },
   pdf_to_image: {
     id: "pdf_to_image",
-    label: "PDF to Image",
+    label: "PDF to PNG/JPG",
     description: "Export PDF pages as JPG or PNG at 200–300 DPI.",
     accepts: "application/pdf",
     acceptsLabel: "PDF",
@@ -54,11 +47,27 @@ export const TOOL_META = {
   },
   image_to_pdf: {
     id: "image_to_pdf",
-    label: "Image to PDF",
+    label: "JPG/PNG/JPEG to PDF",
     description: "Combine one or more images into a clean PDF pack.",
     accepts: "image/jpeg,image/png,image/webp,image/jpg",
     acceptsLabel: "JPG · PNG · WEBP",
     kind: "image",
+  },
+  word_to_pdf: {
+    id: "word_to_pdf",
+    label: "Word to PDF",
+    description: "Convert Word documents (.docx / .doc) into PDF.",
+    accepts: ".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    acceptsLabel: "DOC · DOCX",
+    kind: "document",
+  },
+  word_to_image: {
+    id: "word_to_image",
+    label: "Word to JPG/PNG",
+    description: "Convert Word documents into JPG or PNG images, one page per file.",
+    accepts: ".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    acceptsLabel: "DOC · DOCX",
+    kind: "document",
   },
 };
 
@@ -71,7 +80,9 @@ export const TOOL_META = {
 export function suggestToolForFile(file) {
   if (!file) return null;
   const type = String(file.type || "").toLowerCase();
+  const name = String(file.name || "").toLowerCase();
   if (type === "application/pdf") return "pdf_to_image";
+  if (type === "application/msword" || type.includes("wordprocessingml") || name.endsWith(".docx") || name.endsWith(".doc")) return "word_to_pdf";
   if (type.startsWith("image/")) return "compress";
   return null;
 }

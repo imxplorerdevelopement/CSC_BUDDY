@@ -187,7 +187,7 @@ export function ImageToPdfTool({ onQueue }) {
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <Heading
-        title="Image to PDF"
+        title="JPG/PNG/JPEG to PDF"
         subtitle="Combine one or more images into a clean PDF pack. Reorder using the arrows."
       />
 

@@ -1,112 +1,322 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { DT, eyebrow } from "../theme.js";
-import { UniversalDropzone } from "../components/UniversalDropzone.jsx";
-import { Field, selectStyle } from "../components/Field.jsx";
 import { PrimaryButton } from "../components/PrimaryButton.jsx";
-import { formatBytes, percentReduction } from "../lib/formatBytes.js";
-import { stripExtension } from "../lib/download.js";
-import { groupPresetsByKind, PORTAL_PRESET_MAP, PORTAL_PRESETS } from "../state/presets.js";
+import { formatBytes } from "../lib/formatBytes.js";
 import { prepareForPortal } from "../lib/portalPrep.js";
+import { stripExtension } from "../lib/download.js";
+
+// ─── Preset definitions ───────────────────────────────────────────────────────
+
+const SERVICE_GROUPS = [
+  { id: "certificates", label: "Certificates" },
+  { id: "pan_card", label: "PAN Card" },
+  { id: "aadhaar_card", label: "Aadhaar Card" },
+];
 
 /**
- * Portal Prep — pick a portal, drop a file, get a portal-ready output.
- *
- * This is the highest-value tool on the dashboard. Instead of asking the
- * operator to remember "Aadhaar wants 3.5×4.5 cm, 20–50 KB, JPG", they pick
- * "Aadhaar Update — Photo" and the engine chains resize → compress → format
- * for them. The tool reuses the same primitives as Resize and Compress —
- * presets are the only new surface.
- *
- * @param {{ onQueue: (entry: { name: string, blob: Blob, toolId: string, meta?: string }) => any }} props
+ * Each slot describes one required upload box.
+ * `preset` is the portal-prep spec applied when processing.
  */
-export function PortalPrepTool({ onQueue, initialPresetId }) {
-  const [presetId, setPresetId] = useState(
-    initialPresetId && PORTAL_PRESET_MAP[initialPresetId]
-      ? initialPresetId
-      : PORTAL_PRESETS[0]?.id || "",
-  );
-  const [file, setFile] = useState(null);
+const GROUP_SLOTS = {
+  certificates: [
+    {
+      id: "photo",
+      label: "Photo",
+      hint: "45 KB · JPG",
+      accept: "image/jpeg,image/jpg,image/png,image/webp",
+      kind: "image",
+      preset: { mime: "image/jpeg", ext: "jpg", targetMaxKB: 45 },
+    },
+    {
+      id: "aadhaar",
+      label: "Aadhaar Card",
+      hint: "95 KB · JPG",
+      accept: "image/jpeg,image/jpg,image/png,image/webp",
+      kind: "image",
+      preset: { mime: "image/jpeg", ext: "jpg", targetMaxKB: 95 },
+    },
+    {
+      id: "self_declaration",
+      label: "Self Declaration Form",
+      hint: "95 KB · JPG",
+      accept: "image/jpeg,image/jpg,image/png,image/webp",
+      kind: "image",
+      preset: { mime: "image/jpeg", ext: "jpg", targetMaxKB: 95 },
+    },
+    {
+      id: "other1",
+      label: "Other Document 1",
+      hint: "95 KB · JPG",
+      accept: "image/jpeg,image/jpg,image/png,image/webp",
+      kind: "image",
+      preset: { mime: "image/jpeg", ext: "jpg", targetMaxKB: 95 },
+    },
+    {
+      id: "other2",
+      label: "Other Document 2",
+      hint: "95 KB · JPG",
+      accept: "image/jpeg,image/jpg,image/png,image/webp",
+      kind: "image",
+      preset: { mime: "image/jpeg", ext: "jpg", targetMaxKB: 95 },
+    },
+    {
+      id: "other3",
+      label: "Other Document 3",
+      hint: "95 KB · JPG",
+      accept: "image/jpeg,image/jpg,image/png,image/webp",
+      kind: "image",
+      preset: { mime: "image/jpeg", ext: "jpg", targetMaxKB: 95 },
+    },
+  ],
+  pan_card: [
+    {
+      id: "photo",
+      label: "Photo",
+      hint: "3.5 × 2.5 cm · 45 KB · JPG · 200 DPI",
+      accept: "image/jpeg,image/jpg,image/png,image/webp",
+      kind: "image",
+      preset: {
+        mime: "image/jpeg",
+        ext: "jpg",
+        widthCm: 3.5,
+        heightCm: 2.5,
+        dpi: 200,
+        targetMaxKB: 45,
+      },
+    },
+    {
+      id: "signature",
+      label: "Signature",
+      hint: "2 × 4.5 cm · 45 KB · JPG · 200 DPI",
+      accept: "image/jpeg,image/jpg,image/png,image/webp",
+      kind: "image",
+      preset: {
+        mime: "image/jpeg",
+        ext: "jpg",
+        widthCm: 2,
+        heightCm: 4.5,
+        dpi: 200,
+        targetMaxKB: 45,
+      },
+    },
+    {
+      id: "aadhaar",
+      label: "Aadhaar Card",
+      hint: "290 KB · PDF",
+      accept: "application/pdf",
+      kind: "pdf",
+      preset: null, // PDF pass-through — compress if image, else send as-is
+    },
+    {
+      id: "birth_proof",
+      label: "Birth Proof",
+      hint: "290 KB · PDF",
+      accept: "application/pdf",
+      kind: "pdf",
+      preset: null,
+    },
+  ],
+  aadhaar_card: [
+    {
+      id: "aadhaar",
+      label: "Aadhaar Card",
+      hint: "950 KB · PDF",
+      accept: "application/pdf",
+      kind: "pdf",
+      preset: null,
+    },
+  ],
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+/**
+ * Portal Prep — select a service group (Certificates / PAN Card / Aadhaar Card),
+ * upload each required document into its labelled box, click once, and receive
+ * all portal-ready files in the output queue.
+ *
+ * @param {{ onQueue: (entry: any) => any, initialPresetId?: string }} props
+ */
+export function PortalPrepTool({ onQueue }) {
+  const [groupId, setGroupId] = useState("certificates");
+  const [files, setFiles] = useState({}); // { slotId: File }
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState(null);
+  const [progress, setProgress] = useState(null); // { current, total, label }
+  const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
-  const groups = useMemo(() => groupPresetsByKind(), []);
-  const preset = PORTAL_PRESET_MAP[presetId];
+  const slots = GROUP_SLOTS[groupId] || [];
+  const group = SERVICE_GROUPS.find((g) => g.id === groupId);
 
-  const handleFiles = (accepted) => {
+  const handleGroupChange = (id) => {
+    setGroupId(id);
+    setFiles({});
+    setDone(false);
     setError("");
-    setResult(null);
-    const first = accepted[0];
-    if (!first || !String(first.type).startsWith("image/")) {
-      setError("Please pick an image (JPG, PNG, or WEBP).");
-      return;
-    }
-    setFile(first);
+    setProgress(null);
   };
 
+  const setSlotFile = (slotId, file) => {
+    setFiles((prev) => ({ ...prev, [slotId]: file }));
+    setDone(false);
+    setError("");
+  };
+
+  const clearSlotFile = (slotId) => {
+    setFiles((prev) => {
+      const next = { ...prev };
+      delete next[slotId];
+      return next;
+    });
+    setDone(false);
+  };
+
+  const uploadedCount = slots.filter((s) => files[s.id]).length;
+  const allUploaded = uploadedCount === slots.length;
+
   const handleRun = async () => {
-    if (!file || !preset) return;
+    if (!uploadedCount) return;
     setBusy(true);
     setError("");
-    setResult(null);
+    setDone(false);
+    setProgress({ current: 0, total: uploadedCount, label: "" });
+
+    const slotsWithFiles = slots.filter((s) => files[s.id]);
+    let processed = 0;
+
     try {
-      const prep = await prepareForPortal(file, preset);
-      const name = `${stripExtension(file.name)}_${preset.id}.${preset.ext}`;
-      onQueue({
-        name,
-        descriptor: preset.id,
-        ext: preset.ext,
-        blob: prep.blob,
-        toolId: "portal_prep",
-        meta: `${preset.portal} · ${Math.round(prep.finalBytes / 1024)} KB`,
-      });
-      setResult(prep);
+      for (const slot of slotsWithFiles) {
+        const file = files[slot.id];
+        setProgress({ current: processed, total: slotsWithFiles.length, label: slot.label });
+
+        if (slot.kind === "pdf" || !slot.preset) {
+          // PDF pass-through — send as-is
+          const ext = "pdf";
+          const descriptor = `${groupId}_${slot.id}`;
+          onQueue({
+            name: `${stripExtension(file.name)}_${descriptor}.${ext}`,
+            descriptor,
+            ext,
+            blob: file,
+            toolId: "portal_prep",
+            meta: `${group.label} · ${slot.label} · PDF`,
+          });
+        } else {
+          // Image — run through portal prep pipeline
+          // eslint-disable-next-line no-await-in-loop
+          const prep = await prepareForPortal(file, slot.preset);
+          const descriptor = `${groupId}_${slot.id}`;
+          onQueue({
+            name: `${stripExtension(file.name)}_${descriptor}.${slot.preset.ext}`,
+            descriptor,
+            ext: slot.preset.ext,
+            blob: prep.blob,
+            toolId: "portal_prep",
+            meta: `${group.label} · ${slot.label} · ${Math.round(prep.finalBytes / 1024)} KB`,
+          });
+        }
+
+        processed += 1;
+        setProgress({ current: processed, total: slotsWithFiles.length, label: slot.label });
+      }
+
+      setDone(true);
     } catch (err) {
-      setError(err?.message || "Could not prepare this file.");
+      setError(err?.message || "Could not prepare one or more files.");
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   };
 
   const reset = () => {
-    setFile(null);
-    setResult(null);
+    setFiles({});
+    setDone(false);
     setError("");
+    setProgress(null);
   };
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <Heading
-        title="Portal Prep"
-        subtitle="Pick a portal, drop a file, get a portal-ready output. We handle the size, dimensions, and format for you."
-      />
+    <div style={{ display: "grid", gap: 16 }}>
+      <Heading />
 
-      <Field
-        label="Portal / Document"
-        hint={preset ? `${preset.portal} · ${preset.notes}` : "Choose which portal this file is for."}
-      >
-        <select value={presetId} onChange={(e) => { setPresetId(e.target.value); setResult(null); }} style={selectStyle}>
-          {groups.map((group) => (
-            <optgroup key={group.kind} label={group.label}>
-              {group.items.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
-              ))}
-            </optgroup>
+      {/* Service group selector */}
+      <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ ...eyebrow }}>Select service</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {SERVICE_GROUPS.map((g) => {
+            const active = g.id === groupId;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => handleGroupChange(g.id)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 999,
+                  border: `1.5px solid ${active ? DT.primary : DT.border}`,
+                  background: active ? DT.primarySoft : DT.surface,
+                  color: active ? DT.primary : DT.textMuted,
+                  fontFamily: DT.brand,
+                  fontSize: "0.82rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  cursor: "pointer",
+                  transition: "all 120ms ease",
+                }}
+              >
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Document upload boxes */}
+      <div style={{ display: "grid", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ ...eyebrow }}>Upload documents</div>
+          <span style={{
+            fontFamily: DT.mono,
+            fontSize: "0.72rem",
+            color: uploadedCount === slots.length ? DT.success : DT.textMuted,
+            fontWeight: 600,
+          }}>
+            {uploadedCount} / {slots.length} uploaded
+          </span>
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+          gap: 8,
+        }}>
+          {slots.map((slot) => (
+            <DocumentBox
+              key={slot.id}
+              slot={slot}
+              file={files[slot.id] || null}
+              onFile={(f) => setSlotFile(slot.id, f)}
+              onClear={() => clearSlotFile(slot.id)}
+            />
           ))}
-        </select>
-      </Field>
+        </div>
+      </div>
 
-      {preset ? <PresetSummary preset={preset} /> : null}
+      {/* Progress */}
+      {progress ? (
+        <div style={{
+          padding: "9px 12px",
+          borderRadius: DT.rSm,
+          background: DT.primarySoft,
+          color: DT.primaryDark,
+          fontFamily: DT.mono,
+          fontSize: "0.80rem",
+        }}>
+          Processing {progress.label} ({progress.current} / {progress.total})…
+        </div>
+      ) : null}
 
-      <UniversalDropzone
-        title={file ? file.name : "Drop the customer file here"}
-        helper={file
-          ? `${formatBytes(file.size)} · ready to prepare`
-          : "JPG · PNG · WEBP"}
-        accept="image/jpeg,image/png,image/webp,image/jpg"
-        onFiles={handleFiles}
-      />
-
+      {/* Error */}
       {error ? (
         <div style={{
           padding: "10px 12px",
@@ -118,150 +328,188 @@ export function PortalPrepTool({ onQueue, initialPresetId }) {
         }}>{error}</div>
       ) : null}
 
-      {result ? <ResultCard result={result} preset={preset} /> : null}
+      {/* Done confirmation */}
+      {done ? (
+        <div style={{
+          padding: "10px 12px",
+          borderRadius: DT.rSm,
+          background: DT.successSoft,
+          color: DT.success,
+          fontFamily: DT.font,
+          fontSize: "0.84rem",
+          fontWeight: 600,
+        }}>
+          All files processed and added to Output Queue.
+        </div>
+      ) : null}
 
+      {/* Actions */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-        <PrimaryButton variant="ghost" onClick={reset} disabled={!file && !result}>Reset</PrimaryButton>
-        <PrimaryButton onClick={handleRun} busy={busy} disabled={!file || !preset}>
-          Prepare for {preset?.portal?.split(" / ")[0] || "portal"}
+        <PrimaryButton variant="ghost" onClick={reset} disabled={uploadedCount === 0 && !done}>
+          Reset
+        </PrimaryButton>
+        <PrimaryButton onClick={handleRun} busy={busy} disabled={uploadedCount === 0}>
+          {allUploaded
+            ? `Prepare all ${slots.length} documents`
+            : uploadedCount > 0
+              ? `Prepare ${uploadedCount} document${uploadedCount === 1 ? "" : "s"}`
+              : "Upload files to prepare"}
         </PrimaryButton>
       </div>
     </div>
   );
 }
 
+// ─── DocumentBox ──────────────────────────────────────────────────────────────
+
 /**
- * Compact spec row showing the chosen portal's constraints. Keeps operators
- * oriented on what the output will look like before they run the job.
- * @param {{ preset: import("../state/presets.js").PortalPreset }} props
+ * Single document upload slot with drag-and-drop and click-to-browse.
  */
-function PresetSummary({ preset }) {
-  const rows = [
-    preset.widthCm && preset.heightCm ? { label: "Size", value: `${preset.widthCm} × ${preset.heightCm} cm` } : null,
-    preset.dpi ? { label: "DPI", value: `${preset.dpi}` } : null,
-    preset.targetMinKB || preset.targetMaxKB ? {
-      label: "File size",
-      value: preset.targetMinKB && preset.targetMaxKB
-        ? `${preset.targetMinKB}–${preset.targetMaxKB} KB`
-        : preset.targetMaxKB
-          ? `up to ${preset.targetMaxKB} KB`
-          : `≥ ${preset.targetMinKB} KB`,
-    } : null,
-    { label: "Format", value: preset.ext.toUpperCase() },
-  ].filter(Boolean);
+function DocumentBox({ slot, file, onFile, onClear }) {
+  const inputRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setDragging(false);
+    const dropped = e.dataTransfer?.files?.[0];
+    if (dropped) onFile(dropped);
+  }, [onFile]);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = () => setDragging(false);
+
+  const handleInputChange = (e) => {
+    const picked = e.target.files?.[0];
+    if (picked) onFile(picked);
+    e.target.value = "";
+  };
+
+  const borderColor = dragging ? DT.primary : file ? DT.borderAccent : DT.border;
+  const bgColor = dragging ? DT.primarySoft : file ? DT.successSoft : DT.surfaceMuted;
 
   return (
-    <div style={{
-      border: `1px solid ${DT.borderSoft}`,
-      borderRadius: DT.rMd,
-      background: DT.surfaceMuted,
-      padding: "10px 12px",
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-      gap: 8,
-    }}>
-      {rows.map((row) => (
-        <div key={row.label} style={{ display: "grid", gap: 2 }}>
-          <span style={{ ...eyebrow, color: DT.textSubtle }}>{row.label}</span>
-          <span style={{ fontFamily: DT.mono, fontSize: "0.82rem", color: DT.text, fontWeight: 600 }}>
-            {row.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ResultCard({ result, preset }) {
-  const successfulSize = preset.targetMaxKB
-    ? result.finalBytes <= preset.targetMaxKB * 1024
-    : true;
-
-  return (
-    <div style={{
-      border: `1px solid ${successfulSize ? DT.borderSoft : DT.border}`,
-      borderRadius: DT.rMd,
-      background: DT.surfaceMuted,
-      padding: 12,
-      display: "grid",
-      gap: 8,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ ...eyebrow, color: DT.textSubtle }}>Run summary</div>
-        <span style={{
-          fontFamily: DT.brand,
-          fontSize: "0.62rem",
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: successfulSize ? DT.success : DT.warning,
-          background: successfulSize ? DT.successSoft : DT.warningSoft,
-          padding: "3px 7px",
-          borderRadius: 999,
-        }}>
-          {successfulSize ? "Portal-ready" : "Best effort"}
-        </span>
-      </div>
-
-      <div style={{
+    <div
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      style={{
+        border: `1.5px dashed ${borderColor}`,
+        borderRadius: DT.rMd,
+        background: bgColor,
+        padding: "12px 10px",
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-        gap: 8,
-        fontFamily: DT.mono,
-        fontSize: "0.80rem",
-        color: DT.text,
-      }}>
-        <Stat label="From" value={formatBytes(result.originalBytes)} />
-        <Stat label="To" value={`${formatBytes(result.finalBytes)} (-${percentReduction(result.originalBytes, result.finalBytes)}%)`} />
-        {result.width && result.height ? (
-          <Stat label="Dimensions" value={`${result.width} × ${result.height}px`} />
-        ) : null}
+        gap: 6,
+        cursor: "pointer",
+        transition: "all 120ms ease",
+        minHeight: 90,
+      }}
+      onClick={() => !file && inputRef.current?.click()}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept={slot.accept}
+        style={{ display: "none" }}
+        onChange={handleInputChange}
+      />
+
+      {/* Slot label + hint */}
+      <div>
+        <div style={{
+          fontFamily: DT.brand,
+          fontSize: "0.82rem",
+          fontWeight: 700,
+          color: file ? DT.success : DT.text,
+          letterSpacing: "0.02em",
+        }}>
+          {slot.label}
+        </div>
+        <div style={{
+          fontFamily: DT.mono,
+          fontSize: "0.68rem",
+          color: DT.textSubtle,
+          marginTop: 2,
+        }}>
+          {slot.hint}
+        </div>
       </div>
 
-      {result.steps.length ? (
-        <ul style={{
-          margin: 0,
-          paddingLeft: 18,
+      {/* File state */}
+      {file ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+          <div style={{
+            fontFamily: DT.mono,
+            fontSize: "0.70rem",
+            color: DT.success,
+            fontWeight: 600,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}>
+            {file.name} · {formatBytes(file.size)}
+          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onClear(); }}
+            style={{
+              flexShrink: 0,
+              padding: "2px 7px",
+              borderRadius: 999,
+              border: `1px solid ${DT.borderSoft}`,
+              background: DT.surface,
+              color: DT.textMuted,
+              fontFamily: DT.brand,
+              fontSize: "0.60rem",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      ) : (
+        <div style={{
+          fontFamily: DT.font,
+          fontSize: "0.74rem",
           color: DT.textMuted,
-          fontFamily: DT.font,
-          fontSize: "0.78rem",
-          lineHeight: 1.55,
         }}>
-          {result.steps.map((step, i) => <li key={i}>{step}</li>)}
-        </ul>
-      ) : null}
-
-      {result.warnings.map((warning, i) => (
-        <div key={i} style={{
-          padding: "8px 10px",
-          borderRadius: DT.rSm,
-          background: DT.warningSoft,
-          color: DT.warning,
-          fontFamily: DT.font,
-          fontSize: "0.80rem",
-        }}>{warning}</div>
-      ))}
+          Drop here or click to browse
+        </div>
+      )}
     </div>
   );
 }
 
-function Stat({ label, value }) {
-  return (
-    <div style={{ display: "grid", gap: 2 }}>
-      <span style={{ ...eyebrow, color: DT.textSubtle }}>{label}</span>
-      <span style={{ fontFamily: DT.mono, fontSize: "0.84rem", color: DT.text, fontWeight: 600 }}>
-        {value}
-      </span>
-    </div>
-  );
-}
+// ─── Heading ──────────────────────────────────────────────────────────────────
 
-function Heading({ title, subtitle }) {
+function Heading() {
   return (
     <div>
       <div style={eyebrow}>Active tool</div>
-      <div style={{ fontFamily: DT.brand, fontSize: "1.15rem", fontWeight: 700, color: DT.text, marginTop: 2 }}>{title}</div>
-      <div style={{ fontFamily: DT.font, fontSize: "0.88rem", color: DT.textMuted, marginTop: 4 }}>{subtitle}</div>
+      <div style={{
+        fontFamily: DT.brand,
+        fontSize: "1.15rem",
+        fontWeight: 700,
+        color: DT.text,
+        marginTop: 2,
+      }}>
+        Portal Prep
+      </div>
+      <div style={{
+        fontFamily: DT.font,
+        fontSize: "0.88rem",
+        color: DT.textMuted,
+        marginTop: 4,
+      }}>
+        Select a service, upload all required documents, click once — all portal-ready files appear in the Output Queue.
+      </div>
     </div>
   );
 }

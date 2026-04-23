@@ -2,10 +2,11 @@ import React from "react";
 import { DT } from "../theme.js";
 import { CompressTool } from "../tools/CompressTool.jsx";
 import { ResizeTool } from "../tools/ResizeTool.jsx";
-import { FormatConvertTool } from "../tools/FormatConvertTool.jsx";
 import { PdfToImageTool } from "../tools/PdfToImageTool.jsx";
 import { ImageToPdfTool } from "../tools/ImageToPdfTool.jsx";
 import { PortalPrepTool } from "../tools/PortalPrepTool.jsx";
+import { WordToPdfTool } from "../tools/WordToPdfTool.jsx";
+import { WordToImageTool } from "../tools/WordToImageTool.jsx";
 
 /**
  * Central workbench. Only one tool renders at a time — we switch on toolId.
@@ -39,7 +40,6 @@ function renderTool(toolId, onQueue, emptyState, toolContext) {
   const ctx = toolContext || {};
   switch (toolId) {
     case "portal_prep":
-      // Remount when the requested preset changes so the picker reflects it.
       return (
         <PortalPrepTool
           key={`portal_prep:${ctx.presetId || "default"}`}
@@ -51,12 +51,14 @@ function renderTool(toolId, onQueue, emptyState, toolContext) {
       return <CompressTool onQueue={onQueue} />;
     case "resize":
       return <ResizeTool onQueue={onQueue} />;
-    case "convert":
-      return <FormatConvertTool onQueue={onQueue} />;
     case "pdf_to_image":
       return <PdfToImageTool onQueue={onQueue} />;
     case "image_to_pdf":
       return <ImageToPdfTool onQueue={onQueue} />;
+    case "word_to_pdf":
+      return <WordToPdfTool onQueue={onQueue} />;
+    case "word_to_image":
+      return <WordToImageTool onQueue={onQueue} />;
     default:
       return emptyState || null;
   }

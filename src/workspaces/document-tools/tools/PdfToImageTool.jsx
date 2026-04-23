@@ -190,7 +190,7 @@ export function PdfToImageTool({ onQueue }) {
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <Heading
-        title="PDF to Image"
+        title="PDF to PNG/JPG"
         subtitle="Export selected PDF pages as JPG or PNG at printable DPI. Password-protected PDFs are supported."
       />
 
