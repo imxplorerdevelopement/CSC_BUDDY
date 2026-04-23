@@ -3,19 +3,22 @@ import { SD } from "./theme.js";
 import { groupServicesByCategory } from "./registry.js";
 import { ServiceRow } from "./ServiceRow.jsx";
 
-/**
- * Services Dashboard — the centre's master service registry.
- *
- * Groups every service by category, numbers them within each group, and lets
- * the operator click any row to open a details panel beneath it. The details
- * panel is intentionally a placeholder right now; service information, rates,
- * and required documents will be added in a later pass.
- *
- * Multiple rows can be expanded at the same time so an operator can compare
- * two services side-by-side once the detail panels are populated.
- */
-export function ServicesDashboardWorkspace() {
-  const groups = useMemo(() => groupServicesByCategory(), []);
+export function ServicesDashboardWorkspace({ services: servicesProp } = {}) {
+  const groups = useMemo(() => {
+    if (Array.isArray(servicesProp) && servicesProp.length > 0) {
+      const categoryMap = new Map();
+      servicesProp.forEach((svc) => {
+        const cat = String(svc.category || "Other").trim() || "Other";
+        if (!categoryMap.has(cat)) {
+          categoryMap.set(cat, { id: cat, label: cat, services: [] });
+        }
+        categoryMap.get(cat).services.push({ id: svc.id, label: svc.name || svc.id });
+      });
+      return Array.from(categoryMap.values());
+    }
+    return groupServicesByCategory();
+  }, [servicesProp]);
+
   const [expandedIds, setExpandedIds] = useState(() => new Set());
 
   const toggle = useCallback((id) => {
@@ -68,9 +71,9 @@ function Header({ totalServices, categoryCount }) {
     }}>
       <div style={{
         fontFamily: SD.brand,
-        fontSize: "0.60rem",
+        fontSize: "0.62rem",
         fontWeight: 700,
-        letterSpacing: "0.22em",
+        letterSpacing: "0.18em",
         textTransform: "uppercase",
         color: SD.textSubtle,
       }}>
@@ -80,9 +83,9 @@ function Header({ totalServices, categoryCount }) {
         margin: 0,
         fontFamily: SD.brand,
         fontSize: "1.5rem",
-        fontWeight: 700,
+        fontWeight: 800,
         color: SD.text,
-        letterSpacing: "0.005em",
+        letterSpacing: "-0.01em",
       }}>
         Services Dashboard
       </h2>
@@ -118,7 +121,7 @@ function CategoryBlock({ label, services, expandedIds, onToggle }) {
         <h3 style={{
           margin: 0,
           fontFamily: SD.brand,
-          fontSize: "1.02rem",
+          fontSize: "1.0rem",
           fontWeight: 700,
           color: SD.text,
           letterSpacing: "0.01em",

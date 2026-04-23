@@ -151,9 +151,9 @@ const PHONE_REGEX = /^[0-9]{10}$/;
 const DELETE_ACCESS_CODE = "241100";
 const MENU_OPTION_STYLE = { color: "#0f172a", backgroundColor: "#ffffff" };
 const MENU_OPTGROUP_STYLE = { color: "rgba(15,23,42,0.58)", backgroundColor: "#f1f5f9" };
-const BRAND_PRIMARY = DS.wine;
-const BRAND_PRIMARY_DARK = "#1e40af";
-const BRAND_PRIMARY_SOFT = "rgba(37,99,235,0.14)";
+const BRAND_PRIMARY = "#1a56db";
+const BRAND_PRIMARY_DARK = "#1540b0";
+const BRAND_PRIMARY_SOFT = "rgba(26,86,219,0.12)";
 const NEGOTIATION_FACTOR_MIN = 0.5;
 const NEGOTIATION_FACTOR_MAX = 1.5;
 const NEGOTIATION_FACTOR_STEP = 0.05;
@@ -185,43 +185,46 @@ const APP_SERIF_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
 const APP_BRAND_STACK = "'League Spartan', 'Manrope', sans-serif";
 const APP_MONO_STACK = "'JetBrains Mono', 'Cascadia Code', Consolas, monospace";
 const OPS = {
-  bg: "#f8fafc",
+  bg: "#eef2f7",
   shell: "#ffffff",
   surface: "#ffffff",
-  surfaceMuted: "#f1f5f9",
-  border: "rgba(15,23,42,0.12)",
-  borderSoft: "rgba(15,23,42,0.08)",
-  text: "#0f172a",
-  textMuted: "#475569",
-  primary: "#2563eb",
-  primarySoft: "rgba(37,99,235,0.12)",
-  primaryBorder: "rgba(37,99,235,0.32)",
-  success: "#166534",
-  warning: "#a16207",
-  danger: "#b91c1c",
-  shadowSoft: "0 1px 2px rgba(15,23,42,0.08)",
-  shadowElevated: "0 10px 24px rgba(15,23,42,0.10)",
+  surfaceMuted: "#f4f7fa",
+  border: "rgba(13,27,42,0.11)",
+  borderSoft: "rgba(13,27,42,0.07)",
+  text: "#0d1b2a",
+  textMuted: "#3d5068",
+  primary: "#1a56db",
+  primarySoft: "rgba(26,86,219,0.10)",
+  primaryBorder: "rgba(26,86,219,0.32)",
+  success: "#059669",
+  successSoft: "rgba(5,150,105,0.10)",
+  warning: "#b45309",
+  warningSoft: "rgba(180,83,9,0.10)",
+  danger: "#dc2626",
+  dangerSoft: "rgba(220,38,38,0.10)",
+  shadowSoft: "0 1px 3px rgba(13,27,42,0.07), 0 0 0 1px rgba(13,27,42,0.05)",
+  shadowElevated: "0 8px 24px rgba(13,27,42,0.09), 0 0 0 1px rgba(13,27,42,0.06)",
 };
 const STATUS_THEME = {
   info: {
-    text: "#1d4ed8",
-    bg: "rgba(37,99,235,0.10)",
-    border: "rgba(37,99,235,0.26)",
+    text: "#1a56db",
+    bg: "rgba(26,86,219,0.09)",
+    border: "rgba(26,86,219,0.24)",
   },
   success: {
-    text: "#166534",
-    bg: "rgba(22,163,74,0.10)",
-    border: "rgba(22,163,74,0.26)",
+    text: "#059669",
+    bg: "rgba(5,150,105,0.09)",
+    border: "rgba(5,150,105,0.26)",
   },
   warning: {
-    text: "#a16207",
-    bg: "rgba(161,98,7,0.10)",
-    border: "rgba(161,98,7,0.26)",
+    text: "#b45309",
+    bg: "rgba(180,83,9,0.09)",
+    border: "rgba(180,83,9,0.26)",
   },
   danger: {
-    text: "#b91c1c",
-    bg: "rgba(220,38,38,0.10)",
-    border: "rgba(220,38,38,0.30)",
+    text: "#dc2626",
+    bg: "rgba(220,38,38,0.09)",
+    border: "rgba(220,38,38,0.28)",
   },
 };
 const ELEVATION = {
@@ -2857,46 +2860,35 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
-      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
-          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Total Tickets</div>
-          <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#1e3a8a" }}>{tickets.length}</div>
-        </div>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
-          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Service Records</div>
-          <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#1e3a8a" }}>{services.length}</div>
-        </div>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
-          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>Ticket Collection</div>
-          <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#166534" }}>Rs. {Math.round(totalCollections).toLocaleString("en-IN")}</div>
-        </div>
-        <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 12, background: "rgba(255,255,255,0.92)", padding: "11px 13px" }}>
-          <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK }}>B2B Ledger</div>
-          <div style={{ marginTop: 6, fontFamily: APP_MONO_STACK, fontSize: "1.1rem", fontWeight: 700, color: "#1e3a8a" }}>Rs. {Math.round(totalB2B).toLocaleString("en-IN")}</div>
-        </div>
-      </div>
-
-      <div style={{ border: "1px solid rgba(15,23,42,0.12)", borderRadius: 14, background: "rgba(255,255,255,0.94)", padding: 12 }}>
+      <div style={{ border: "1px solid rgba(13,27,42,0.11)", borderRadius: 14, background: "#ffffff", padding: 12 }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
           <button
             type="button"
             onClick={handleExportRecordsToExcel}
             style={{
-              border: "1px solid rgba(37,99,235,0.30)",
-              borderRadius: 10,
-              background: "rgba(37,99,235,0.10)",
-              color: "#1d4ed8",
+              border: "1px solid rgba(21,128,61,0.32)",
+              borderRadius: 8,
+              background: "#ffffff",
+              color: "#166534",
               fontFamily: APP_BRAND_STACK,
-              fontSize: "0.58rem",
+              fontSize: "0.76rem",
               fontWeight: 700,
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
+              letterSpacing: "0.06em",
               cursor: "pointer",
-              padding: "9px 12px",
+              padding: "9px 14px",
               whiteSpace: "nowrap",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              boxShadow: "0 1px 3px rgba(21,128,61,0.10)",
             }}
           >
-            Export All To Excel
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect width="16" height="16" rx="3" fill="#217346"/>
+              <path d="M2 4h5v1.5H2V4zm0 2.5h5V8H2V6.5zm0 2.5h5v1.5H2V9zm6-5h6v1.5H8V4zm0 2.5h6V8H8V6.5zm0 2.5h6v1.5H8V9zm-6 2.5h12V13H2v-1.5z" fill="white"/>
+              <text x="3.5" y="14.5" fontSize="4.5" fontWeight="bold" fill="white" fontFamily="sans-serif">XLS</text>
+            </svg>
+            Export to Excel
           </button>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {DATABASE_SECTION_CONFIG.map((section) => {
@@ -2907,22 +2899,23 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                 key={section.id}
                 onClick={() => setActiveSectionId(section.id)}
                 style={{
-                  border: active ? "1px solid rgba(37,99,235,0.38)" : "1px solid rgba(15,23,42,0.14)",
-                  borderRadius: 10,
-                  background: active ? "rgba(37,99,235,0.11)" : "rgba(255,255,255,0.8)",
-                  color: active ? "#1e3a8a" : "#0f172a",
-                  padding: "9px 12px",
-                  fontFamily: APP_FONT_STACK,
-                  fontSize: "0.84rem",
+                  border: active ? "1px solid rgba(26,86,219,0.30)" : "1px solid rgba(13,27,42,0.12)",
+                  borderRadius: 8,
+                  background: active ? "rgba(26,86,219,0.09)" : "#ffffff",
+                  color: active ? "#1540b0" : "#0d1b2a",
+                  padding: "8px 12px",
+                  fontFamily: APP_BRAND_STACK,
+                  fontSize: "0.78rem",
                   fontWeight: 700,
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
+                  boxShadow: active ? "none" : "0 1px 2px rgba(13,27,42,0.05)",
                 }}
               >
                 <span>{section.label}</span>
-                <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.74rem", color: "rgba(15,23,42,0.56)" }}>{count}</span>
+                <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: active ? "#1a56db" : "rgba(13,27,42,0.46)" }}>{count}</span>
               </button>
             );
           })}
@@ -3405,14 +3398,15 @@ function WorkspaceSidebar({
   };
   const menuButtonStyle = (active) => ({
     width: "100%",
-    border: active ? "1px solid rgba(37,99,235,0.34)" : "1px solid rgba(15,23,42,0.11)",
-    borderRadius: 12,
-    background: active ? "rgba(37,99,235,0.10)" : "rgba(255,255,255,0.72)",
+    border: active ? "1px solid rgba(26,86,219,0.30)" : "1px solid rgba(13,27,42,0.10)",
+    borderRadius: 10,
+    background: active ? "rgba(26,86,219,0.09)" : "#ffffff",
     cursor: "pointer",
-    padding: "11px 12px",
+    padding: "10px 12px",
     textAlign: "left",
     display: "grid",
-    transition: "all 0.18s ease",
+    transition: "all 0.15s ease",
+    boxShadow: active ? "0 0 0 0 transparent" : "0 1px 2px rgba(13,27,42,0.04)",
   });
 
   const renderMenuGroup = (items, heading) => (
@@ -3444,8 +3438,8 @@ function WorkspaceSidebar({
                   borderRadius: 9,
                   display: "grid",
                   placeItems: "center",
-                  background: active ? "rgba(37,99,235,0.18)" : "rgba(15,23,42,0.07)",
-                  color: active ? "#1d4ed8" : "rgba(15,23,42,0.68)",
+                  background: active ? "rgba(26,86,219,0.14)" : "rgba(13,27,42,0.06)",
+                  color: active ? "#1a56db" : "rgba(13,27,42,0.60)",
                   fontSize: "0.60rem",
                   fontWeight: 800,
                   fontFamily: APP_BRAND_STACK,
@@ -3458,7 +3452,7 @@ function WorkspaceSidebar({
                   fontFamily: APP_FONT_STACK,
                   fontSize: "0.88rem",
                   fontWeight: 700,
-                  color: active ? "#1e3a8a" : "#0f172a",
+                  color: active ? "#1540b0" : "#0d1b2a",
                   lineHeight: 1.2,
                   letterSpacing: "-0.01em",
                   whiteSpace: "nowrap",
@@ -3470,11 +3464,11 @@ function WorkspaceSidebar({
               </div>
               {badge && (
                 <span style={{
-                  borderRadius: 999,
+                  borderRadius: 6,
                   padding: "3px 7px",
-                  border: "1px solid rgba(37,99,235,0.22)",
-                  background: "rgba(37,99,235,0.08)",
-                  color: "#1d4ed8",
+                  border: "1px solid rgba(26,86,219,0.20)",
+                  background: "rgba(26,86,219,0.08)",
+                  color: "#1a56db",
                   fontFamily: APP_MONO_STACK,
                   fontSize: "0.68rem",
                   fontWeight: 700,
@@ -3494,8 +3488,8 @@ function WorkspaceSidebar({
     <aside className="csc-sidebar" style={{
       width: 320,
       minWidth: 320,
-      background: "linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%)",
-      borderRight: "1px solid rgba(15,23,42,0.12)",
+      background: "#ffffff",
+      borderRight: "1px solid rgba(13,27,42,0.10)",
       display: "flex",
       flexDirection: "column",
       position: "fixed",
@@ -3505,34 +3499,34 @@ function WorkspaceSidebar({
       height: "100vh",
       overflow: "hidden",
       zIndex: 40,
-      boxShadow: "12px 0 30px rgba(15,23,42,0.18)",
+      boxShadow: "4px 0 20px rgba(13,27,42,0.10), 1px 0 0 rgba(13,27,42,0.08)",
       transform: isOpen ? "translateX(0)" : "translateX(-108%)",
       opacity: isOpen ? 1 : 0,
       pointerEvents: isOpen ? "auto" : "none",
       transition: "transform 0.22s ease, opacity 0.18s ease",
       willChange: "transform",
     }}>
-      <div style={{ padding: "22px 18px 14px", borderBottom: "1px solid rgba(15,23,42,0.10)" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+      <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(13,27,42,0.09)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
               width: 34,
               height: 34,
-              borderRadius: 10,
-              background: "rgba(37,99,235,0.12)",
-              border: "1px solid rgba(37,99,235,0.26)",
+              borderRadius: 8,
+              background: "#1a56db",
+              border: "none",
               display: "grid",
               placeItems: "center",
-              color: "#1d4ed8",
+              color: "#ffffff",
               fontFamily: APP_BRAND_STACK,
               fontWeight: 800,
-              fontSize: "0.66rem",
+              fontSize: "0.64rem",
               letterSpacing: "0.08em",
             }}>
               CSC
             </div>
             <div>
-              <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.96rem", fontWeight: 800, color: "#0f172a", letterSpacing: "0.06em" }}>
+              <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.94rem", fontWeight: 800, color: "#0d1b2a", letterSpacing: "0.02em" }}>
                 Partner Desk
               </div>
             </div>
@@ -3540,38 +3534,36 @@ function WorkspaceSidebar({
           <button
             onClick={handleClose}
             style={{
-              border: "1px solid rgba(15,23,42,0.14)",
-              borderRadius: 9,
-              background: "rgba(255,255,255,0.84)",
-              color: "rgba(15,23,42,0.70)",
+              border: "1px solid rgba(13,27,42,0.12)",
+              borderRadius: 7,
+              background: "#f4f7fa",
+              color: "rgba(13,27,42,0.62)",
               fontFamily: APP_BRAND_STACK,
               fontWeight: 700,
-              fontSize: "0.58rem",
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
+              fontSize: "0.68rem",
+              letterSpacing: "0.04em",
               cursor: "pointer",
-              padding: "6px 9px",
+              padding: "5px 9px",
               flexShrink: 0,
             }}
             aria-label="Hide navigation menu"
             title="Hide navigation menu"
           >
-            {"<"} Hide
+            ← Hide
           </button>
         </div>
         <button
           onClick={() => onNavigate("home")}
           style={{
             width: "100%",
-            border: "1px solid rgba(37,99,235,0.30)",
-            borderRadius: 10,
-            background: "rgba(37,99,235,0.10)",
-            color: "#1d4ed8",
+            border: "1px solid rgba(26,86,219,0.28)",
+            borderRadius: 8,
+            background: "rgba(26,86,219,0.08)",
+            color: "#1a56db",
             fontFamily: APP_BRAND_STACK,
-            fontSize: "0.62rem",
+            fontSize: "0.72rem",
             fontWeight: 700,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
+            letterSpacing: "0.06em",
             cursor: "pointer",
             padding: "9px 12px",
             textAlign: "center",
@@ -3586,20 +3578,19 @@ function WorkspaceSidebar({
         {renderMenuGroup(toolItems, "Dashboards & Tools")}
       </div>
 
-      <div style={{ borderTop: "1px solid rgba(15,23,42,0.10)", padding: "12px 14px 16px", display: "grid", gap: 8 }}>
+      <div style={{ borderTop: "1px solid rgba(13,27,42,0.09)", padding: "12px 14px 16px", display: "grid", gap: 8 }}>
         <button
           onClick={onOpenWhatsApp}
           style={{
             width: "100%",
-            border: "1px solid rgba(22,163,74,0.34)",
-            borderRadius: 10,
-            background: "rgba(22,163,74,0.12)",
-            color: "#166534",
+            border: "1px solid rgba(5,150,105,0.30)",
+            borderRadius: 8,
+            background: "rgba(5,150,105,0.08)",
+            color: "#059669",
             fontFamily: APP_BRAND_STACK,
-            fontSize: "0.62rem",
+            fontSize: "0.72rem",
             fontWeight: 700,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
+            letterSpacing: "0.04em",
             cursor: "pointer",
             padding: "9px 10px",
           }}
@@ -4687,11 +4678,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const sanitizePhone = (value) => value.replace(/\D/g, "").slice(0, 10);
   const hasOnlyZeroPricedItems = items.length > 0 && total === 0;
   const canSaveTicket = items.length > 0 && !isOverpaid && !hasOnlyZeroPricedItems;
-  const ENTRY_ACCENT = "#5b7ea5";
-  const ENTRY_ACCENT_TEXT = "#3f6086";
-  const ENTRY_ACCENT_SOFT = "rgba(91,126,165,0.12)";
-  const ENTRY_ACCENT_SOFTER = "rgba(91,126,165,0.08)";
-  const ENTRY_ACCENT_BORDER = "rgba(91,126,165,0.32)";
+  const ENTRY_ACCENT = "#1a56db";
+  const ENTRY_ACCENT_TEXT = "#1540b0";
+  const ENTRY_ACCENT_SOFT = "rgba(26,86,219,0.10)";
+  const ENTRY_ACCENT_SOFTER = "rgba(26,86,219,0.06)";
+  const ENTRY_ACCENT_BORDER = "rgba(26,86,219,0.30)";
   const ticketReferenceSummary = ticketMeta
     ? formatReferenceSummary({
       hasReference: getHasReferenceValue(ticketMeta),
@@ -4701,78 +4692,78 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     : "No reference added";
   const surfaceCardStyle = {
     background: "#ffffff",
-    borderRadius: 20,
-    border: "1px solid rgba(15,23,42,0.09)",
-    padding: 24,
-    boxShadow: "0 12px 34px rgba(15,23,42,0.07)",
+    borderRadius: 14,
+    border: "1px solid rgba(13,27,42,0.09)",
+    padding: 22,
+    boxShadow: "0 2px 8px rgba(13,27,42,0.07), 0 0 0 1px rgba(13,27,42,0.05)",
   };
   const softPanelStyle = {
-    background: "#f7f9fc",
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    padding: 18,
-    boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
+    background: "#f4f7fa",
+    borderRadius: 10,
+    border: "1px solid rgba(13,27,42,0.08)",
+    padding: 16,
   };
   const sectionEyebrowStyle = {
-    fontSize: "0.58rem",
+    fontSize: "0.62rem",
     color: ENTRY_ACCENT_TEXT,
     fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
     textTransform: "uppercase",
-    letterSpacing: "0.30em",
+    letterSpacing: "0.18em",
     marginBottom: 8,
     display: "block",
   };
   const inputStyle = {
     width: "100%",
-    padding: "11px 14px",
-    border: "1px solid rgba(15,23,42,0.14)",
-    borderRadius: 10,
+    padding: "10px 13px",
+    border: "1px solid rgba(13,27,42,0.14)",
+    borderRadius: 8,
     background: "#ffffff",
-    color: "#0f172a",
+    color: "#0d1b2a",
     outline: "none",
     fontFamily: APP_FONT_STACK,
     fontSize: "0.88rem",
-    boxShadow: "inset 0 1px 2px rgba(15,23,42,0.03)",
+    fontWeight: 500,
+    boxShadow: "inset 0 1px 2px rgba(13,27,42,0.04)",
   };
   const primaryButtonStyle = {
-    border: `1px solid ${ENTRY_ACCENT_BORDER}`,
-    borderRadius: 999,
-    padding: "12px 22px",
-    background: ENTRY_ACCENT_SOFT,
-    color: ENTRY_ACCENT_TEXT,
+    border: "none",
+    borderRadius: 8,
+    padding: "11px 20px",
+    background: ENTRY_ACCENT,
+    color: "#ffffff",
     fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
-    fontSize: "0.6rem",
-    letterSpacing: "0.22em",
-    textTransform: "uppercase",
+    fontSize: "0.76rem",
+    letterSpacing: "0.06em",
     cursor: "pointer",
-    transition: "all 0.22s ease",
+    transition: "all 0.15s ease",
+    boxShadow: "0 1px 3px rgba(26,86,219,0.25)",
   };
   const secondaryButtonStyle = {
-    border: "1px solid rgba(15,23,42,0.14)",
-    borderRadius: 999,
-    padding: "12px 22px",
-    background: "rgba(255,255,255,0.72)",
-    color: "rgba(15,23,42,0.78)",
+    border: "1px solid rgba(13,27,42,0.15)",
+    borderRadius: 8,
+    padding: "11px 20px",
+    background: "#ffffff",
+    color: "#0d1b2a",
     fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
-    fontSize: "0.6rem",
-    letterSpacing: "0.22em",
-    textTransform: "uppercase",
+    fontSize: "0.76rem",
+    letterSpacing: "0.04em",
     cursor: "pointer",
-    transition: "all 0.22s ease",
+    transition: "all 0.15s ease",
+    boxShadow: "0 1px 2px rgba(13,27,42,0.06)",
   };
   const smallBadgeStyle = {
     display: "inline-flex",
     alignItems: "center",
     gap: 6,
-    borderRadius: 999,
-    padding: "6px 12px",
-    fontSize: "0.58rem",
+    borderRadius: 6,
+    padding: "4px 10px",
+    fontSize: "0.68rem",
     fontFamily: APP_BRAND_STACK,
     fontWeight: 700,
-    letterSpacing: "0.18em",
+    letterSpacing: "0.08em",
     textTransform: "uppercase",
   };
   const draftStatusLabel = draftStorageState === "saving"
@@ -4783,10 +4774,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         ? "Local save failed"
         : "Draft idle";
   const draftStatusAccent = draftStorageState === "error"
-    ? "#8f2e3d"
+    ? "#dc2626"
     : draftStorageState === "saving"
       ? ENTRY_ACCENT_TEXT
-      : "rgba(15,23,42,0.55)";
+      : "rgba(13,27,42,0.50)";
   const closeConfirmDialog = () => {
     setConfirmDialog({
       isOpen: false,
@@ -4920,8 +4911,8 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     if (hasReference && !trimmedReferenceName) {
       nextErrors.referenceName = "Reference name is required when reference is enabled.";
     }
-    if (hasReference && !PHONE_REGEX.test(referencePhoneDigits)) {
-      nextErrors.referencePhone = "Reference mobile number must be exactly 10 digits.";
+    if (hasReference && referencePhoneDigits.length > 0 && !PHONE_REGEX.test(referencePhoneDigits)) {
+      nextErrors.referencePhone = "Reference mobile must be exactly 10 digits if entered.";
     }
 
     return {
@@ -8943,7 +8934,42 @@ export default function CSCBilling() {
     setEntryWorkspaceKey((prev) => prev + 1);
   };
 
-  const saveTicket = (ticket) => setTickets((prev) => [...prev, withStructuredTicket(ticket)]);
+  const saveTicket = (ticket) => {
+    const structured = withStructuredTicket(ticket);
+    setTickets((prev) => [...prev, structured]);
+    const phonesToSync = [];
+    const holderPhone = String(structured.customerPhone || "").replace(/\D/g, "");
+    const holderName = String(structured.customerName || "").trim();
+    if (PHONE_REGEX.test(holderPhone)) {
+      phonesToSync.push({ name: holderName, mobileNumber: holderPhone });
+    }
+    const refPhone = String(structured.referenceLabel || "").replace(/\D/g, "");
+    const refName = String(structured.referenceName || "").trim();
+    if (PHONE_REGEX.test(refPhone)) {
+      phonesToSync.push({ name: refName || holderName, mobileNumber: refPhone });
+    }
+    if (phonesToSync.length > 0) {
+      setDatabaseRecords((prev) => {
+        const existingPhones = new Set(
+          prev
+            .filter((r) => r.sectionId === "mobile_numbers")
+            .map((r) => String(r.values?.mobileNumber || "").replace(/\D/g, ""))
+            .filter(Boolean)
+        );
+        const newRecords = phonesToSync
+          .filter((p) => !existingPhones.has(p.mobileNumber))
+          .map((p, i) => normalizeDatabaseRecordEntry({
+            id: `db_record_phone_${Date.now()}_${i}`,
+            sectionId: "mobile_numbers",
+            values: { name: p.name, mobileNumber: p.mobileNumber },
+            isActiveClient: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }, prev.length + i));
+        return newRecords.length > 0 ? [...newRecords, ...prev] : prev;
+      });
+    }
+  };
   const addB2BLedgerEntry = (entry) => {
     setB2BLedger((prev) => [...prev, normalizeB2BLedgerEntry(entry, prev.length)]);
   };
@@ -9379,15 +9405,22 @@ export default function CSCBilling() {
         * { box-sizing: border-box; }
         html, body {
           margin: 0;
-          background: #f8fbff;
-          color: #0f172a;
+          background: #eef2f7;
+          color: #0d1b2a;
         }
         body, button, input, select, textarea {
           font-family: ${APP_FONT_STACK};
-          color: #0f172a;
+          color: #0d1b2a;
+          font-style: normal;
+        }
+        h1, h2, h3, h4, h5, h6 {
+          font-family: ${APP_BRAND_STACK};
+          font-style: normal;
+          color: #0d1b2a;
+          margin: 0;
         }
         button, [role="button"], input, select, textarea {
-          transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+          transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
         }
         button:focus-visible,
         [role="button"]:focus-visible,
@@ -9395,7 +9428,7 @@ export default function CSCBilling() {
         select:focus-visible,
         textarea:focus-visible {
           outline: 2px solid transparent;
-          box-shadow: 0 0 0 3px rgba(37,99,235,0.26);
+          box-shadow: 0 0 0 3px rgba(26,86,219,0.28);
         }
         .csc-hover-surface-row:hover,
         .csc-hover-surface-row:focus-within {
@@ -9407,52 +9440,51 @@ export default function CSCBilling() {
         }
         .csc-hover-accent:hover,
         .csc-hover-accent:focus-visible {
-          background: rgba(20,184,166,0.24) !important;
+          background: rgba(26,86,219,0.10) !important;
         }
         .csc-empty-state {
           text-align: center;
-          border: 1px dashed rgba(15,23,42,0.14);
+          border: 1px dashed rgba(13,27,42,0.13);
           border-radius: 12px;
-          background: rgba(255,255,255,0.68);
-          padding: 22px 18px;
+          background: #ffffff;
+          padding: 24px 20px;
         }
         .csc-empty-state-icon {
           width: 36px;
           height: 36px;
           margin: 0 auto 10px;
-          border-radius: 999px;
+          border-radius: 10px;
           display: grid;
           place-items: center;
           font-size: 16px;
-          color: #1d4ed8;
-          border: 1px solid rgba(37,99,235,0.24);
-          background: rgba(37,99,235,0.08);
+          color: #1a56db;
+          border: 1px solid rgba(26,86,219,0.22);
+          background: rgba(26,86,219,0.08);
         }
         .csc-empty-state-title {
-          font-size: 0.96rem;
+          font-size: 0.94rem;
           font-weight: 700;
-          color: #0f172a;
-          font-family: ${APP_FONT_STACK};
+          color: #0d1b2a;
+          font-family: ${APP_BRAND_STACK};
           margin-bottom: 6px;
         }
         .csc-empty-state-message {
           font-size: 0.84rem;
           line-height: 1.65;
-          color: rgba(15,23,42,0.55);
+          color: rgba(13,27,42,0.52);
           font-family: ${APP_FONT_STACK};
-          margin-bottom: 12px;
+          margin-bottom: 14px;
         }
         .csc-empty-state-cta {
-          border: 1px solid rgba(37,99,235,0.30);
-          border-radius: 999px;
-          background: rgba(37,99,235,0.10);
-          color: #1d4ed8;
+          border: 1px solid rgba(26,86,219,0.28);
+          border-radius: 8px;
+          background: rgba(26,86,219,0.09);
+          color: #1a56db;
           font-family: ${APP_BRAND_STACK};
           font-weight: 700;
-          font-size: 0.58rem;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          padding: 8px 12px;
+          font-size: 0.72rem;
+          letter-spacing: 0.06em;
+          padding: 8px 14px;
           cursor: pointer;
         }
         .csc-ticket-dashboard-grid {
@@ -9478,12 +9510,9 @@ export default function CSCBilling() {
           position: sticky;
           top: 80px;
         }
-        input::placeholder, textarea::placeholder {
-          color: rgba(15,23,42,0.45);
-        }
         select option {
           background: #ffffff;
-          color: #0f172a;
+          color: #0d1b2a;
         }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(6px); }
@@ -9494,16 +9523,20 @@ export default function CSCBilling() {
           to { opacity: 1; transform: translateX(0); }
         }
         @keyframes subtleGlow {
-          from { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
-          to   { box-shadow: 0 0 22px 4px rgba(37,99,235,0.08); }
+          from { box-shadow: 0 0 0 0 rgba(26,86,219,0); }
+          to   { box-shadow: 0 0 22px 4px rgba(26,86,219,0.10); }
         }
         .csc-sidebar-nav::-webkit-scrollbar { width: 4px; }
         .csc-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
         .csc-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
         .csc-content-scroll::-webkit-scrollbar { width: 4px; }
         .csc-content-scroll::-webkit-scrollbar-track { background: transparent; }
-        .csc-content-scroll::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.12); border-radius: 999px; }
-        input[type="checkbox"] { accent-color: ${DS.wine}; cursor: pointer; }
+        .csc-content-scroll::-webkit-scrollbar-thumb { background: rgba(13,27,42,0.11); border-radius: 999px; }
+        input[type="checkbox"] { accent-color: #1a56db; cursor: pointer; }
+        input::placeholder, textarea::placeholder {
+          color: rgba(13,27,42,0.38);
+          font-style: normal;
+        }
         @media (max-width: 1100px) {
           .csc-ticket-dashboard-grid { grid-template-columns: 1fr !important; }
           .csc-db-main-grid { grid-template-columns: 1fr !important; }
@@ -9550,7 +9583,7 @@ export default function CSCBilling() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(15,23,42,0.28)",
+              background: "rgba(13,27,42,0.24)",
               zIndex: 30,
             }}
             aria-label="Close navigation menu overlay"
@@ -9577,11 +9610,11 @@ export default function CSCBilling() {
           minWidth: 0,
           display: "flex",
           flexDirection: "column",
-          background: "#ffffff",
+          background: "#eef2f7",
           position: "relative",
         }}>
           {/* Subtle grid texture */}
-          <div style={{ display: isHomeTab || tab === "entry" ? "none" : "block", position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.18, backgroundImage: "linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px)", backgroundSize: "72px 72px" }} />
+          <div style={{ display: isHomeTab || tab === "entry" ? "none" : "block", position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.12, backgroundImage: "linear-gradient(90deg, rgba(13,27,42,0.05) 1px, transparent 1px), linear-gradient(rgba(13,27,42,0.05) 1px, transparent 1px)", backgroundSize: "80px 80px" }} />
 
           {!isHomeTab && (
           <>
@@ -9590,12 +9623,12 @@ export default function CSCBilling() {
             position: "sticky",
             top: 0,
             zIndex: 10,
-            background: `rgba(255,255,255,0.92)`,
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            borderBottom: `1px solid rgba(15,23,42,0.10)`,
+            background: `rgba(255,255,255,0.96)`,
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            borderBottom: `1px solid rgba(13,27,42,0.09)`,
             padding: "0 28px",
-            height: 60,
+            height: 56,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -9606,16 +9639,15 @@ export default function CSCBilling() {
               <button
                 onClick={() => setIsSidebarOpen((prev) => !prev)}
                 style={{
-                  border: "1px solid rgba(15,23,42,0.16)",
-                  borderRadius: 999,
-                  padding: "6px 11px",
-                  background: "rgba(255,255,255,0.86)",
-                  color: "rgba(15,23,42,0.78)",
+                  border: "1px solid rgba(13,27,42,0.13)",
+                  borderRadius: 7,
+                  padding: "5px 10px",
+                  background: "#f4f7fa",
+                  color: "rgba(13,27,42,0.70)",
                   fontFamily: APP_BRAND_STACK,
                   fontWeight: 700,
-                  fontSize: "0.56rem",
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.04em",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                   display: "inline-flex",
@@ -9629,9 +9661,9 @@ export default function CSCBilling() {
                   <span style={{ fontSize: "0.7rem", lineHeight: 1 }}>{"<"}</span>
                 ) : (
                   <span style={{ display: "grid", gap: 2 }}>
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.72)", display: "block" }} />
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.72)", display: "block" }} />
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(15,23,42,0.72)", display: "block" }} />
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(13,27,42,0.65)", display: "block" }} />
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(13,27,42,0.65)", display: "block" }} />
+                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: "rgba(13,27,42,0.65)", display: "block" }} />
                   </span>
                 )}
                 {isSidebarOpen ? "Hide Menu" : "Menu"}
@@ -9639,16 +9671,15 @@ export default function CSCBilling() {
               <button
                 onClick={() => navigateTab("home")}
                 style={{
-                  border: "1px solid rgba(37,99,235,0.28)",
-                  borderRadius: 999,
-                  padding: "6px 11px",
-                  background: "rgba(37,99,235,0.10)",
-                  color: "#1d4ed8",
+                  border: "1px solid rgba(26,86,219,0.24)",
+                  borderRadius: 7,
+                  padding: "5px 10px",
+                  background: "rgba(26,86,219,0.08)",
+                  color: "#1a56db",
                   fontFamily: APP_BRAND_STACK,
                   fontWeight: 700,
-                  fontSize: "0.56rem",
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.04em",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                 }}
@@ -9656,15 +9687,15 @@ export default function CSCBilling() {
                 Home
               </button>
               <div style={{
-                width: 6, height: 6, borderRadius: "50%",
-                background: "#2563eb", opacity: 0.7, flexShrink: 0,
+                width: 5, height: 5, borderRadius: "50%",
+                background: "#1a56db", opacity: 0.5, flexShrink: 0,
               }} />
               <div style={{
                 fontFamily: APP_BRAND_STACK,
-                fontSize: "0.80rem",
+                fontSize: "0.84rem",
                 fontWeight: 700,
-                color: "#0f172a",
-                letterSpacing: "0.04em",
+                color: "#0d1b2a",
+                letterSpacing: "0.02em",
               }}>
                 {activeTabConfig.label}
               </div>
@@ -9674,25 +9705,25 @@ export default function CSCBilling() {
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               {headerStats.map((stat) => (
                 <div key={stat.label} style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
+                  <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,27,42,0.40)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
                     {stat.label}
                   </div>
-                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: stat.accent || "#0f172a", fontFamily: APP_MONO_STACK, letterSpacing: "-0.01em" }}>
+                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: stat.accent || "#0d1b2a", fontFamily: APP_MONO_STACK, letterSpacing: "-0.01em" }}>
                     {stat.value}
                   </div>
                 </div>
               ))}
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(15,23,42,0.38)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
+                <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(13,27,42,0.40)", fontFamily: APP_BRAND_STACK, marginBottom: 2 }}>
                   Data Sync
                 </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, padding: "5px 10px", border: `1px solid ${cloudSyncState === "sync_failed" ? "rgba(214,5,43,0.30)" : cloudSyncState === "synced" ? "rgba(42,102,71,0.30)" : "rgba(15,23,42,0.16)"}`, background: cloudSyncState === "sync_failed" ? "rgba(214,5,43,0.08)" : cloudSyncState === "synced" ? "rgba(42,102,71,0.10)" : "rgba(15,23,42,0.05)" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 7, padding: "4px 9px", border: `1px solid ${cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.26)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.26)" : "rgba(13,27,42,0.13)"}`, background: cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.07)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.07)" : "rgba(13,27,42,0.04)" }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: cloudSyncAccent, display: "inline-block" }} />
-                  <span style={{ fontSize: "0.62rem", fontWeight: 700, color: cloudSyncAccent, fontFamily: APP_BRAND_STACK, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: "0.68rem", fontWeight: 700, color: cloudSyncAccent, fontFamily: APP_BRAND_STACK, letterSpacing: "0.06em" }}>
                     {cloudSyncLabel}
                   </span>
                   {cloudSyncState === "synced" && cloudLastSyncedAt && (
-                    <span style={{ fontSize: "0.68rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_MONO_STACK }}>
+                    <span style={{ fontSize: "0.68rem", color: "rgba(13,27,42,0.40)", fontFamily: APP_MONO_STACK }}>
                       {formatSyncTime(cloudLastSyncedAt)}
                     </span>
                   )}
@@ -9745,32 +9776,32 @@ export default function CSCBilling() {
 
           {/* Page title / hero area */}
           <div style={{
-            padding: "24px 32px 18px",
-            borderBottom: `1px solid rgba(15,23,42,0.09)`,
-            background: tab === "entry" ? "#f4f6f9" : "#f8fafc",
+            padding: "22px 32px 16px",
+            borderBottom: `1px solid rgba(13,27,42,0.09)`,
+            background: "#ffffff",
             position: "relative",
             zIndex: 1,
           }}>
             <div style={{ width: "100%", maxWidth: 1240, margin: "0 auto" }}>
               <div style={{
-                fontSize: "0.58rem",
+                fontSize: "0.62rem",
                 fontWeight: 700,
-                letterSpacing: "0.32em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
-                color: tab === "entry" ? "#4c6f96" : DS.wine,
+                color: "rgba(13,27,42,0.42)",
                 fontFamily: APP_BRAND_STACK,
-                marginBottom: 10,
+                marginBottom: 8,
               }}>
                 CSC Centre Workspace
               </div>
               <h1 style={{
                 margin: 0,
-                fontFamily: APP_FONT_STACK,
-                fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)",
+                fontFamily: APP_BRAND_STACK,
+                fontSize: "clamp(1.4rem, 2.4vw, 1.9rem)",
                 fontWeight: 800,
                 lineHeight: 1.0,
-                letterSpacing: "-0.03em",
-                color: "#0f172a",
+                letterSpacing: "-0.01em",
+                color: "#0d1b2a",
               }}>
                 {activeTabConfig.label}
               </h1>
@@ -9852,7 +9883,7 @@ export default function CSCBilling() {
               <DocumentToolsWorkspace />
             </TabPanel>
             <TabPanel active={tab === "services_dashboard"}>
-              <ServicesDashboardWorkspace />
+              <ServicesDashboardWorkspace services={services} />
             </TabPanel>
             <TabPanel active={tab === "customers"}>
               <CustomersWorkspace tickets={tickets} onDeleteCustomer={deleteCustomerTickets} onNavigateTab={navigateTab} />
