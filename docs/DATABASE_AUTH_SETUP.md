@@ -1,6 +1,6 @@
 # Database 2FA Setup (Server-Side)
 
-This dashboard now verifies Database access using server APIs (`/api/database-auth/*`) and an HttpOnly cookie session.
+This dashboard verifies app access using server APIs (`/api/database-auth/*`) and an HttpOnly cookie session. Supabase reads/writes go through protected server routes, so no app data is fetched until the operator enters both the security code and authenticator code.
 
 ## 1) Required Environment Variables
 
@@ -10,6 +10,8 @@ Set these in Vercel project settings:
 - `DB_SESSION_TTL_MINUTES` (example: `15`)
 - `DB_SECURITY_CODE_HASH`
 - `DB_TOTP_SECRET`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
 Optional fallback:
 
@@ -22,8 +24,6 @@ Optional plain fallback (not recommended, only for temporary setup):
 
 Client-side vars still needed:
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
 - `VITE_CSC_WHATSAPP_NUMBER`
 
 ## 2) Generate SHA-256 Hash Values
@@ -57,10 +57,12 @@ After updating env vars:
 
 1. Redeploy on Vercel.
 2. Open dashboard.
-3. Database button now calls backend verification API.
+3. Opening the dashboard now shows the access gate before app data loads.
+4. After verification, app data loads through `/api/app-config/*`.
 
 ## 5) Security Notes
 
 - Do not use `VITE_` prefix for secret auth values.
+- Do not expose `SUPABASE_SERVICE_ROLE_KEY` to the browser.
 - `DB_SESSION_SECRET` should be long and random.
 - Rotate secrets if compromised.

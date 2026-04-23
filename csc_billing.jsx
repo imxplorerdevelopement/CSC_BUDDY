@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { dbLoad, dbSave, supabase } from "./supabase.js";
+import { dbLoadMany, dbSave } from "./supabase.js";
 import { DS } from "./design-tokens.js";
 import { DocumentToolsWorkspace } from "./src/workspaces/document-tools/DocumentToolsWorkspace.jsx";
 import { ServicesDashboardWorkspace } from "./src/workspaces/services-dashboard/ServicesDashboardWorkspace.jsx";
@@ -286,6 +286,8 @@ const STORAGE_KEYS = {
   quickLinks: "csc-buddy.quick-links",
   databaseRecords: "csc-buddy.database-records",
 };
+const APP_CONFIG_KEYS = ["tickets", "services", "quick_links", "b2b_ledger", "database_records"];
+const SESSION_CACHE_KEYS = Object.values(STORAGE_KEYS);
 const TAB_CONFIG = [
   { id: "home", label: "Dashboard Home", shortLabel: "HM", navGroup: "home" },
   { id: "entry", label: "New Service Entry", shortLabel: "NS", navGroup: "primary" },
@@ -647,26 +649,6 @@ function normalizePhoneValue(value) {
 
 function normalizeOtpInput(value) {
   return String(value || "").replace(/\D/g, "").slice(0, 6);
-}
-
-async function fetchDatabaseSessionStatus() {
-  try {
-    const response = await fetch("/api/database-auth/session", {
-      method: "GET",
-      credentials: "include",
-      headers: { Accept: "application/json" },
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      if (response.status === 404) {
-        return { ok: false, authenticated: false, message: "Security API is not available in this environment." };
-      }
-      return { ok: false, authenticated: false, message: payload?.message || "Session check failed." };
-    }
-    return { ok: true, authenticated: Boolean(payload?.authenticated), expiresAt: payload?.expiresAt || "" };
-  } catch (_error) {
-    return { ok: false, authenticated: false, message: "Unable to reach security server." };
-  }
 }
 
 async function verifyDatabaseAccessOnServer({ securityCode, authenticatorCode }) {
@@ -1430,13 +1412,13 @@ function printTicketSlip(ticket) {
 }
 
 function canUseStorage() {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+  return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 }
 
 function readStoredJSON(key, fallbackValue) {
   if (!canUseStorage()) return fallbackValue;
   try {
-    const raw = window.localStorage.getItem(key);
+    const raw = window.sessionStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallbackValue;
   } catch {
     return fallbackValue;
@@ -1446,7 +1428,7 @@ function readStoredJSON(key, fallbackValue) {
 function writeStoredJSON(key, value) {
   if (!canUseStorage()) return false;
   try {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    window.sessionStorage.setItem(key, JSON.stringify(value));
     return true;
   } catch {
     // Ignore quota or browser storage errors and continue with in-memory state.
@@ -1455,14 +1437,20 @@ function writeStoredJSON(key, value) {
 }
 
 function removeStoredValue(key) {
-  if (!canUseStorage()) return false;
+  if (typeof window === "undefined") return false;
   try {
-    window.localStorage.removeItem(key);
+    window.sessionStorage?.removeItem(key);
+    window.localStorage?.removeItem(key);
     return true;
   } catch {
     // Ignore storage cleanup failures.
     return false;
   }
+}
+
+function clearSessionCache(keys = SESSION_CACHE_KEYS) {
+  if (typeof window === "undefined") return;
+  keys.forEach((key) => removeStoredValue(key));
 }
 
 function useDebouncedStoredJSON(key, value, delay = 180, enabled = true, callbacks = null) {
@@ -2612,7 +2600,7 @@ function QuickLinksWorkspace({
 }
 
 function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpsertRecord, onDeleteRecord, cloudSyncState = "local_only" }) {
-  const isOffline = cloudSyncState === "local_only";
+  const isOffline = cloudSyncState === "local_only" || cloudSyncState === "sync_failed";
   const [activeSectionId, setActiveSectionId] = useState(() => DATABASE_SECTION_CONFIG[0].id);
   const [formValues, setFormValues] = useState(() => createEmptyDatabaseRecordValues(DATABASE_SECTION_CONFIG[0].id));
   const [isActiveClient, setIsActiveClient] = useState(false);
@@ -2982,10 +2970,10 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           </div>
           <div>
             <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.90rem", fontWeight: 700, color: "#92400e", marginBottom: 4 }}>
-              Supabase not connected
+              Protected sync is not connected
             </div>
             <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.82rem", color: "rgba(120,53,15,0.80)", lineHeight: 1.55, maxWidth: 480 }}>
-              The database requires a live Supabase connection. Add your <code style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", background: "rgba(180,83,9,0.08)", padding: "1px 5px", borderRadius: 4 }}>VITE_SUPABASE_URL</code> and <code style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", background: "rgba(180,83,9,0.08)", padding: "1px 5px", borderRadius: 4 }}>VITE_SUPABASE_ANON_KEY</code> environment variables, then reload the app. Records will load automatically once connected.
+              The database requires the protected server API. Add <code style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", background: "rgba(180,83,9,0.08)", padding: "1px 5px", borderRadius: 4 }}>SUPABASE_URL</code> and <code style={{ fontFamily: APP_MONO_STACK, fontSize: "0.78rem", background: "rgba(180,83,9,0.08)", padding: "1px 5px", borderRadius: 4 }}>SUPABASE_SERVICE_ROLE_KEY</code> on the server, then reload the app.
             </div>
           </div>
         </div>
@@ -3988,7 +3976,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
   );
 }
 
-function DatabaseAccessModal({ onClose, onVerify }) {
+function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
   const [securityCode, setSecurityCode] = useState("");
   const [authCode, setAuthCode] = useState("");
   const [error, setError] = useState("");
@@ -4064,13 +4052,15 @@ function DatabaseAccessModal({ onClose, onVerify }) {
         </div>
         {error && <div style={{ marginTop: 10, fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "#b91c1c", fontWeight: 600 }}>{error}</div>}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-          <button
-            onClick={onClose}
-            disabled={checking}
-            style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 10, background: "rgba(15,23,42,0.06)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: checking ? "not-allowed" : "pointer", padding: "9px 12px", opacity: checking ? 0.4 : 1 }}
-          >
-            Cancel
-          </button>
+          {allowClose && (
+            <button
+              onClick={onClose}
+              disabled={checking}
+              style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 10, background: "rgba(15,23,42,0.06)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: checking ? "not-allowed" : "pointer", padding: "9px 12px", opacity: checking ? 0.4 : 1 }}
+            >
+              Cancel
+            </button>
+          )}
           <button
             onClick={handleVerify}
             disabled={checking}
@@ -9690,30 +9680,24 @@ function WalkInModal({ onClose, onStart }) {
 export default function CSCBilling() {
   const [tab, setTab] = useState(() => getInitialActiveTab());
   const [isBootLoading, setIsBootLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => getStoredSidePanelExpanded());
   const [showDatabaseGate, setShowDatabaseGate] = useState(false);
   const [databaseUnlocked, setDatabaseUnlocked] = useState(false);
   const [unlockAnimPhase, setUnlockAnimPhase] = useState(null); // null | "running" | "success"
-  const [services, setServices] = useState(() => (
-    hydrateServices(readStoredJSON(STORAGE_KEYS.services, INITIAL_SERVICES))
-  ));
-  const [tickets, setTickets] = useState(() => (
-    hydrateTickets(readStoredJSON(STORAGE_KEYS.tickets, []))
-  ));
-  const [b2bLedger, setB2BLedger] = useState(() => (
-    hydrateB2BLedger(readStoredJSON(STORAGE_KEYS.b2bLedger, []))
-  ));
-  const [databaseRecords, setDatabaseRecords] = useState(() => (
-    hydrateDatabaseRecords(readStoredJSON(STORAGE_KEYS.databaseRecords, []))
-  ));
-  const [customQuickLinks, setCustomQuickLinks] = useState(() => getStoredQuickLinks());
+  const [configLoaded, setConfigLoaded] = useState(false);
+  const [services, setServices] = useState(() => hydrateServices(INITIAL_SERVICES));
+  const [tickets, setTickets] = useState(() => []);
+  const [b2bLedger, setB2BLedger] = useState(() => []);
+  const [databaseRecords, setDatabaseRecords] = useState(() => []);
+  const [customQuickLinks, setCustomQuickLinks] = useState(() => []);
   const [showAddQuickLink, setShowAddQuickLink] = useState(false);
   const [quickLinkName, setQuickLinkName] = useState("");
   const [quickLinkUrl, setQuickLinkUrl] = useState("");
   const [quickLinkError, setQuickLinkError] = useState("");
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [entryWorkspaceKey, setEntryWorkspaceKey] = useState(0);
-  const [cloudSyncState, setCloudSyncState] = useState(() => (supabase ? "connecting" : "local_only"));
+  const [cloudSyncState, setCloudSyncState] = useState(() => "connecting");
   const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState(null);
   const dbSyncedRef = useRef(false);
   const todayDateKey = getTicketCounterDateKey(new Date());
@@ -9755,11 +9739,13 @@ export default function CSCBilling() {
   ];
   const cloudSyncLabel = cloudSyncState === "local_only"
     ? "Local-only"
-    : cloudSyncState === "syncing" || cloudSyncState === "connecting"
-      ? "Syncing"
-      : cloudSyncState === "synced"
-        ? "Synced"
-        : "Sync failed";
+    : cloudSyncState === "locked"
+      ? "Locked"
+      : cloudSyncState === "syncing" || cloudSyncState === "connecting"
+        ? "Syncing"
+        : cloudSyncState === "synced"
+          ? "Synced"
+          : "Sync failed";
   const cloudSyncAccent = cloudSyncState === "synced"
     ? OPS.success
     : cloudSyncState === "sync_failed"
@@ -9952,6 +9938,24 @@ export default function CSCBilling() {
     }, 900);
     window.location.href = appUrl;
   };
+  const resetProtectedAppState = () => {
+    dbSyncedRef.current = false;
+    setConfigLoaded(false);
+    setServices(hydrateServices(INITIAL_SERVICES));
+    setTickets([]);
+    setB2BLedger([]);
+    setDatabaseRecords([]);
+    setCustomQuickLinks([]);
+    setCloudLastSyncedAt(null);
+  };
+  const handleAuthExpired = () => {
+    clearSessionCache();
+    resetProtectedAppState();
+    setDatabaseUnlocked(false);
+    setShowDatabaseGate(true);
+    setCloudSyncState("locked");
+    navigateTab("home", "replace", { bypassDatabaseGate: true });
+  };
   const handleDatabaseVerification = async ({ securityCode, authenticatorCode }) => {
     // Start hacker animation immediately — it renders over the modal.
     setUnlockAnimPhase("running");
@@ -9963,7 +9967,11 @@ export default function CSCBilling() {
     }
     // API succeeded. Lock in the unlocked state and cue the success reveal.
     // The modal will be closed after the animation finishes via handleUnlockAnimDone.
+    clearSessionCache();
+    resetProtectedAppState();
     setDatabaseUnlocked(true);
+    setAuthChecked(true);
+    setCloudSyncState("connecting");
     setUnlockAnimPhase("success");
     return { ok: true };
   };
@@ -9971,7 +9979,7 @@ export default function CSCBilling() {
   const handleUnlockAnimDone = () => {
     setUnlockAnimPhase(null);
     setShowDatabaseGate(false);
-    navigateTab("database", "push", { bypassDatabaseGate: true });
+    navigateTab("home", "replace", { bypassDatabaseGate: true });
   };
   const lockDatabaseAccess = async () => {
     try {
@@ -9982,8 +9990,11 @@ export default function CSCBilling() {
     } catch (_error) {
       // Ignore network errors and still clear local lock state.
     }
+    clearSessionCache();
+    resetProtectedAppState();
     setDatabaseUnlocked(false);
-    setShowDatabaseGate(false);
+    setShowDatabaseGate(true);
+    setCloudSyncState("locked");
     navigateTab("home", "replace");
   };
 
@@ -9993,16 +10004,11 @@ export default function CSCBilling() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    async function syncDatabaseSession() {
-      const session = await fetchDatabaseSessionStatus();
-      if (cancelled) return;
-      setDatabaseUnlocked(Boolean(session?.authenticated));
-    }
-    syncDatabaseSession();
-    return () => {
-      cancelled = true;
-    };
+    clearSessionCache();
+    resetProtectedAppState();
+    setDatabaseUnlocked(false);
+    setShowDatabaseGate(true);
+    setCloudSyncState("locked");
   }, []);
 
   useEffect(() => {
@@ -10053,124 +10059,72 @@ export default function CSCBilling() {
 
   useEffect(() => {
     let cancelled = false;
-    async function loadFromSupabase() {
-      if (!supabase) {
-        if (!cancelled) {
-          dbSyncedRef.current = true;
-          setCloudSyncState("local_only");
+    async function loadProtectedConfig() {
+      if (!authChecked || !databaseUnlocked || configLoaded) return;
+      setCloudSyncState("connecting");
+      const result = await dbLoadMany(APP_CONFIG_KEYS);
+
+      if (cancelled) return;
+      if (!result?.ok) {
+        if (result?.reason === "unauthorized") {
+          handleAuthExpired();
+          return;
         }
+        dbSyncedRef.current = false;
+        setConfigLoaded(false);
+        setCloudSyncState("sync_failed");
         return;
       }
 
-      setCloudSyncState("connecting");
-      const [
-        remoteTicketsResult,
-        remoteServicesResult,
-        remoteQuickLinksResult,
-        remoteB2BLedgerResult,
-        remoteDatabaseRecordsResult,
-      ] = await Promise.all([
-        dbLoad("tickets"),
-        dbLoad("services"),
-        dbLoad("quick_links"),
-        dbLoad("b2b_ledger"),
-        dbLoad("database_records"),
-      ]);
+      const values = result.values || {};
+      const hydratedServices = hydrateServices(values.services);
+      const hydratedTickets = hydrateTickets(values.tickets);
+      const hydratedQuickLinks = normalizeQuickLinksList(values.quick_links);
+      const hydratedLedger = hydrateB2BLedger(values.b2b_ledger);
+      const hydratedRecords = hydrateDatabaseRecords(values.database_records);
 
-      if (cancelled) return;
-      let syncFailed = [
-        remoteTicketsResult,
-        remoteServicesResult,
-        remoteQuickLinksResult,
-        remoteB2BLedgerResult,
-        remoteDatabaseRecordsResult,
-      ].some((result) => !result?.ok);
-
-      const localTickets = readStoredJSON(STORAGE_KEYS.tickets, []);
-      const localServices = readStoredJSON(STORAGE_KEYS.services, []);
-      const localQuickLinks = getStoredQuickLinks();
-      const localB2BLedger = readStoredJSON(STORAGE_KEYS.b2bLedger, []);
-      const localDatabaseRecords = readStoredJSON(STORAGE_KEYS.databaseRecords, []);
-      const remoteTickets = remoteTicketsResult?.value;
-      const remoteServices = remoteServicesResult?.value;
-      const remoteQuickLinks = remoteQuickLinksResult?.value;
-      const remoteB2BLedger = remoteB2BLedgerResult?.value;
-      const remoteDatabaseRecords = remoteDatabaseRecordsResult?.value;
-
-      if (Array.isArray(remoteTickets) && remoteTickets.length > 0) {
-        setTickets(hydrateTickets(remoteTickets));
-        writeStoredJSON(STORAGE_KEYS.tickets, remoteTickets);
-      } else if (Array.isArray(localTickets) && localTickets.length > 0) {
-        const seedTicketsResult = await dbSave("tickets", localTickets);
-        if (!seedTicketsResult?.ok) syncFailed = true;
-      }
-
-      if (Array.isArray(remoteServices) && remoteServices.length > 0) {
-        setServices(hydrateServices(remoteServices));
-        writeStoredJSON(STORAGE_KEYS.services, remoteServices);
-      } else if (Array.isArray(localServices) && localServices.length > 0) {
-        const seedServicesResult = await dbSave("services", localServices);
-        if (!seedServicesResult?.ok) syncFailed = true;
-      }
-
-      if (Array.isArray(remoteQuickLinks) && remoteQuickLinks.length > 0) {
-        setCustomQuickLinks(normalizeQuickLinksList(remoteQuickLinks));
-        writeStoredJSON(STORAGE_KEYS.quickLinks, remoteQuickLinks);
-      } else if (Array.isArray(localQuickLinks) && localQuickLinks.length > 0) {
-        const seedQuickLinksResult = await dbSave("quick_links", localQuickLinks);
-        if (!seedQuickLinksResult?.ok) syncFailed = true;
-      }
-
-      if (Array.isArray(remoteB2BLedger) && remoteB2BLedger.length > 0) {
-        const hydratedRemoteLedger = hydrateB2BLedger(remoteB2BLedger);
-        setB2BLedger(hydratedRemoteLedger);
-        writeStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(hydratedRemoteLedger));
-      } else if (Array.isArray(localB2BLedger) && localB2BLedger.length > 0) {
-        const hydratedLocalLedger = hydrateB2BLedger(localB2BLedger);
-        const seedB2BLedgerResult = await dbSave("b2b_ledger", serializeB2BLedger(hydratedLocalLedger));
-        if (!seedB2BLedgerResult?.ok) syncFailed = true;
-      }
-
-      if (Array.isArray(remoteDatabaseRecords) && remoteDatabaseRecords.length > 0) {
-        const hydratedRemoteRecords = hydrateDatabaseRecords(remoteDatabaseRecords);
-        setDatabaseRecords(hydratedRemoteRecords);
-        writeStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(hydratedRemoteRecords));
-      } else if (Array.isArray(localDatabaseRecords) && localDatabaseRecords.length > 0) {
-        const hydratedLocalRecords = hydrateDatabaseRecords(localDatabaseRecords);
-        const seedDatabaseRecordsResult = await dbSave("database_records", serializeDatabaseRecords(hydratedLocalRecords));
-        if (!seedDatabaseRecordsResult?.ok) syncFailed = true;
-      }
+      setServices(hydratedServices);
+      setTickets(hydratedTickets);
+      setCustomQuickLinks(hydratedQuickLinks);
+      setB2BLedger(hydratedLedger);
+      setDatabaseRecords(hydratedRecords);
+      writeStoredJSON(STORAGE_KEYS.services, hydratedServices);
+      writeStoredJSON(STORAGE_KEYS.tickets, serializeTickets(hydratedTickets));
+      writeStoredJSON(STORAGE_KEYS.quickLinks, hydratedQuickLinks);
+      writeStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(hydratedLedger));
+      writeStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(hydratedRecords));
 
       if (!cancelled) {
         dbSyncedRef.current = true;
-        if (syncFailed) {
-          setCloudSyncState("sync_failed");
-        } else {
-          setCloudSyncState("synced");
-          setCloudLastSyncedAt(new Date());
-        }
+        setConfigLoaded(true);
+        setCloudSyncState("synced");
+        setCloudLastSyncedAt(new Date());
       }
     }
-    loadFromSupabase();
+    loadProtectedConfig();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authChecked, databaseUnlocked, configLoaded]);
 
-  useDebouncedStoredJSON(STORAGE_KEYS.services, services, 180);
-  useDebouncedStoredJSON(STORAGE_KEYS.tickets, serializeTickets(tickets), 180);
-  useDebouncedStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(b2bLedger), 180);
-  useDebouncedStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks, 180);
-  useDebouncedStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(databaseRecords), 180);
+  useDebouncedStoredJSON(STORAGE_KEYS.services, services, 180, configLoaded);
+  useDebouncedStoredJSON(STORAGE_KEYS.tickets, serializeTickets(tickets), 180, configLoaded);
+  useDebouncedStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(b2bLedger), 180, configLoaded);
+  useDebouncedStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks, 180, configLoaded);
+  useDebouncedStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(databaseRecords), 180, configLoaded);
 
   useEffect(() => {
-    if (!dbSyncedRef.current || !supabase) return undefined;
+    if (!dbSyncedRef.current || !configLoaded) return undefined;
     let cancelled = false;
     async function syncServices() {
       setCloudSyncState("syncing");
       const result = await dbSave("services", services);
       if (cancelled) return;
       if (!result?.ok) {
+        if (result?.reason === "unauthorized") {
+          handleAuthExpired();
+          return;
+        }
         setCloudSyncState("sync_failed");
         return;
       }
@@ -10181,16 +10135,20 @@ export default function CSCBilling() {
     return () => {
       cancelled = true;
     };
-  }, [services]);
+  }, [services, configLoaded]);
 
   useEffect(() => {
-    if (!dbSyncedRef.current || !supabase) return undefined;
+    if (!dbSyncedRef.current || !configLoaded) return undefined;
     let cancelled = false;
     async function syncTickets() {
       setCloudSyncState("syncing");
       const result = await dbSave("tickets", serializeTickets(tickets));
       if (cancelled) return;
       if (!result?.ok) {
+        if (result?.reason === "unauthorized") {
+          handleAuthExpired();
+          return;
+        }
         setCloudSyncState("sync_failed");
         return;
       }
@@ -10201,16 +10159,20 @@ export default function CSCBilling() {
     return () => {
       cancelled = true;
     };
-  }, [tickets]);
+  }, [tickets, configLoaded]);
 
   useEffect(() => {
-    if (!dbSyncedRef.current || !supabase) return undefined;
+    if (!dbSyncedRef.current || !configLoaded) return undefined;
     let cancelled = false;
     async function syncQuickLinks() {
       setCloudSyncState("syncing");
       const result = await dbSave("quick_links", customQuickLinks);
       if (cancelled) return;
       if (!result?.ok) {
+        if (result?.reason === "unauthorized") {
+          handleAuthExpired();
+          return;
+        }
         setCloudSyncState("sync_failed");
         return;
       }
@@ -10221,16 +10183,20 @@ export default function CSCBilling() {
     return () => {
       cancelled = true;
     };
-  }, [customQuickLinks]);
+  }, [customQuickLinks, configLoaded]);
 
   useEffect(() => {
-    if (!dbSyncedRef.current || !supabase) return undefined;
+    if (!dbSyncedRef.current || !configLoaded) return undefined;
     let cancelled = false;
     async function syncB2BLedger() {
       setCloudSyncState("syncing");
       const result = await dbSave("b2b_ledger", serializeB2BLedger(b2bLedger));
       if (cancelled) return;
       if (!result?.ok) {
+        if (result?.reason === "unauthorized") {
+          handleAuthExpired();
+          return;
+        }
         setCloudSyncState("sync_failed");
         return;
       }
@@ -10241,16 +10207,20 @@ export default function CSCBilling() {
     return () => {
       cancelled = true;
     };
-  }, [b2bLedger]);
+  }, [b2bLedger, configLoaded]);
 
   useEffect(() => {
-    if (!dbSyncedRef.current || !supabase) return undefined;
+    if (!dbSyncedRef.current || !configLoaded) return undefined;
     let cancelled = false;
     async function syncDatabaseRecords() {
       setCloudSyncState("syncing");
       const result = await dbSave("database_records", serializeDatabaseRecords(databaseRecords));
       if (cancelled) return;
       if (!result?.ok) {
+        if (result?.reason === "unauthorized") {
+          handleAuthExpired();
+          return;
+        }
         setCloudSyncState("sync_failed");
         return;
       }
@@ -10261,10 +10231,26 @@ export default function CSCBilling() {
     return () => {
       cancelled = true;
     };
-  }, [databaseRecords]);
+  }, [databaseRecords, configLoaded]);
 
   if (isBootLoading) {
     return <BootLoadingScreen />;
+  }
+
+  if (!databaseUnlocked && !unlockAnimPhase) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#f8fbff",
+        fontFamily: APP_FONT_STACK,
+        color: "#0f172a",
+      }}>
+        <DatabaseAccessModal
+          allowClose={false}
+          onVerify={handleDatabaseVerification}
+        />
+      </div>
+    );
   }
 
   return (
@@ -10606,7 +10592,7 @@ export default function CSCBilling() {
                   </span>
                 )}
               </div>
-              {tab === "database" && databaseUnlocked && (
+              {databaseUnlocked && (
                 <button
                   onClick={lockDatabaseAccess}
                   style={{
@@ -10625,7 +10611,7 @@ export default function CSCBilling() {
                     transition: "all 0.22s ease",
                   }}
                 >
-                  Lock Database
+                  Lock App
                 </button>
               )}
               <button
@@ -10798,11 +10784,3 @@ export default function CSCBilling() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
