@@ -145,7 +145,7 @@ export function CompressTool({ onQueue }) {
         onFiles={handleFiles}
       />
 
-      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", alignItems: "end" }}>
+      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
         <Field
           label="Custom size (KB)"
           hint="Enter a number or pick a preset below."
@@ -159,7 +159,7 @@ export function CompressTool({ onQueue }) {
             style={inputStyle}
           />
         </Field>
-        <Field label="Output format">
+        <Field label="Output format" hint=" ">
           <select
             value={outputMime}
             onChange={(e) => setOutputMime(e.target.value)}
