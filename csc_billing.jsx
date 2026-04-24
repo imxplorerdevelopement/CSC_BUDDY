@@ -5,6 +5,8 @@ import { DocumentToolsWorkspace } from "./src/workspaces/document-tools/Document
 import { ServicesDashboardWorkspace } from "./src/workspaces/services-dashboard/ServicesDashboardWorkspace.jsx";
 import { SERVICE_REGISTRY, SERVICE_CATEGORIES } from "./src/workspaces/services-dashboard/registry.js";
 
+const AUTH_HERO_BG_URL = "https://images.pexels.com/photos/32674962/pexels-photo-32674962.jpeg?auto=compress&cs=tinysrgb&w=1600";
+
 // Map registry category IDs to the billing category names used by
 // CATEGORY_DETAIL_SCHEMA_IDS and the service-entry dropdown grouping.
 const REGISTRY_CAT_TO_BILLING = {
@@ -3981,6 +3983,8 @@ function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
   const [authCode, setAuthCode] = useState("");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
+  const [showSecurityCode, setShowSecurityCode] = useState(false);
+  const [showAuthCode, setShowAuthCode] = useState(false);
 
   const handleVerify = async () => {
     if (checking) return;
@@ -4009,65 +4013,416 @@ function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
     }
   };
 
+  const isFullPage = !allowClose;
+  const authFieldStyle = {
+    width: "100%",
+    padding: "16px 48px 16px 18px",
+    borderRadius: 18,
+    border: "1px solid rgba(15,23,42,0.10)",
+    background: "rgba(255,255,255,0.72)",
+    color: "#0f172a",
+    fontFamily: APP_FONT_STACK,
+    fontSize: "0.98rem",
+    outline: "none",
+    backdropFilter: "blur(16px) saturate(140%)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.70), 0 10px 28px rgba(15,23,42,0.08)",
+  };
+  const authFieldWrapStyle = {
+    position: "relative",
+    display: "grid",
+    gap: 8,
+  };
+  const authIconButtonStyle = {
+    position: "absolute",
+    right: 14,
+    top: 42,
+    width: 30,
+    height: 30,
+    border: "none",
+    background: "transparent",
+    color: "rgba(15,23,42,0.44)",
+    display: "grid",
+    placeItems: "center",
+    cursor: "pointer",
+    padding: 0,
+  };
+  const eyeIcon = (visible) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+      <circle cx="12" cy="12" r="3" />
+      {visible ? null : <path d="M4 4 20 20" />}
+    </svg>
+  );
+
   return (
     <div style={{
-      position: "fixed",
-      inset: 0,
-      background: "rgba(2,6,23,0.58)",
+      position: isFullPage ? "relative" : "fixed",
+      inset: isFullPage ? "auto" : 0,
+      minHeight: isFullPage ? "100vh" : "auto",
+      background: isFullPage ? "#edf1f3" : "rgba(2,6,23,0.44)",
       display: "flex",
-      alignItems: "center",
+      alignItems: "stretch",
       justifyContent: "center",
-      padding: 20,
+      padding: isFullPage ? 0 : 20,
       zIndex: 120,
+      overflow: "hidden",
     }}>
+      <style>{`
+        @keyframes authHeroZoom {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.035); }
+        }
+        @keyframes authGlassSheen {
+          0% { transform: translateX(-135%) rotate(10deg); opacity: 0; }
+          18% { opacity: 0.20; }
+          100% { transform: translateX(230%) rotate(10deg); opacity: 0; }
+        }
+        @keyframes authStatusPulse {
+          0%, 100% { opacity: 0.40; transform: scale(0.94); }
+          50% { opacity: 1; transform: scale(1); }
+        }
+        .auth-login-shell {
+          grid-template-columns: minmax(0, 1.06fr) minmax(360px, 430px);
+        }
+        .auth-login-grid {
+          background-image:
+            linear-gradient(rgba(15,23,42,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15,23,42,0.06) 1px, transparent 1px);
+          background-size: 72px 72px;
+          opacity: 0.36;
+        }
+        @media (max-width: 960px) {
+          .auth-login-shell {
+            grid-template-columns: 1fr !important;
+            align-items: stretch !important;
+            padding: 24px 18px !important;
+          }
+          .auth-login-hero {
+            min-height: auto !important;
+            gap: 20px !important;
+            align-content: start !important;
+            padding: 28vh 0 0 !important;
+          }
+          .auth-login-card {
+            justify-self: stretch !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            border-radius: 26px !important;
+            transform: none !important;
+          }
+          .auth-login-image-pane {
+            width: 100% !important;
+            height: 34vh !important;
+            inset: 0 0 auto 0 !important;
+          }
+          .auth-login-surface {
+            width: 100% !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .auth-login-shell {
+            padding: 18px 14px !important;
+            gap: 18px !important;
+          }
+          .auth-login-hero-copy {
+            gap: 12px !important;
+            max-width: 100% !important;
+          }
+          .auth-login-card-body {
+            padding: 22px 18px 18px !important;
+            gap: 18px !important;
+          }
+          .auth-login-headline {
+            font-size: clamp(2.5rem, 13vw, 3.9rem) !important;
+            line-height: 0.96 !important;
+          }
+          .auth-login-subcopy {
+            font-size: 0.94rem !important;
+            line-height: 1.7 !important;
+            max-width: 100% !important;
+          }
+          .auth-login-footer {
+            justify-content: flex-start !important;
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
       <div style={{
-        width: "min(460px, 100%)",
-        borderRadius: 18,
-        border: "1px solid rgba(220,38,38,0.26)",
-        background: "rgba(255,255,255,0.97)",
-        boxShadow: "0 24px 56px rgba(15,23,42,0.28)",
-        padding: "20px 18px",
+        position: "relative",
+        width: "100%",
+        minHeight: isFullPage ? "100vh" : "auto",
+        overflow: "hidden",
+        display: "grid",
+        placeItems: "center",
       }}>
-        <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "#991b1b", fontFamily: APP_BRAND_STACK, marginBottom: 8 }}>
-          Database Access Gate
-        </div>
-        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "1.12rem", color: "#0f172a", fontWeight: 700, marginBottom: 12 }}>
-          Verify both factors to continue
-        </div>
-        <div style={{ display: "grid", gap: 10 }}>
-          <input
-            value={securityCode}
-            onChange={(e) => setSecurityCode(e.target.value)}
-            placeholder="Security code"
-            style={{ padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.16)", background: "#fff", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.9rem" }}
-          />
-          <input
-            value={authCode}
-            onChange={(e) => setAuthCode(normalizeOtpInput(e.target.value))}
-            placeholder="Authenticator code"
-            inputMode="numeric"
-            maxLength={6}
-            style={{ padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.16)", background: "#fff", color: "#0f172a", fontFamily: APP_MONO_STACK, fontSize: "0.94rem", letterSpacing: "0.10em" }}
-          />
-        </div>
-        {error && <div style={{ marginTop: 10, fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "#b91c1c", fontWeight: 600 }}>{error}</div>}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-          {allowClose && (
-            <button
-              onClick={onClose}
-              disabled={checking}
-              style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 10, background: "rgba(15,23,42,0.06)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: checking ? "not-allowed" : "pointer", padding: "9px 12px", opacity: checking ? 0.4 : 1 }}
-            >
-              Cancel
-            </button>
+        {isFullPage && (
+          <>
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(180deg, #f7f9fa 0%, #eef2f4 100%)",
+            }} />
+            <div style={{
+              position: "absolute",
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: "42%",
+              backgroundImage: `url(${AUTH_HERO_BG_URL})`,
+              backgroundPosition: "center center",
+              backgroundSize: "cover",
+              animation: "authHeroZoom 18s ease-in-out infinite alternate",
+              transformOrigin: "center center",
+            }} className="auth-login-image-pane" />
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(90deg, rgba(247,249,250,0.96) 0%, rgba(247,249,250,0.96) 54%, rgba(247,249,250,0.34) 70%, rgba(247,249,250,0.16) 100%)",
+            }} />
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(180deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0) 18%, rgba(255,255,255,0.12) 100%)",
+            }} />
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+            }} className="auth-login-grid" />
+            <div style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: "58%",
+              width: 1,
+              background: "rgba(15,23,42,0.08)",
+            }} />
+          </>
+        )}
+        <div style={{
+          position: "relative",
+          zIndex: 1,
+          width: "min(1380px, 100%)",
+          minHeight: isFullPage ? "100vh" : "auto",
+          padding: isFullPage ? "clamp(28px, 4vw, 48px)" : 0,
+          display: "grid",
+          gridTemplateColumns: isFullPage ? undefined : "1fr",
+          alignItems: "stretch",
+          gap: "clamp(24px, 4vw, 56px)",
+        }} className="auth-login-shell">
+          {isFullPage && (
+            <div style={{
+              display: "grid",
+              alignContent: "space-between",
+              gap: 40,
+              padding: "clamp(10px, 2vw, 22px) 0",
+              minHeight: "calc(100vh - clamp(56px, 8vw, 88px))",
+            }} className="auth-login-hero">
+              <div style={{ display: "grid", gap: 18, maxWidth: 560, alignSelf: "start" }} className="auth-login-hero-copy">
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "rgba(15,23,42,0.56)", fontFamily: APP_BRAND_STACK, fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase" }}>
+                  <span style={{ width: 40, height: 1, background: "rgba(15,23,42,0.20)", display: "inline-block" }} />
+                  CSC Buddy
+                </div>
+                <div style={{ display: "grid", gap: 18 }}>
+                  <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.42)", fontFamily: APP_MONO_STACK, letterSpacing: "0.08em" }}>
+                    01 / Entry
+                  </div>
+                  <h1 style={{ margin: 0, fontSize: "clamp(3.2rem, 7vw, 6.2rem)", lineHeight: 0.9, letterSpacing: 0, color: "#101418", fontFamily: APP_BRAND_STACK, fontWeight: 700 }} className="auth-login-headline">
+                    Private
+                    <br />
+                    workspace.
+                  </h1>
+                </div>
+                <p style={{ margin: 0, maxWidth: 420, fontSize: "1rem", lineHeight: 1.8, color: "rgba(15,23,42,0.64)", fontFamily: APP_FONT_STACK }} className="auth-login-subcopy">
+                  A quiet sign in before the workspace opens.
+                </p>
+              </div>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(160px, 220px))",
+                gap: 20,
+                alignItems: "end",
+                paddingBottom: 8,
+              }} className="auth-login-footer">
+                <div style={{ display: "grid", gap: 8 }}>
+                  <div style={{ fontSize: "0.68rem", color: "rgba(15,23,42,0.42)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                    Status
+                  </div>
+                  <div style={{ fontSize: "0.92rem", color: "#101418", fontFamily: APP_FONT_STACK, lineHeight: 1.6 }}>
+                    Private and time-limited.
+                  </div>
+                </div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  <div style={{ fontSize: "0.68rem", color: "rgba(15,23,42,0.42)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                    Access
+                  </div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: "0.92rem", color: "#101418", fontFamily: APP_FONT_STACK, lineHeight: 1.6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#101418", opacity: 0.82, display: "inline-block", animation: "authStatusPulse 2.2s ease-in-out infinite" }} />
+                    Available after verification.
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
-          <button
-            onClick={handleVerify}
-            disabled={checking}
-            style={{ border: "1px solid rgba(22,163,74,0.32)", borderRadius: 10, background: checking ? "rgba(22,163,74,0.08)" : "rgba(22,163,74,0.14)", color: "#166534", fontFamily: APP_BRAND_STACK, fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: checking ? "wait" : "pointer", padding: "9px 12px" }}
-          >
-            {checking ? "Verifying..." : "Unlock"}
-          </button>
+          <div style={{
+            alignSelf: "center",
+            justifySelf: isFullPage ? "end" : "center",
+            width: "min(100%, 430px)",
+            maxWidth: "430px",
+            borderRadius: isFullPage ? 32 : 24,
+            border: "1px solid rgba(255,255,255,0.58)",
+            background: isFullPage ? "rgba(255,255,255,0.52)" : "rgba(255,255,255,0.92)",
+            backdropFilter: "blur(24px) saturate(155%)",
+            WebkitBackdropFilter: "blur(24px) saturate(155%)",
+            boxShadow: isFullPage
+              ? "0 28px 80px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.72)"
+              : "0 24px 64px rgba(2,6,23,0.16)",
+            overflow: "hidden",
+            position: "relative",
+            transform: isFullPage ? "translateX(-4vw)" : "none",
+          }} className="auth-login-card">
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              overflow: "hidden",
+            }}>
+              <span style={{
+                position: "absolute",
+                top: "-18%",
+                left: "-24%",
+                width: "58%",
+                height: "160%",
+                background: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.42), rgba(255,255,255,0))",
+                transform: "rotate(12deg)",
+                animation: "authGlassSheen 10s ease-in-out infinite",
+              }} />
+            </div>
+            <div style={{
+              position: "relative",
+              zIndex: 1,
+              padding: isFullPage ? "32px 30px 28px" : "22px 20px",
+              display: "grid",
+              gap: 22,
+            }} className="auth-login-card-body">
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "rgba(15,23,42,0.52)", fontFamily: APP_MONO_STACK, fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0f172a", display: "inline-block", animation: "authStatusPulse 2.1s ease-in-out infinite" }} />
+                  Verified access
+                </div>
+                <div style={{ fontFamily: APP_BRAND_STACK, fontSize: isFullPage ? "2.2rem" : "1.28rem", lineHeight: 1.0, color: "#101418", fontWeight: 700 }}>
+                  Sign in
+                </div>
+              </div>
+              <div style={{ display: "grid", gap: 16 }}>
+                <label style={authFieldWrapStyle}>
+                  <span style={{ fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.48)", fontFamily: APP_BRAND_STACK }}>
+                    Security Code
+                  </span>
+                  <input
+                    value={securityCode}
+                    onChange={(e) => setSecurityCode(e.target.value)}
+                    placeholder=""
+                    type={showSecurityCode ? "text" : "password"}
+                    style={authFieldStyle}
+                  />
+                  <button
+                    type="button"
+                    title={showSecurityCode ? "Hide security code" : "Show security code"}
+                    onClick={() => setShowSecurityCode((prev) => !prev)}
+                    style={authIconButtonStyle}
+                  >
+                    {eyeIcon(showSecurityCode)}
+                  </button>
+                </label>
+                <label style={authFieldWrapStyle}>
+                  <span style={{ fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.48)", fontFamily: APP_BRAND_STACK }}>
+                    Authenticator Code
+                  </span>
+                  <input
+                    value={authCode}
+                    onChange={(e) => setAuthCode(normalizeOtpInput(e.target.value))}
+                    placeholder=""
+                    type={showAuthCode ? "text" : "password"}
+                    inputMode="numeric"
+                    maxLength={6}
+                    style={{ ...authFieldStyle, fontFamily: APP_MONO_STACK, letterSpacing: "0.22em" }}
+                  />
+                  <button
+                    type="button"
+                    title={showAuthCode ? "Hide authenticator code" : "Show authenticator code"}
+                    onClick={() => setShowAuthCode((prev) => !prev)}
+                    style={authIconButtonStyle}
+                  >
+                    {eyeIcon(showAuthCode)}
+                  </button>
+                </label>
+              </div>
+              {error && (
+                <div style={{
+                  borderRadius: 18,
+                  border: "1px solid rgba(248,113,113,0.24)",
+                  background: "rgba(254,242,242,0.88)",
+                  padding: "12px 14px",
+                  fontFamily: APP_FONT_STACK,
+                  fontSize: "0.83rem",
+                  color: "#b91c1c",
+                  lineHeight: 1.55,
+                }}>
+                  {error}
+                </div>
+              )}
+              <div style={{ display: "grid", gap: 14 }}>
+                <button
+                  onClick={handleVerify}
+                  disabled={checking}
+                  style={{
+                    border: "1px solid rgba(15,23,42,0.10)",
+                    borderRadius: 18,
+                    background: checking ? "rgba(15,23,42,0.76)" : "#101418",
+                    color: "#ffffff",
+                    fontFamily: APP_BRAND_STACK,
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    cursor: checking ? "wait" : "pointer",
+                    padding: "15px 18px",
+                    boxShadow: "0 14px 28px rgba(15,23,42,0.12)",
+                  }}
+                >
+                  {checking ? "Verifying..." : "Continue"}
+                </button>
+                <div style={{ display: "flex", justifyContent: allowClose ? "space-between" : "flex-end", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.79rem", color: "rgba(15,23,42,0.54)", lineHeight: 1.6 }}>
+                    This access is kept private for this session.
+                  </div>
+                  {allowClose && (
+                    <button
+                      onClick={onClose}
+                      disabled={checking}
+                      style={{
+                        border: "1px solid rgba(15,23,42,0.10)",
+                        borderRadius: 16,
+                        background: "rgba(255,255,255,0.48)",
+                        color: "rgba(15,23,42,0.82)",
+                        fontFamily: APP_BRAND_STACK,
+                        fontSize: "0.64rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        cursor: checking ? "not-allowed" : "pointer",
+                        padding: "11px 14px",
+                        opacity: checking ? 0.5 : 1,
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
