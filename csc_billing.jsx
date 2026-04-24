@@ -3978,7 +3978,14 @@ function HackerUnlockAnimation({ phase, onDone }) {
   );
 }
 
-function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
+function DatabaseAccessModal({
+  onClose,
+  onVerify,
+  allowClose = true,
+  busy = false,
+  busyTitle = "Preparing workspace",
+  busyMessage = "Just a moment while your private workspace comes into view.",
+}) {
   const [securityCode, setSecurityCode] = useState("");
   const [authCode, setAuthCode] = useState("");
   const [error, setError] = useState("");
@@ -3987,7 +3994,7 @@ function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
   const [showAuthCode, setShowAuthCode] = useState(false);
 
   const handleVerify = async () => {
-    if (checking) return;
+    if (checking || busy) return;
     if (!String(securityCode || "").trim()) {
       setError("Enter security code.");
       return;
@@ -4308,12 +4315,57 @@ function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
               <div style={{ display: "grid", gap: 12 }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "rgba(15,23,42,0.52)", fontFamily: APP_MONO_STACK, fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0f172a", display: "inline-block", animation: "authStatusPulse 2.1s ease-in-out infinite" }} />
-                  Verified access
+                  {busy ? "Opening workspace" : "Verified access"}
                 </div>
                 <div style={{ fontFamily: APP_BRAND_STACK, fontSize: isFullPage ? "2.2rem" : "1.28rem", lineHeight: 1.0, color: "#101418", fontWeight: 700 }}>
-                  Sign in
+                  {busy ? busyTitle : "Sign in"}
                 </div>
               </div>
+              {busy ? (
+                <div style={{
+                  display: "grid",
+                  gap: 16,
+                  padding: "6px 0 2px",
+                }}>
+                  <div style={{
+                    border: "1px solid rgba(15,23,42,0.08)",
+                    borderRadius: 20,
+                    background: "rgba(255,255,255,0.42)",
+                    padding: "18px 18px 16px",
+                    display: "grid",
+                    gap: 12,
+                  }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                      <span style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        border: "2px solid rgba(15,23,42,0.16)",
+                        borderTopColor: "#101418",
+                        display: "inline-block",
+                        animation: "authHeroZoom 0.9s linear infinite alternate",
+                      }} />
+                      <span style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(15,23,42,0.58)" }}>
+                        Loading
+                      </span>
+                    </div>
+                    <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.92rem", lineHeight: 1.7, color: "rgba(15,23,42,0.66)" }}>
+                      {busyMessage}
+                    </div>
+                    <div style={{ height: 6, borderRadius: 999, background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
+                      <span style={{
+                        display: "block",
+                        width: "38%",
+                        height: "100%",
+                        borderRadius: 999,
+                        background: "#101418",
+                        opacity: 0.82,
+                        animation: "authGlassSheen 1.8s ease-in-out infinite",
+                      }} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div style={{ display: "grid", gap: 16 }}>
                 <label style={authFieldWrapStyle}>
                   <span style={{ fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.48)", fontFamily: APP_BRAND_STACK }}>
@@ -4325,12 +4377,14 @@ function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
                     placeholder=""
                     type={showSecurityCode ? "text" : "password"}
                     style={authFieldStyle}
+                    disabled={busy || checking}
                   />
                   <button
                     type="button"
                     title={showSecurityCode ? "Hide security code" : "Show security code"}
                     onClick={() => setShowSecurityCode((prev) => !prev)}
                     style={authIconButtonStyle}
+                    disabled={busy || checking}
                   >
                     {eyeIcon(showSecurityCode)}
                   </button>
@@ -4347,17 +4401,20 @@ function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
                     inputMode="numeric"
                     maxLength={6}
                     style={{ ...authFieldStyle, fontFamily: APP_MONO_STACK, letterSpacing: "0.22em" }}
+                    disabled={busy || checking}
                   />
                   <button
                     type="button"
                     title={showAuthCode ? "Hide authenticator code" : "Show authenticator code"}
                     onClick={() => setShowAuthCode((prev) => !prev)}
                     style={authIconButtonStyle}
+                    disabled={busy || checking}
                   >
                     {eyeIcon(showAuthCode)}
                   </button>
                 </label>
               </div>
+              )}
               {error && (
                 <div style={{
                   borderRadius: 18,
@@ -4375,11 +4432,11 @@ function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
               <div style={{ display: "grid", gap: 14 }}>
                 <button
                   onClick={handleVerify}
-                  disabled={checking}
+                  disabled={checking || busy}
                   style={{
                     border: "1px solid rgba(15,23,42,0.10)",
                     borderRadius: 18,
-                    background: checking ? "rgba(15,23,42,0.76)" : "#101418",
+                    background: checking || busy ? "rgba(15,23,42,0.76)" : "#101418",
                     color: "#ffffff",
                     fontFamily: APP_BRAND_STACK,
                     fontSize: "0.72rem",
@@ -4391,16 +4448,16 @@ function DatabaseAccessModal({ onClose, onVerify, allowClose = true }) {
                     boxShadow: "0 14px 28px rgba(15,23,42,0.12)",
                   }}
                 >
-                  {checking ? "Verifying..." : "Continue"}
+                  {busy ? "Preparing..." : checking ? "Verifying..." : "Continue"}
                 </button>
                 <div style={{ display: "flex", justifyContent: allowClose ? "space-between" : "flex-end", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.79rem", color: "rgba(15,23,42,0.54)", lineHeight: 1.6 }}>
-                    This access is kept private for this session.
+                    {busy ? "Your session is verified. Bringing everything in quietly." : "This access is kept private for this session."}
                   </div>
                   {allowClose && (
                     <button
                       onClick={onClose}
-                      disabled={checking}
+                      disabled={checking || busy}
                       style={{
                         border: "1px solid rgba(15,23,42,0.10)",
                         borderRadius: 16,
@@ -10034,7 +10091,6 @@ function WalkInModal({ onClose, onStart }) {
 // --- MAIN APP ---
 export default function CSCBilling() {
   const [tab, setTab] = useState(() => getInitialActiveTab());
-  const [isBootLoading, setIsBootLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => getStoredSidePanelExpanded());
   const [showDatabaseGate, setShowDatabaseGate] = useState(false);
@@ -10354,11 +10410,6 @@ export default function CSCBilling() {
   };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setIsBootLoading(false), 1350);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
     clearSessionCache();
     resetProtectedAppState();
     setDatabaseUnlocked(false);
@@ -10588,11 +10639,9 @@ export default function CSCBilling() {
     };
   }, [databaseRecords, configLoaded]);
 
-  if (isBootLoading) {
-    return <BootLoadingScreen />;
-  }
+  const isPreparingWorkspace = databaseUnlocked && !configLoaded;
 
-  if (!databaseUnlocked && !unlockAnimPhase) {
+  if ((!databaseUnlocked || isPreparingWorkspace) && !unlockAnimPhase) {
     return (
       <div style={{
         minHeight: "100vh",
@@ -10603,6 +10652,7 @@ export default function CSCBilling() {
         <DatabaseAccessModal
           allowClose={false}
           onVerify={handleDatabaseVerification}
+          busy={isPreparingWorkspace}
         />
       </div>
     );
