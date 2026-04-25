@@ -3,6 +3,7 @@ import { dbLoadMany, dbSave } from "./supabase.js";
 import { DS } from "./design-tokens.js";
 import { DocumentToolsWorkspace } from "./src/workspaces/document-tools/DocumentToolsWorkspace.jsx";
 import { ServicesDashboardWorkspace } from "./src/workspaces/services-dashboard/ServicesDashboardWorkspace.jsx";
+import { AppointmentsWorkspace } from "./src/workspaces/appointments/AppointmentsWorkspace.jsx";
 import { SERVICE_REGISTRY, SERVICE_CATEGORIES } from "./src/workspaces/services-dashboard/registry.js";
 
 const AUTH_HERO_BG_URL = "https://images.pexels.com/photos/32674962/pexels-photo-32674962.jpeg?auto=compress&cs=tinysrgb&w=1600";
@@ -135,7 +136,6 @@ const SERVICE_DETAIL_LIBRARY = {
     title: "Application Details",
     fields: [
       { key: "requestType", label: "Request Type", type: "select", required: true, options: ["New Application", "Correction / Update", "Reprint / Download"] },
-      { key: "proofUsed", label: "Proof / Source", type: "text", required: true, placeholder: "Aadhaar, PAN, birth proof" },
       { key: "submissionMode", label: "Submission Mode", type: "select", required: false, options: ["Online", "Offline", "Appointment"] },
     ],
   },
@@ -194,6 +194,7 @@ const PHONE_REGEX = /^[0-9]{10}$/;
 const DELETE_ACCESS_CODE = "241100";
 const MENU_OPTION_STYLE = { color: "#0f172a", backgroundColor: "#ffffff" };
 const MENU_OPTGROUP_STYLE = { color: "rgba(15,23,42,0.58)", backgroundColor: "#f1f5f9" };
+const OFFLINE_DEV_ACCESS_ENABLED = import.meta.env.DEV && String(import.meta.env.VITE_ENABLE_OFFLINE_DEV_ACCESS || "").trim().toLowerCase() === "true";
 const BRAND_PRIMARY = "#1a56db";
 const BRAND_PRIMARY_DARK = "#1540b0";
 const BRAND_PRIMARY_SOFT = "rgba(26,86,219,0.12)";
@@ -287,6 +288,7 @@ const STORAGE_KEYS = {
   ticketCounter: "csc-buddy.ticket-counter",
   quickLinks: "csc-buddy.quick-links",
   databaseRecords: "csc-buddy.database-records",
+  appointments: "csc-buddy.appointments",
 };
 const APP_CONFIG_KEYS = ["tickets", "services", "quick_links", "b2b_ledger", "database_records"];
 const SESSION_CACHE_KEYS = Object.values(STORAGE_KEYS);
@@ -297,6 +299,7 @@ const TAB_CONFIG = [
   { id: "monthly", label: "Analytics", shortLabel: "AN", navGroup: "primary" },
   { id: "b2b", label: "Vendor Dashboard", shortLabel: "VD", navGroup: "panel" },
   { id: "database", label: "Database", shortLabel: "DB", navGroup: "panel" },
+  { id: "appointments", label: "Appointments", shortLabel: "AP", navGroup: "panel" },
   { id: "log", label: "Ticket Dashboard", shortLabel: "TD", navGroup: "panel" },
   { id: "quick_links", label: "Quick Website Links", shortLabel: "QL", navGroup: "panel" },
   { id: "doc_tools", label: "Document Tools", shortLabel: "DT", navGroup: "panel" },
@@ -394,9 +397,22 @@ const HOME_NAV_BUTTONS = [
       </svg>
     ),
   },
+  {
+    id: "appointments",
+    label: "Appointments",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+        <line x1="9" y1="16" x2="15" y2="16" />
+      </svg>
+    ),
+  },
 ];
 const CORE_WORKSPACE_TAB_IDS = ["entry", "monthly"];
-const TOOL_WORKSPACE_TAB_IDS = ["b2b", "database", "log", "quick_links", "doc_tools", "services_dashboard"];
+const TOOL_WORKSPACE_TAB_IDS = ["b2b", "database", "appointments", "log", "quick_links", "doc_tools", "services_dashboard"];
 const DATABASE_SECTION_CONFIG = [
   {
     id: "aadhaar",
@@ -1455,6 +1471,16 @@ function clearSessionCache(keys = SESSION_CACHE_KEYS) {
   keys.forEach((key) => removeStoredValue(key));
 }
 
+function readProtectedStateFromSessionCache() {
+  return {
+    services: hydrateServices(readStoredJSON(STORAGE_KEYS.services, INITIAL_SERVICES)),
+    tickets: hydrateTickets(readStoredJSON(STORAGE_KEYS.tickets, [])),
+    customQuickLinks: normalizeQuickLinksList(readStoredJSON(STORAGE_KEYS.quickLinks, [])),
+    b2bLedger: hydrateB2BLedger(readStoredJSON(STORAGE_KEYS.b2bLedger, [])),
+    databaseRecords: hydrateDatabaseRecords(readStoredJSON(STORAGE_KEYS.databaseRecords, [])),
+  };
+}
+
 function useDebouncedStoredJSON(key, value, delay = 180, enabled = true, callbacks = null) {
   const timeoutRef = useRef(null);
 
@@ -2312,7 +2338,15 @@ function BootLoadingScreen() {
   );
 }
 
-function HomeLaunchpad({ onOpenSection }) {
+function HomeLaunchpad({ onOpenSection, appointments = [] }) {
+  const tomorrowISO = (() => {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  const tomorrowAppts = appointments.filter(
+    (a) => a.status === "Upcoming" && a.appointmentDate === tomorrowISO
+  );
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -2322,8 +2356,88 @@ function HomeLaunchpad({ onOpenSection }) {
       justifyContent: "center",
       background: "radial-gradient(circle at 14% 6%, rgba(59,130,246,0.16), transparent 32%), radial-gradient(circle at 85% 85%, rgba(14,165,233,0.12), transparent 28%), #f8fbff",
     }}>
+      <div style={{ width: "min(1120px, 100%)", display: "grid", gap: 12 }}>
+
+        {tomorrowAppts.length > 0 && (
+          <div style={{
+            borderRadius: 14,
+            border: "1px solid rgba(217,119,6,0.35)",
+            background: "linear-gradient(135deg, rgba(254,243,199,0.95), rgba(255,251,235,0.90))",
+            boxShadow: "0 4px 16px rgba(217,119,6,0.10)",
+            padding: "14px 18px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+          }}>
+            <span style={{
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+              background: "rgba(217,119,6,0.14)",
+              border: "1px solid rgba(217,119,6,0.28)",
+              display: "grid", placeItems: "center",
+              color: "#b45309",
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+                <line x1="9" y1="16" x2="15" y2="16"/>
+              </svg>
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontFamily: APP_BRAND_STACK,
+                fontSize: "0.60rem",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#92400e",
+                marginBottom: 4,
+              }}>
+                Tomorrow · Sector 71 Aadhaar Centre
+              </div>
+              <div style={{
+                fontFamily: APP_FONT_STACK,
+                fontSize: "0.92rem",
+                fontWeight: 600,
+                color: "#78350f",
+                lineHeight: 1.5,
+              }}>
+                {tomorrowAppts.length === 1
+                  ? <>Reminder: <strong>{tomorrowAppts[0].customerName.split(" ")[0]}</strong> has an Aadhaar appointment tomorrow. Don't forget!</>
+                  : <>Reminder: {tomorrowAppts.map((a, i) => (
+                      <span key={a.id}>
+                        <strong>{a.customerName.split(" ")[0]}</strong>
+                        {i < tomorrowAppts.length - 2 ? ", " : i === tomorrowAppts.length - 2 ? " & " : ""}
+                      </span>
+                    ))} have Aadhaar appointments tomorrow.</>
+                }
+              </div>
+              <button
+                type="button"
+                onClick={() => onOpenSection("appointments")}
+                style={{
+                  marginTop: 8,
+                  padding: "5px 14px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(217,119,6,0.35)",
+                  background: "rgba(217,119,6,0.12)",
+                  color: "#92400e",
+                  fontFamily: APP_BRAND_STACK,
+                  fontWeight: 700,
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                }}
+              >
+                View Appointments →
+              </button>
+            </div>
+          </div>
+        )}
+
       <div style={{
-        width: "min(1120px, 100%)",
         borderRadius: 18,
         border: "1px solid rgba(15,23,42,0.12)",
         background: "rgba(255,255,255,0.90)",
@@ -2376,6 +2490,7 @@ function HomeLaunchpad({ onOpenSection }) {
             </button>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );
@@ -5811,7 +5926,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   }, [availableServices]);
   const selectedServiceConfig = availableServices.find((service) => service.id === selectedService) || null;
   const selectedQuantityConfig = selectedServiceConfig ? getQuantityModeConfig(selectedServiceConfig.quantityMode) : null;
-  const selectedDetailSchema = selectedServiceConfig ? getServiceDetailSchema(selectedServiceConfig) : null;
   const selectedServiceDetailValues = selectedServiceConfig
     ? createDetailDraftForService(selectedServiceConfig, serviceDetailMap[selectedServiceConfig.id] || {})
     : {};
@@ -5820,6 +5934,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       ? serviceDetailErrorMap[selectedServiceConfig.id]
       : {})
     : {};
+  const selectedOperatorConfig = getOperatorConfig(operator);
 
   const total = Math.max(0, Number(ticketTotal) || 0);
   const cashCollected = Math.max(0, Number(paymentCash) || 0);
@@ -6183,13 +6298,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     if (!selectedService) return;
     const svc = services.find((s) => s.id === selectedService);
     if (!svc) return;
-    const selectedDetailDraft = createDetailDraftForService(svc, selectedServiceDetailValues);
-    const detailErrors = validateServiceDetailValues(svc, selectedDetailDraft);
-    if (Object.keys(detailErrors).length > 0) {
-      setServiceDetailErrorMap((prev) => ({ ...prev, [svc.id]: detailErrors }));
-      setError("Complete the service detail section before adding this line item.");
-      return;
-    }
     const quantityConfig = getQuantityModeConfig(svc.quantityMode);
     const minQty = svc.minQty || quantityConfig.min;
     const maxQty = svc.maxQty || quantityConfig.defaultMax;
@@ -6199,14 +6307,13 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       setError(`${quantityConfig.inputLabel} must stay between ${minQty} and ${maxQty} for ${svc.name}.`);
       return;
     }
-    const detailValues = createDetailDraftForService(svc, selectedDetailDraft);
     setItems((prev) => [...prev, {
       ...svc,
       qty: qtyNum,
       unitPrice: 0,
       amount: 0,
-      detailValues,
-      detailSummary: buildServiceDetailSummary(svc, detailValues),
+      detailValues: {},
+      detailSummary: "",
       done: false,
     }]);
     setSelectedService("");
@@ -6591,6 +6698,48 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               </div>
             </div>
 
+            <div style={{ ...softPanelStyle, marginBottom: 18, padding: "14px 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <div>
+                  <div style={sectionEyebrowStyle}>Operator</div>
+                  <div style={{ fontSize: "0.84rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK }}>
+                    Choose the operator for this ticket. This stays linked to the same ticket data flow as before.
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {OPERATOR_DIRECTORY.map((operatorOption) => {
+                    const active = operator === operatorOption.name;
+                    return (
+                      <button
+                        key={`ticket_operator_${operatorOption.id}`}
+                        type="button"
+                        onClick={() => setOperator(operatorOption.name)}
+                        style={{
+                          borderRadius: 999,
+                          border: active ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(13,27,42,0.12)",
+                          background: active ? ENTRY_ACCENT_SOFTER : "#ffffff",
+                          color: active ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.68)",
+                          padding: "10px 16px",
+                          fontFamily: APP_BRAND_STACK,
+                          fontSize: "0.70rem",
+                          fontWeight: 700,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase",
+                          cursor: "pointer",
+                          boxShadow: active ? "0 0 0 2px rgba(26,86,219,0.08)" : "0 1px 2px rgba(13,27,42,0.05)",
+                        }}
+                      >
+                        {operatorOption.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ marginTop: 10, fontSize: "0.78rem", color: "rgba(15,23,42,0.54)", fontFamily: APP_FONT_STACK }}>
+                Active operator: <strong style={{ color: "#0f172a", fontWeight: 700 }}>{selectedOperatorConfig.name}</strong> · {selectedOperatorConfig.role}
+              </div>
+            </div>
+
             {/* Sub-step panels */}
             {subStep === 1 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
@@ -6779,15 +6928,18 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
                     Add Services
                   </div>
+                  <div style={{ marginTop: 6, fontSize: "0.86rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.6 }}>
+                    Step 2 only captures which services this client is taking from us and the quantity for each line item.
+                  </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 14, alignItems: "end" }}>
                   <label style={{ display: "grid", gap: 7 }}>
                     <span style={sectionEyebrowStyle}>Select Service</span>
                     <select value={selectedService} onChange={(e) => { setSelectedService(e.target.value); setCustomAmt(""); }} style={inputStyle}>
                       <option value="" style={MENU_OPTION_STYLE}>Choose a service...</option>
-                      {CATEGORIES.map((cat) => (
-                        <optgroup key={cat} label={cat} style={MENU_OPTGROUP_STYLE}>
-                          {services.filter((s) => s.category === cat).map((s) => (
+                      {intakeServiceGroups.map((group) => (
+                        <optgroup key={group.category} label={group.category} style={MENU_OPTGROUP_STYLE}>
+                          {group.services.map((s) => (
                             <option key={s.id} value={s.id} style={MENU_OPTION_STYLE}>{s.name}</option>
                           ))}
                         </optgroup>
@@ -6811,70 +6963,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     </>
                   )}
                 </div>
-
-                {selectedServiceConfig && selectedDetailSchema?.fields?.length > 0 && (
-                  <div style={{ ...softPanelStyle, marginBottom: 14 }}>
-                    <div style={{ marginBottom: 8 }}>
-                      <div style={sectionEyebrowStyle}>{selectedDetailSchema?.title || "Service Details"}</div>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-                      {selectedDetailSchema.fields.map((field) => (
-                        <label key={`${selectedServiceConfig.id}_${field.key}`} style={{ display: "grid", gap: 6 }}>
-                          <span style={sectionEyebrowStyle}>{field.label}{field.required ? " *" : ""}</span>
-                          {field.type === "select" ? (
-                            <select
-                              value={selectedServiceDetailValues[field.key] || ""}
-                              onChange={(e) => {
-                                setServiceDetailMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: e.target.value } }));
-                                setServiceDetailErrorMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: "" } }));
-                              }}
-                              style={inputStyle}
-                            >
-                              <option value="" style={MENU_OPTION_STYLE}>Select...</option>
-                              {field.options?.map((option) => (
-                                <option key={`${field.key}_${option}`} value={option} style={MENU_OPTION_STYLE}>{option}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              type={field.type === "number" ? "number" : "text"}
-                              min={field.min}
-                              value={selectedServiceDetailValues[field.key] || ""}
-                              onChange={(e) => {
-                                setServiceDetailMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: e.target.value } }));
-                                setServiceDetailErrorMap((prev) => ({ ...prev, [selectedServiceConfig.id]: { ...(prev[selectedServiceConfig.id] || {}), [field.key]: "" } }));
-                              }}
-                              placeholder={field.placeholder}
-                              style={inputStyle}
-                            />
-                          )}
-                          {selectedServiceDetailErrors[field.key] && (
-                            <span style={{ fontSize: "0.76rem", color: "#8f2e3d", fontFamily: APP_FONT_STACK }}>{selectedServiceDetailErrors[field.key]}</span>
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selectedServiceConfig && (
-                  <div style={{ ...softPanelStyle, marginBottom: 14 }}>
-                    <div style={sectionEyebrowStyle}>Required Documents (Preview)</div>
-                    {getRequiredDocumentNamesForService(selectedServiceConfig).length === 0 ? (
-                      <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>
-                        No required documents configured for this service.
-                      </div>
-                    ) : (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8 }}>
-                        {getRequiredDocumentNamesForService(selectedServiceConfig).map((docName) => (
-                          <div key={`preview_${selectedServiceConfig.id}_${normalizeDocNameKey(docName)}`} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.74)", padding: "9px 11px", fontSize: "0.80rem", color: "#0f172a", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
-                            {docName}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {selectedServiceConfig && (
                   <div style={{ marginBottom: 20 }}>
@@ -6930,6 +7018,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                   <div>
                     <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
                       Service Document Intake
+                    </div>
+                    <div style={{ marginTop: 6, fontSize: "0.84rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.6 }}>
+                      This step is the only place where document and proof intake is tracked. Required items are pulled from the selected services.
                     </div>
                   </div>
                   <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(15,23,42,0.09)", color: "rgba(15,23,42,0.52)" }}>
@@ -7041,17 +7132,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
                       Payment
                     </div>
-                  </div>
-
-                  <div style={{ ...softPanelStyle, marginBottom: 14 }}>
-                    <label style={{ display: "grid", gap: 7, maxWidth: 280 }}>
-                      <span style={sectionEyebrowStyle}>Operator</span>
-                      <select value={operator} onChange={(e) => setOperator(e.target.value)} style={inputStyle}>
-                        {OPERATORS.map((name) => (
-                          <option key={`op_${name}`} value={name} style={MENU_OPTION_STYLE}>{name}</option>
-                        ))}
-                      </select>
-                    </label>
                   </div>
 
                   <div style={{ ...softPanelStyle, marginBottom: 14, padding: "14px 16px" }}>
@@ -8351,6 +8431,8 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
   const activeEntity = trackEntities.find((entity) => entity.key === activeEntityKeys[activeTrack]) || trackEntities[0] || null;
   const activeForm = entryForms[activeTrack];
   const matchingFormEntity = trackEntities.find((entity) => normalizeEntityKey(entity.name) === normalizeEntityKey(activeForm.partnerName));
+  const customPartnerOptionValue = "__custom_partner__";
+  const selectedPartnerOptionValue = matchingFormEntity?.key || (String(activeForm.partnerName || "").trim() ? customPartnerOptionValue : "");
   const serviceSuggestions = matchingFormEntity
     ? dedupeB2BItems(matchingFormEntity.servicesByRole[activeTrack].flatMap((group) => group.items || []))
     : [];
@@ -8358,7 +8440,6 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
   const settledPreview = Math.max(0, Math.min(amountPreview, Number(activeForm.settledAmount) || 0));
   const pendingPreview = Math.max(0, amountPreview - settledPreview);
   const serviceListId = `b2b_service_options_${activeTrack}_${matchingFormEntity?.key || "custom"}`;
-  const partnerListId = `b2b_partner_options_${activeTrack}`;
   const trackMeta = B2B_TRACK_META[activeTrack];
   const trackTotals = trackEntities.reduce((acc, entity) => {
     acc.amount += Number(entity.amountValue) || 0;
@@ -8405,6 +8486,20 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
         serviceName: prev[activeTrack].serviceName || (entity.servicesByRole[activeTrack][0]?.items?.[0] || ""),
       },
     }));
+  };
+
+  const handlePartnerSelection = (partnerKey) => {
+    if (!partnerKey) {
+      updateActiveForm("partnerName", "");
+      return;
+    }
+    if (partnerKey === customPartnerOptionValue) {
+      updateActiveForm("partnerName", matchingFormEntity ? "" : activeForm.partnerName);
+      return;
+    }
+    const entity = trackEntities.find((item) => item.key === partnerKey);
+    if (!entity) return;
+    selectEntity(entity);
   };
 
   const handleAddEntry = () => {
@@ -8762,18 +8857,31 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           <label style={{ display: "grid", gap: 6 }}>
             <span style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>{activeTrack === "agent" ? "Agent" : "Vendor"}</span>
-            <input
-              list={partnerListId}
-              value={activeForm.partnerName}
-              onChange={(event) => updateActiveForm("partnerName", event.target.value)}
-              placeholder={activeTrack === "agent" ? "Agent name" : "Vendor name"}
+            <select
+              value={selectedPartnerOptionValue}
+              onChange={(event) => handlePartnerSelection(event.target.value)}
               style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
-            />
-            <datalist id={partnerListId}>
+            >
+              <option value="" style={MENU_OPTION_STYLE}>
+                {activeTrack === "agent" ? "Select agent" : "Select vendor"}
+              </option>
               {trackEntities.map((entity) => (
-                <option key={`${partnerListId}_${entity.key}`} value={entity.name} />
+                <option key={`partner_select_${activeTrack}_${entity.key}`} value={entity.key} style={MENU_OPTION_STYLE}>
+                  {entity.name}
+                </option>
               ))}
-            </datalist>
+              <option value={customPartnerOptionValue} style={MENU_OPTION_STYLE}>
+                {activeTrack === "agent" ? "Add new agent..." : "Add new vendor..."}
+              </option>
+            </select>
+            {selectedPartnerOptionValue === customPartnerOptionValue && (
+              <input
+                value={activeForm.partnerName}
+                onChange={(event) => updateActiveForm("partnerName", event.target.value)}
+                placeholder={activeTrack === "agent" ? "Agent name" : "Vendor name"}
+                style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(15,23,42,0.12)", background: "rgba(255,255,255,0.94)", color: "#0f172a", fontFamily: APP_FONT_STACK, fontSize: "0.84rem" }}
+              />
+            )}
           </label>
 
           {activeTrack === "agent" && (
@@ -10060,12 +10168,36 @@ function WalkInModal({ onClose, onStart }) {
               <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)" }}>Phone (optional)</span>
               <input type="tel" placeholder="10-digit mobile" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }} style={inputSt} />
             </label>
-            <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ display: "grid", gap: 6 }}>
               <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(15,23,42,0.42)" }}>Operator</span>
-              <select value={operator} onChange={(e) => setOperator(e.target.value)} style={inputSt}>
-                {OPERATORS.map((op) => <option key={op} value={op} style={MENU_OPTION_STYLE}>{op}</option>)}
-              </select>
-            </label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {OPERATOR_DIRECTORY.map((operatorOption) => {
+                  const active = operator === operatorOption.name;
+                  return (
+                    <button
+                      key={`walkin_operator_${operatorOption.id}`}
+                      type="button"
+                      onClick={() => setOperator(operatorOption.name)}
+                      style={{
+                        borderRadius: 999,
+                        border: active ? "1px solid rgba(37,99,235,0.34)" : "1px solid rgba(15,23,42,0.12)",
+                        background: active ? "rgba(37,99,235,0.10)" : "rgba(255,255,255,0.82)",
+                        color: active ? "#1e40af" : "rgba(15,23,42,0.66)",
+                        padding: "10px 15px",
+                        fontFamily: APP_BRAND_STACK,
+                        fontWeight: 700,
+                        fontSize: "0.66rem",
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {operatorOption.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -10095,12 +10227,16 @@ export default function CSCBilling() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => getStoredSidePanelExpanded());
   const [showDatabaseGate, setShowDatabaseGate] = useState(false);
   const [databaseUnlocked, setDatabaseUnlocked] = useState(false);
+  const [isOfflineDevMode, setIsOfflineDevMode] = useState(false);
   const [unlockAnimPhase, setUnlockAnimPhase] = useState(null); // null | "running" | "success"
   const [configLoaded, setConfigLoaded] = useState(false);
   const [services, setServices] = useState(() => hydrateServices(INITIAL_SERVICES));
   const [tickets, setTickets] = useState(() => []);
   const [b2bLedger, setB2BLedger] = useState(() => []);
   const [databaseRecords, setDatabaseRecords] = useState(() => []);
+  const [appointments, setAppointments] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.appointments) || "[]"); } catch { return []; }
+  });
   const [customQuickLinks, setCustomQuickLinks] = useState(() => []);
   const [showAddQuickLink, setShowAddQuickLink] = useState(false);
   const [quickLinkName, setQuickLinkName] = useState("");
@@ -10140,6 +10276,7 @@ export default function CSCBilling() {
     quick_links: String(customQuickLinks.length + QUICK_LINK_DEFAULTS.length),
     doc_tools: String(Math.max(0, tickets.length)),
     services_dashboard: String(Math.max(0, services.length)),
+    appointments: (() => { const n = appointments.filter((a) => a.status === "Upcoming").length; return n > 0 ? String(n) : ""; })(),
   };
   const isHomeTab = tab === "home";
   const activeTabConfig = TAB_CONFIG.find((item) => item.id === tab) || TAB_CONFIG[0];
@@ -10258,6 +10395,28 @@ export default function CSCBilling() {
   const deleteDatabaseRecord = (recordId) => {
     setDatabaseRecords((prev) => prev.filter((record) => record.id !== recordId));
   };
+  const saveAppointment = (appt) => {
+    setAppointments((prev) => {
+      const idx = prev.findIndex((a) => a.id === appt.id);
+      const next = idx >= 0 ? prev.map((a) => a.id === appt.id ? appt : a) : [appt, ...prev];
+      try { localStorage.setItem(STORAGE_KEYS.appointments, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  const deleteAppointment = (id) => {
+    setAppointments((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      try { localStorage.setItem(STORAGE_KEYS.appointments, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  const changeAppointmentStatus = (id, status) => {
+    setAppointments((prev) => {
+      const next = prev.map((a) => a.id === id ? { ...a, status, updatedAt: new Date().toISOString() } : a);
+      try { localStorage.setItem(STORAGE_KEYS.appointments, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   const deleteTicket = (ticketNo) => {
     setTickets((prev) => prev.filter((ticket) => ticket.ticketNo !== ticketNo));
   };
@@ -10322,6 +10481,22 @@ export default function CSCBilling() {
   const removeQuickLink = (linkId) => {
     setCustomQuickLinks((prev) => prev.filter((item) => item.id !== linkId));
   };
+  const enterOfflineDevMode = () => {
+    const localSnapshot = readProtectedStateFromSessionCache();
+    dbSyncedRef.current = false;
+    setServices(localSnapshot.services);
+    setTickets(localSnapshot.tickets);
+    setCustomQuickLinks(localSnapshot.customQuickLinks);
+    setB2BLedger(localSnapshot.b2bLedger);
+    setDatabaseRecords(localSnapshot.databaseRecords);
+    setCloudLastSyncedAt(null);
+    setDatabaseUnlocked(true);
+    setAuthChecked(true);
+    setConfigLoaded(true);
+    setShowDatabaseGate(false);
+    setIsOfflineDevMode(true);
+    setCloudSyncState("local_only");
+  };
   const openQuickLink = (url) => {
     if (typeof window === "undefined") return;
     const finalUrl = normalizeExternalUrl(url);
@@ -10363,6 +10538,7 @@ export default function CSCBilling() {
     clearSessionCache();
     resetProtectedAppState();
     setDatabaseUnlocked(false);
+    setIsOfflineDevMode(false);
     setShowDatabaseGate(true);
     setCloudSyncState("locked");
     navigateTab("home", "replace", { bypassDatabaseGate: true });
@@ -10381,6 +10557,7 @@ export default function CSCBilling() {
     clearSessionCache();
     resetProtectedAppState();
     setDatabaseUnlocked(true);
+    setIsOfflineDevMode(false);
     setAuthChecked(true);
     setCloudSyncState("connecting");
     setUnlockAnimPhase("success");
@@ -10404,15 +10581,21 @@ export default function CSCBilling() {
     clearSessionCache();
     resetProtectedAppState();
     setDatabaseUnlocked(false);
+    setIsOfflineDevMode(false);
     setShowDatabaseGate(true);
     setCloudSyncState("locked");
     navigateTab("home", "replace");
   };
 
   useEffect(() => {
+    if (OFFLINE_DEV_ACCESS_ENABLED) {
+      enterOfflineDevMode();
+      return;
+    }
     clearSessionCache();
     resetProtectedAppState();
     setDatabaseUnlocked(false);
+    setIsOfflineDevMode(false);
     setShowDatabaseGate(true);
     setCloudSyncState("locked");
   }, []);
@@ -10996,8 +11179,21 @@ export default function CSCBilling() {
                     {formatSyncTime(cloudLastSyncedAt)}
                   </span>
                 )}
+                {isOfflineDevMode && (
+                  <span style={{
+                    marginLeft: 2,
+                    fontSize: "0.58rem",
+                    fontWeight: 700,
+                    color: tab === "database" ? "rgba(0,255,70,0.78)" : "#92400e",
+                    fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                  }}>
+                    Dev
+                  </span>
+                )}
               </div>
-              {databaseUnlocked && (
+              {databaseUnlocked && !isOfflineDevMode && (
                 <button
                   onClick={lockDatabaseAccess}
                   style={{
@@ -11117,6 +11313,7 @@ export default function CSCBilling() {
             {isHomeTab && (
               <HomeLaunchpad
                 onOpenSection={(sectionId) => navigateTab(sectionId)}
+                appointments={appointments}
               />
             )}
             <TabPanel active={tab === "entry"}>
@@ -11178,6 +11375,14 @@ export default function CSCBilling() {
             </TabPanel>
             <TabPanel active={tab === "services_dashboard"}>
               <ServicesDashboardWorkspace />
+            </TabPanel>
+            <TabPanel active={tab === "appointments"}>
+              <AppointmentsWorkspace
+                appointments={appointments}
+                onSave={saveAppointment}
+                onDelete={deleteAppointment}
+                onStatusChange={changeAppointmentStatus}
+              />
             </TabPanel>
             <TabPanel active={tab === "customers"}>
               <CustomersWorkspace tickets={tickets} onDeleteCustomer={deleteCustomerTickets} onNavigateTab={navigateTab} />
