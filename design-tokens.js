@@ -5,49 +5,48 @@
 
 export const DS = {
   // Core palette
-  dark:        "#0f1116",
-  darkDeep:    "#080809",
-  darkSoft:    "#0d0b08",
+  dark:        "#0d1b2a",
+  darkDeep:    "#060e17",
+  darkSoft:    "#111a26",
   cream:       "#ffffff",
-  creamSoft:   "#f1f5f9",
-  creamText:   "#f8fbff",
-  wine:        "#2563eb",
-  gold:        "#3b82f6",
-  goldDark:    "#2563eb",
-  redBright:   "#d6052b",
-  inkBlack:    "#0a0a0a",
+  creamSoft:   "#f4f7fa",
+  creamText:   "#eef2f7",
+  wine:        "#1a56db",
+  gold:        "#2563eb",
+  goldDark:    "#1540b0",
+  redBright:   "#dc2626",
+  inkBlack:    "#0d1b2a",
 
   // Category semantic accents
   cat: {
-    "Government ID":        "#2563eb",
-    "Certificates":         "#0ea5e9",
-    "Legal & Docs":         "#1d4ed8",
-    "Government Services":  "#3b82f6",
-    "Typing & Print":       "#60a5fa",
+    "Government ID":        "#1a56db",
+    "Certificates":         "#0284c7",
+    "Legal & Docs":         "#1540b0",
+    "Government Services":  "#2563eb",
+    "Typing & Print":       "#3b82f6",
   },
 
   // Foreground tiers on dark
-  fg1: "rgba(252,249,248,1)",
-  fg2: "rgba(252,249,248,0.78)",
-  fg3: "rgba(252,249,248,0.60)",
-  fg4: "rgba(255,255,255,0.40)",
-  fg5: "rgba(255,255,255,0.20)",
+  fg1: "rgba(248,250,252,1)",
+  fg2: "rgba(248,250,252,0.80)",
+  fg3: "rgba(248,250,252,0.60)",
+  fg4: "rgba(248,250,252,0.38)",
+  fg5: "rgba(248,250,252,0.18)",
 
-  // Foreground tiers on cream/light
-  ink1: "rgba(10,10,10,1)",
-  ink2: "rgba(10,10,10,0.85)",
-  ink3: "rgba(10,10,10,0.60)",
-  ink4: "rgba(10,10,10,0.40)",
+  // Foreground tiers on light
+  ink1: "rgba(13,27,42,1)",
+  ink2: "rgba(13,27,42,0.82)",
+  ink3: "rgba(13,27,42,0.58)",
+  ink4: "rgba(13,27,42,0.38)",
 
   // Surfaces
-  hairline:    "rgba(255,255,255,0.10)",
-  hairlineSoft:"rgba(255,255,255,0.06)",
-  glass:       "rgba(255,255,255,0.06)",
-  card:        "rgba(10,10,10,0.35)",
-  cardDeep:    "rgba(10,10,10,0.65)",
+  hairline:    "rgba(13,27,42,0.10)",
+  hairlineSoft:"rgba(13,27,42,0.06)",
+  glass:       "rgba(255,255,255,0.08)",
+  card:        "rgba(13,27,42,0.04)",
+  cardDeep:    "rgba(13,27,42,0.08)",
 
   // Fonts
-  serif:  "'Cormorant Garamond', 'Times New Roman', serif",
   sans:   "'Manrope', system-ui, -apple-system, sans-serif",
   brand:  "'League Spartan', 'Manrope', sans-serif",
   mono:   "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
@@ -55,21 +54,21 @@ export const DS = {
   // Radius
   rXs:   "4px",
   rSm:   "8px",
-  rMd:   "14px",
-  rLg:   "20px",
-  rXl:   "24px",
+  rMd:   "12px",
+  rLg:   "16px",
+  rXl:   "20px",
   rPill: "999px",
 
   // Shadows
-  shadowCard:  "0 20px 60px rgba(0,0,0,0.50)",
-  shadowNav:   "0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03)",
-  shadowSm:    "0 4px 12px rgba(0,0,0,0.08)",
-  shadowMd:    "0 10px 20px rgba(0,0,0,0.15)",
-  shadowLg:    "0 18px 36px rgba(0,0,0,0.25)",
+  shadowCard:  "0 2px 8px rgba(13,27,42,0.08), 0 0 0 1px rgba(13,27,42,0.06)",
+  shadowNav:   "0 4px 20px rgba(13,27,42,0.12), 0 0 0 1px rgba(13,27,42,0.08)",
+  shadowSm:    "0 1px 3px rgba(13,27,42,0.07), 0 0 0 1px rgba(13,27,42,0.05)",
+  shadowMd:    "0 8px 24px rgba(13,27,42,0.09), 0 0 0 1px rgba(13,27,42,0.06)",
+  shadowLg:    "0 16px 40px rgba(13,27,42,0.12)",
 
   // Motion
   ease:      "cubic-bezier(0.16, 1, 0.3, 1)",
   easeSoft:  "cubic-bezier(0.2, 0.9, 0.22, 1)",
-  transStd:  "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-  transColor:"color 0.18s ease, background 0.18s ease, border-color 0.18s ease",
+  transStd:  "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+  transColor:"color 0.15s ease, background 0.15s ease, border-color 0.15s ease",
 };
