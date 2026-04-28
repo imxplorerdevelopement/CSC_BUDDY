@@ -290,7 +290,7 @@ const STORAGE_KEYS = {
   databaseRecords: "csc-buddy.database-records",
   appointments: "csc-buddy.appointments",
 };
-const APP_CONFIG_KEYS = ["tickets", "services", "quick_links", "b2b_ledger", "database_records"];
+const APP_CONFIG_KEYS = ["tickets", "services", "quick_links", "b2b_ledger", "database_records", "appointments"];
 const SESSION_CACHE_KEYS = Object.values(STORAGE_KEYS);
 const TAB_CONFIG = [
   { id: "home", label: "Dashboard Home", shortLabel: "HM", navGroup: "home" },
@@ -1464,6 +1464,18 @@ function readStoredJSON(key, fallbackValue) {
   }
 }
 
+function readAppointmentCache() {
+  if (typeof window === "undefined") return [];
+  try {
+    const sessionRaw = window.sessionStorage?.getItem(STORAGE_KEYS.appointments);
+    if (sessionRaw) return JSON.parse(sessionRaw);
+    const legacyLocalRaw = window.localStorage?.getItem(STORAGE_KEYS.appointments);
+    return legacyLocalRaw ? JSON.parse(legacyLocalRaw) : [];
+  } catch {
+    return [];
+  }
+}
+
 function writeStoredJSON(key, value) {
   if (!canUseStorage()) return false;
   try {
@@ -1499,6 +1511,7 @@ function readProtectedStateFromSessionCache() {
     customQuickLinks: normalizeQuickLinksList(readStoredJSON(STORAGE_KEYS.quickLinks, [])),
     b2bLedger: hydrateB2BLedger(readStoredJSON(STORAGE_KEYS.b2bLedger, [])),
     databaseRecords: hydrateDatabaseRecords(readStoredJSON(STORAGE_KEYS.databaseRecords, [])),
+    appointments: hydrateAppointments(readAppointmentCache()),
   };
 }
 
@@ -1572,6 +1585,25 @@ function serializeTickets(tickets) {
     const { structured, ...rawTicket } = ticket || {};
     return rawTicket;
   });
+}
+
+function hydrateAppointments(storedAppointments) {
+  if (!Array.isArray(storedAppointments)) return [];
+  return storedAppointments
+    .filter((appointment) => appointment && typeof appointment === "object")
+    .map((appointment, index) => ({
+      id: String(appointment.id || `appt-${Date.now()}-${index}`),
+      customerName: String(appointment.customerName || "").trim(),
+      customerPhone: normalizePhoneValue(appointment.customerPhone),
+      service: String(appointment.service || "Aadhaar Address Update"),
+      appointmentDate: String(appointment.appointmentDate || ""),
+      appointmentTime: String(appointment.appointmentTime || ""),
+      note: String(appointment.note || ""),
+      status: ["Upcoming", "Done", "Cancelled"].includes(appointment.status) ? appointment.status : "Upcoming",
+      createdAt: appointment.createdAt || new Date().toISOString(),
+      updatedAt: appointment.updatedAt || appointment.createdAt || new Date().toISOString(),
+    }))
+    .filter((appointment) => appointment.customerName || appointment.customerPhone || appointment.appointmentDate);
 }
 
 function normalizeEntityKey(value) {
@@ -10653,7 +10685,7 @@ export default function CSCBilling() {
   const [b2bLedger, setB2BLedger] = useState(() => []);
   const [databaseRecords, setDatabaseRecords] = useState(() => []);
   const [appointments, setAppointments] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.appointments) || "[]"); } catch { return []; }
+    return hydrateAppointments(readAppointmentCache());
   });
   const [customQuickLinks, setCustomQuickLinks] = useState(() => []);
   const [showAddQuickLink, setShowAddQuickLink] = useState(false);
@@ -10863,22 +10895,22 @@ export default function CSCBilling() {
   const saveAppointment = (appt) => {
     setAppointments((prev) => {
       const idx = prev.findIndex((a) => a.id === appt.id);
-      const next = idx >= 0 ? prev.map((a) => a.id === appt.id ? appt : a) : [appt, ...prev];
-      try { localStorage.setItem(STORAGE_KEYS.appointments, JSON.stringify(next)); } catch {}
+      const next = hydrateAppointments(idx >= 0 ? prev.map((a) => a.id === appt.id ? appt : a) : [appt, ...prev]);
+      writeStoredJSON(STORAGE_KEYS.appointments, next);
       return next;
     });
   };
   const deleteAppointment = (id) => {
     setAppointments((prev) => {
       const next = prev.filter((a) => a.id !== id);
-      try { localStorage.setItem(STORAGE_KEYS.appointments, JSON.stringify(next)); } catch {}
+      writeStoredJSON(STORAGE_KEYS.appointments, next);
       return next;
     });
   };
   const changeAppointmentStatus = (id, status) => {
     setAppointments((prev) => {
       const next = prev.map((a) => a.id === id ? { ...a, status, updatedAt: new Date().toISOString() } : a);
-      try { localStorage.setItem(STORAGE_KEYS.appointments, JSON.stringify(next)); } catch {}
+      writeStoredJSON(STORAGE_KEYS.appointments, next);
       return next;
     });
   };
@@ -10954,6 +10986,7 @@ export default function CSCBilling() {
     setCustomQuickLinks(localSnapshot.customQuickLinks);
     setB2BLedger(localSnapshot.b2bLedger);
     setDatabaseRecords(localSnapshot.databaseRecords);
+    setAppointments(localSnapshot.appointments);
     setCloudLastSyncedAt(null);
     setIsDashboardUnlocked(true);
     setDatabaseUnlocked(true);
@@ -10998,6 +11031,7 @@ export default function CSCBilling() {
     setB2BLedger([]);
     setDatabaseRecords([]);
     setCustomQuickLinks([]);
+    setAppointments([]);
     setCloudLastSyncedAt(null);
   };
   const handleAuthExpired = () => {
@@ -11009,6 +11043,9 @@ export default function CSCBilling() {
     setShowDatabaseGate(false);
     setCloudSyncState("locked");
     navigateTab("home", "replace", { bypassDatabaseGate: true });
+  };
+  const handleBackgroundSyncUnauthorized = () => {
+    setCloudSyncState("sync_failed");
   };
 
   // Step 1: Main dashboard authentication — unlocks the dashboard but NOT the Database page.
@@ -11099,6 +11136,7 @@ export default function CSCBilling() {
         setCustomQuickLinks(localSnapshot.customQuickLinks);
         setB2BLedger(localSnapshot.b2bLedger);
         setDatabaseRecords(localSnapshot.databaseRecords);
+        setAppointments(localSnapshot.appointments);
         setCloudLastSyncedAt(null);
         setIsDashboardUnlocked(true);
         setDatabaseUnlocked(false);
@@ -11200,17 +11238,22 @@ export default function CSCBilling() {
       const hydratedQuickLinks = normalizeQuickLinksList(values.quick_links);
       const hydratedLedger = hydrateB2BLedger(values.b2b_ledger);
       const hydratedRecords = hydrateDatabaseRecords(values.database_records);
+      const hydratedAppointments = hydrateAppointments(
+        values.appointments == null ? readAppointmentCache() : values.appointments
+      );
 
       setServices(hydratedServices);
       setTickets(hydratedTickets);
       setCustomQuickLinks(hydratedQuickLinks);
       setB2BLedger(hydratedLedger);
       setDatabaseRecords(hydratedRecords);
+      setAppointments(hydratedAppointments);
       writeStoredJSON(STORAGE_KEYS.services, hydratedServices);
       writeStoredJSON(STORAGE_KEYS.tickets, serializeTickets(hydratedTickets));
       writeStoredJSON(STORAGE_KEYS.quickLinks, hydratedQuickLinks);
       writeStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(hydratedLedger));
       writeStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(hydratedRecords));
+      writeStoredJSON(STORAGE_KEYS.appointments, hydratedAppointments);
 
       if (!cancelled) {
         dbSyncedRef.current = true;
@@ -11230,6 +11273,7 @@ export default function CSCBilling() {
   useDebouncedStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(b2bLedger), 180, configLoaded);
   useDebouncedStoredJSON(STORAGE_KEYS.quickLinks, customQuickLinks, 180, configLoaded);
   useDebouncedStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(databaseRecords), 180, configLoaded);
+  useDebouncedStoredJSON(STORAGE_KEYS.appointments, appointments, 180, configLoaded);
 
   useEffect(() => {
     if (!dbSyncedRef.current || !configLoaded) return undefined;
@@ -11240,7 +11284,7 @@ export default function CSCBilling() {
       if (cancelled) return;
       if (!result?.ok) {
         if (result?.reason === "unauthorized") {
-          handleAuthExpired();
+          handleBackgroundSyncUnauthorized();
           return;
         }
         setCloudSyncState("sync_failed");
@@ -11264,7 +11308,7 @@ export default function CSCBilling() {
       if (cancelled) return;
       if (!result?.ok) {
         if (result?.reason === "unauthorized") {
-          handleAuthExpired();
+          handleBackgroundSyncUnauthorized();
           return;
         }
         setCloudSyncState("sync_failed");
@@ -11288,7 +11332,7 @@ export default function CSCBilling() {
       if (cancelled) return;
       if (!result?.ok) {
         if (result?.reason === "unauthorized") {
-          handleAuthExpired();
+          handleBackgroundSyncUnauthorized();
           return;
         }
         setCloudSyncState("sync_failed");
@@ -11312,7 +11356,7 @@ export default function CSCBilling() {
       if (cancelled) return;
       if (!result?.ok) {
         if (result?.reason === "unauthorized") {
-          handleAuthExpired();
+          handleBackgroundSyncUnauthorized();
           return;
         }
         setCloudSyncState("sync_failed");
@@ -11336,7 +11380,7 @@ export default function CSCBilling() {
       if (cancelled) return;
       if (!result?.ok) {
         if (result?.reason === "unauthorized") {
-          handleAuthExpired();
+          handleBackgroundSyncUnauthorized();
           return;
         }
         setCloudSyncState("sync_failed");
@@ -11350,6 +11394,30 @@ export default function CSCBilling() {
       cancelled = true;
     };
   }, [databaseRecords, configLoaded]);
+
+  useEffect(() => {
+    if (!dbSyncedRef.current || !configLoaded) return undefined;
+    let cancelled = false;
+    async function syncAppointments() {
+      setCloudSyncState("syncing");
+      const result = await dbSave("appointments", appointments);
+      if (cancelled) return;
+      if (!result?.ok) {
+        if (result?.reason === "unauthorized") {
+          handleBackgroundSyncUnauthorized();
+          return;
+        }
+        setCloudSyncState("sync_failed");
+        return;
+      }
+      setCloudSyncState("synced");
+      setCloudLastSyncedAt(new Date());
+    }
+    syncAppointments();
+    return () => {
+      cancelled = true;
+    };
+  }, [appointments, configLoaded]);
 
   const isPreparingWorkspace = isDashboardUnlocked && !configLoaded;
 

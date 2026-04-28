@@ -7,6 +7,7 @@ const ALLOWED_APP_CONFIG_KEYS = new Set([
   "quick_links",
   "b2b_ledger",
   "database_records",
+  "appointments",
 ]);
 
 function normalizeKey(key) {
