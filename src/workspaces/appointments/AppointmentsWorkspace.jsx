@@ -61,7 +61,7 @@ function blankForm() {
 
 // ===================== MAIN EXPORT =====================
 
-export function AppointmentsWorkspace({ appointments: apptsProp, onSave, onDelete, onStatusChange }) {
+export function AppointmentsWorkspace({ appointments: apptsProp, customerOptions = [], onSave, onDelete, onStatusChange }) {
   // If parent doesn't wire state yet, manage locally so the page is usable standalone
   const [localAppointments, setLocalAppointments] = useState(() => []);
   const appointments = apptsProp ?? localAppointments;
@@ -170,6 +170,7 @@ export function AppointmentsWorkspace({ appointments: apptsProp, onSave, onDelet
       {showForm && (
         <AppointmentFormModal
           initial={editingAppt}
+          customerOptions={customerOptions}
           onSave={handleFormSave}
           onClose={() => { setShowForm(false); setEditingId(null); }}
         />
@@ -538,7 +539,7 @@ function EmptyState({ filterStatus, onAddNew }) {
 
 // ===================== FORM MODAL =====================
 
-function AppointmentFormModal({ initial, onSave, onClose }) {
+function AppointmentFormModal({ initial, customerOptions = [], onSave, onClose }) {
   const [form, setForm] = useState(() =>
     initial
       ? {
@@ -552,10 +553,23 @@ function AppointmentFormModal({ initial, onSave, onClose }) {
       : blankForm()
   );
   const [errors, setErrors] = useState({});
+  const [customerMenuOpen, setCustomerMenuOpen] = useState(false);
+  const [customerSearchTouched, setCustomerSearchTouched] = useState(false);
 
   function set(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
+  }
+
+  function selectCustomer(customer) {
+    setForm((prev) => ({
+      ...prev,
+      customerName: customer.name || prev.customerName,
+      customerPhone: customer.phone || prev.customerPhone,
+    }));
+    setErrors((prev) => ({ ...prev, customerName: undefined }));
+    setCustomerMenuOpen(false);
+    setCustomerSearchTouched(true);
   }
 
   function validate() {
@@ -573,6 +587,18 @@ function AppointmentFormModal({ initial, onSave, onClose }) {
   }
 
   const isEdit = !!initial;
+  const customerQuery = form.customerName.trim().toLowerCase();
+  const matchingCustomers = useMemo(() => {
+    const source = Array.isArray(customerOptions) ? customerOptions : [];
+    const filtered = source.filter((customer) => {
+      const name = String(customer?.name || "").toLowerCase();
+      const phone = String(customer?.phone || "");
+      if (!customerQuery) return true;
+      return name.includes(customerQuery) || phone.includes(customerQuery);
+    });
+    return filtered.slice(0, 6);
+  }, [customerOptions, customerQuery]);
+  const shouldShowCustomerMenu = customerMenuOpen && matchingCustomers.length > 0;
 
   const inputStyle = (hasErr) => ({
     width: "100%",
@@ -642,17 +668,69 @@ function AppointmentFormModal({ initial, onSave, onClose }) {
 
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
           {/* Customer Name */}
-          <div>
+          <div style={{ position: "relative" }}>
             <label style={labelStyle}>Customer Name *</label>
             <input
               type="text"
               value={form.customerName}
-              onChange={(e) => set("customerName", e.target.value)}
-              placeholder="Full name"
+              onChange={(e) => {
+                set("customerName", e.target.value);
+                setCustomerMenuOpen(true);
+                setCustomerSearchTouched(true);
+              }}
+              onFocus={() => setCustomerMenuOpen(true)}
+              onBlur={() => window.setTimeout(() => setCustomerMenuOpen(false), 140)}
+              placeholder="Type or select existing customer"
               style={inputStyle(!!errors.customerName)}
               autoFocus
             />
+            {shouldShowCustomerMenu && (
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 6px)",
+                left: 0,
+                right: 0,
+                zIndex: 5,
+                background: AP.surface,
+                border: `1px solid ${AP.border}`,
+                borderRadius: AP.rMd,
+                boxShadow: AP.shadowCard,
+                overflow: "hidden",
+              }}>
+                {matchingCustomers.map((customer) => (
+                  <button
+                    key={`${customer.phone || "name"}_${customer.name}`}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => selectCustomer(customer)}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      background: "transparent",
+                      padding: "10px 12px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      display: "grid",
+                      gap: 3,
+                      borderBottom: `1px solid ${AP.borderSoft}`,
+                    }}
+                  >
+                    <span style={{ fontFamily: AP.font, fontSize: "0.88rem", fontWeight: 700, color: AP.text }}>
+                      {customer.name}
+                    </span>
+                    <span style={{ fontFamily: AP.mono, fontSize: "0.72rem", color: AP.textSubtle }}>
+                      {customer.phone ? `${customer.phone} · ${customer.source || "Existing customer"}` : customer.source || "Existing customer"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             {errors.customerName && <div style={{ color: AP.danger, fontSize: "0.74rem", marginTop: 4 }}>{errors.customerName}</div>}
+            {!errors.customerName && customerOptions.length > 0 && customerSearchTouched && matchingCustomers.length === 0 && form.customerName.trim() && (
+              <div style={{ color: AP.textSubtle, fontSize: "0.72rem", marginTop: 4 }}>
+                No existing customer matched. This will create a new appointment name.
+              </div>
+            )}
           </div>
 
           {/* Phone */}

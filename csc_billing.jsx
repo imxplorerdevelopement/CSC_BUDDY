@@ -10721,6 +10721,53 @@ export default function CSCBilling() {
         : OPS.primary;
   const CSC_WHATSAPP_NUMBER = String(import.meta.env.VITE_CSC_WHATSAPP_NUMBER || "").replace(/\D/g, "");
   const quickLinks = [...QUICK_LINK_DEFAULTS, ...customQuickLinks];
+  const appointmentCustomerOptions = useMemo(() => {
+    const customerMap = new Map();
+    const addCustomer = ({ name, phone, source = "Customer" }) => {
+      const cleanName = String(name || "").trim();
+      const cleanPhone = normalizePhoneValue(phone);
+      if (!cleanName && !cleanPhone) return;
+      const key = cleanPhone || cleanName.toLowerCase();
+      const existing = customerMap.get(key);
+      customerMap.set(key, {
+        name: cleanName || existing?.name || "Existing customer",
+        phone: cleanPhone || existing?.phone || "",
+        source: existing?.source || source,
+        count: (existing?.count || 0) + 1,
+      });
+    };
+
+    tickets.forEach((ticket) => {
+      const structured = ticket.structured ? ticket : withStructuredTicket(ticket);
+      addCustomer({
+        name: structured.customerName,
+        phone: structured.customerPhone,
+        source: "Ticket customer",
+      });
+    });
+
+    databaseRecords
+      .filter((record) => record.sectionId === "mobile_numbers")
+      .forEach((record) => {
+        addCustomer({
+          name: record.values?.name,
+          phone: record.values?.mobileNumber,
+          source: "Database customer",
+        });
+      });
+
+    appointments.forEach((appointment) => {
+      addCustomer({
+        name: appointment.customerName,
+        phone: appointment.customerPhone,
+        source: "Appointment",
+      });
+    });
+
+    return Array.from(customerMap.values())
+      .filter((customer) => customer.name && customer.name !== "Unknown")
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [tickets, databaseRecords, appointments]);
   const navigateTab = (nextTab, mode = "push", options = {}) => {
     if (!TAB_CONFIG.some((item) => item.id === nextTab)) return;
     if (nextTab === "database" && !databaseUnlocked && !options.bypassDatabaseGate) {
@@ -11901,6 +11948,7 @@ export default function CSCBilling() {
             <TabPanel active={tab === "appointments"}>
               <AppointmentsWorkspace
                 appointments={appointments}
+                customerOptions={appointmentCustomerOptions}
                 onSave={saveAppointment}
                 onDelete={deleteAppointment}
                 onStatusChange={changeAppointmentStatus}
