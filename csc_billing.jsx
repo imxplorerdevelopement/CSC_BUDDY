@@ -3940,33 +3940,57 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
 
 // ---------------------------------------------------------------------------
 // HackerUnlockAnimation
-// Displayed between "Unlock" click and database reveal. Runs hacker-terminal
+// Displayed between "Unlock" click and dashboard/database reveal. Runs hacker-terminal
 // theatrics while the real API request completes in parallel.
 // phase: "running" | "success" | "error"
 // ---------------------------------------------------------------------------
 const HACKER_BOOT_LINES = [
   "$ init secure_handshake --proto=TLSv1.3",
-  "$ connect supabase://csc-db.internal:5432",
-  "Resolving host... done",
+  "$ open operator_session --scope=dashboard",
+  "Resolving secure route... done",
   "$ AUTH verify --2fa --operator-key",
-  "Reading operator token from vault...",
-  "$ decrypt index.csc.db --algo=AES-256-GCM",
-  "Checking certificate chain... OK",
-  "$ scan --deep records/*.enc",
-  "Mounting encrypted partition /db/csc_records",
+  "Reading operator token... accepted",
+  "$ handshake csc-buddy.control-plane",
+  "Session channel established",
+  "$ mount workspace.env --profile=operator",
+  "Loading tools, routes, and sync state",
   "Validating operator code... ████████ OK",
-  "$ handshake supabase --credentials=env",
-  "Supabase handshake established ✓",
-  "$ load schema csc_buddy.public.*",
-  "Fetching row-level security policies...",
-  "Decrypting database index... ██████████ OK",
+  "$ prepare dashboard.route --target=home",
+  "Dashboard route primed",
+  "$ load workspace.modules --quiet",
+  "Interface state synchronized",
+  "Interface cache warmed",
   "$ verify --integrity sha256:a3f9c1...",
-  "Integrity check passed ✓",
-  "Mounting CSC records... done",
-  "$ grant access --scope=operator --level=full",
+  "Integrity check passed",
+  "Operator environment online",
+  "$ grant access --scope=operator --level=session",
 ];
 
 const HACKER_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*<>/\\|{}[]";
+const HACKER_SUCCESS_LINES = [
+  "Handshake sealed",
+  "Workspace route primed",
+  "Operator environment online",
+];
+const HACKER_TERMINAL_LINES = [
+  "$ init secure_handshake --proto=TLSv1.3",
+  "$ open operator_session --scope=dashboard",
+  "Resolving secure route... done",
+  "$ AUTH verify --2fa --operator-key",
+  "Reading operator token... accepted",
+  "$ handshake csc-buddy.control-plane",
+  "Session channel established",
+  "$ mount workspace.env --profile=operator",
+  "Loading tools, routes, and sync state",
+  "Validating operator code... OK",
+  "$ prepare dashboard.route --target=home",
+  "Dashboard route primed",
+  "$ load workspace.modules --quiet",
+  "Interface state synchronized",
+  "$ verify --integrity sha256:a3f9c1...",
+  "Integrity check passed",
+  "$ grant access --scope=operator --level=session",
+];
 
 function seededRand(seed) {
   let s = seed;
@@ -4012,10 +4036,10 @@ function HackerUnlockAnimation({ phase, onDone }) {
     if (phase !== "running" && phase !== "success") return;
     const addLine = () => {
       const idx = lineIndexRef.current;
-      if (idx >= HACKER_BOOT_LINES.length) return;
+      if (idx >= HACKER_TERMINAL_LINES.length) return;
       lineIndexRef.current = idx + 1;
       setVisibleLines((prev) => {
-        const next = [...prev, { text: HACKER_BOOT_LINES[idx], id: idx }];
+        const next = [...prev, { text: HACKER_TERMINAL_LINES[idx], id: idx }];
         return next.slice(-12);
       });
     };
@@ -4031,7 +4055,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
   // Scramble text effect on a rotating string
   React.useEffect(() => {
     if (phase !== "running") return;
-    const targets = ["DECRYPTING...", "AUTH CHECK..", "VALIDATING..", "HANDSHAKE...", "MOUNTING DB."];
+    const targets = ["DECRYPTING...", "AUTH CHECK..", "VALIDATING..", "HANDSHAKE...", "ROUTING..."];
     let targetIdx = 0;
     let charPos = 0;
     const id = setInterval(() => {
@@ -4070,10 +4094,16 @@ function HackerUnlockAnimation({ phase, onDone }) {
     if (phase !== "success") return;
     clear();
     setProgress(100);
-    const t1 = setTimeout(() => setShowGranted(true), 280);
-    const t2 = setTimeout(() => setFadeOut(true), 1200);
-    const t3 = setTimeout(() => onDone?.(), 1700);
-    timers.current = [t1, t2, t3];
+    setStage(stageLabels.length);
+    const successTimers = HACKER_SUCCESS_LINES.map((line, idx) => (
+      setTimeout(() => {
+        setVisibleLines((prev) => [...prev, { text: line, id: `success_${idx}` }].slice(-12));
+      }, 220 + idx * 360)
+    ));
+    const t1 = setTimeout(() => setShowGranted(true), 1450);
+    const t2 = setTimeout(() => setFadeOut(true), 3850);
+    const t3 = setTimeout(() => onDone?.(), 4400);
+    timers.current = [...successTimers, t1, t2, t3];
   }, [phase]);
 
   const stageLabels = ["INIT", "AUTH", "DECRYPT", "MOUNT", "VERIFY"];
@@ -4130,7 +4160,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
             ))}
           </div>
           <span style={{ fontSize: "0.64rem", color: "rgba(0,255,70,0.55)", letterSpacing: "0.18em", textTransform: "uppercase" }}>
-            CSC-BUDDY SECURE TERMINAL — v2.1.0
+            CSC-BUDDY SECURE TERMINAL - v2.1.0
           </span>
           <span style={{ fontSize: "0.60rem", color: "rgba(0,255,70,0.35)", letterSpacing: "0.10em" }}>
             {showGranted ? "SESSION ACTIVE" : "AUTHENTICATING"}
@@ -4269,10 +4299,45 @@ function HackerUnlockAnimation({ phase, onDone }) {
                 fontSize: "0.68rem",
                 color: "rgba(0,255,70,0.60)",
                 letterSpacing: "0.22em",
-                textTransform: "uppercase",
                 marginBottom: 16,
               }}>
-                DATABASE UNLOCKED — OPERATOR SESSION ACTIVE
+                Operator Session Active
+              </div>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto",
+                gap: 12,
+                alignItems: "center",
+                width: "min(360px, 86%)",
+                margin: "0 auto 16px",
+              }}>
+                <div style={{
+                  height: 7,
+                  borderRadius: 999,
+                  border: "1px solid rgba(0,255,70,0.24)",
+                  background: "rgba(0,255,70,0.07)",
+                  overflow: "hidden",
+                  boxShadow: "inset 0 0 12px rgba(0,255,70,0.08)",
+                }}>
+                  <span style={{
+                    display: "block",
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 999,
+                    background: "linear-gradient(90deg, rgba(0,255,70,0.22), rgba(0,255,70,0.95), rgba(0,255,70,0.22))",
+                    backgroundSize: "180% 100%",
+                    animation: "terminalBarFlow 1.45s ease-in-out infinite",
+                    boxShadow: "0 0 14px rgba(0,255,70,0.55)",
+                  }} />
+                </div>
+                <span style={{
+                  fontSize: "0.56rem",
+                  color: "rgba(0,255,70,0.48)",
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                }}>
+                  routing
+                </span>
               </div>
               <div style={{
                 width: "100%",
@@ -4288,7 +4353,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
                     borderRadius: "50%",
                     background: "rgba(0,255,70,0.8)",
                     boxShadow: "0 0 8px rgba(0,255,70,0.7)",
-                    animation: `dotPulse 0.6s ease ${i * 0.1}s both`,
+                    animation: `dotPulse 1.1s ease-in-out ${i * 0.12}s infinite`,
                   }} />
                 ))}
               </div>
@@ -4316,9 +4381,14 @@ function HackerUnlockAnimation({ phase, onDone }) {
           to   { opacity: 1; transform: scale(1); }
         }
         @keyframes dotPulse {
-          0%   { opacity: 0; transform: scale(0.4); }
-          60%  { opacity: 1; transform: scale(1.2); }
-          100% { transform: scale(1); opacity: 1; }
+          0%, 100% { opacity: 0.32; transform: scale(0.72); }
+          45% { opacity: 1; transform: scale(1.18); }
+          70% { opacity: 0.74; transform: scale(0.96); }
+        }
+        @keyframes terminalBarFlow {
+          0% { background-position: 120% 0; opacity: 0.64; }
+          50% { opacity: 1; }
+          100% { background-position: -80% 0; opacity: 0.72; }
         }
       `}</style>
     </div>
