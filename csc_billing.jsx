@@ -693,6 +693,27 @@ async function verifyDatabaseAccessOnServer({ securityCode, authenticatorCode })
   }
 }
 
+async function checkDashboardSessionOnServer() {
+  try {
+    const response = await fetch("/api/database-auth/session", {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { ok: false, authenticated: false };
+    }
+    return {
+      ok: true,
+      authenticated: Boolean(payload?.authenticated),
+      expiresAt: payload?.expiresAt || "",
+    };
+  } catch (_error) {
+    return { ok: false, authenticated: false };
+  }
+}
+
 function verifyDeleteAccess(actionLabel, enteredCode) {
   if (String(enteredCode || "").trim() !== DELETE_ACCESS_CODE) {
     return { ok: false, message: `Access denied. Invalid code for ${actionLabel}.` };
@@ -10617,7 +10638,7 @@ function WalkInModal({ onClose, onStart }) {
 // --- MAIN APP ---
 export default function CSCBilling() {
   const [tab, setTab] = useState(() => getInitialActiveTab());
-  const [authChecked, setAuthChecked] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => getStoredSidePanelExpanded());
   // Two independent auth states: dashboard and database are separate gates.
   const [isDashboardUnlocked, setIsDashboardUnlocked] = useState(false);
@@ -11011,20 +11032,57 @@ export default function CSCBilling() {
   };
 
   useEffect(() => {
-    if (OFFLINE_DEV_ACCESS_ENABLED) {
-      enterOfflineDevMode();
-      return;
+    let cancelled = false;
+    async function restoreDashboardSession() {
+      setAuthChecked(false);
+
+      if (OFFLINE_DEV_ACCESS_ENABLED) {
+        enterOfflineDevMode();
+        return;
+      }
+
+      const result = await checkDashboardSessionOnServer();
+      if (cancelled) return;
+
+      if (result?.ok && result.authenticated) {
+        const localSnapshot = readProtectedStateFromSessionCache();
+        dbSyncedRef.current = false;
+        setServices(localSnapshot.services);
+        setTickets(localSnapshot.tickets);
+        setCustomQuickLinks(localSnapshot.customQuickLinks);
+        setB2BLedger(localSnapshot.b2bLedger);
+        setDatabaseRecords(localSnapshot.databaseRecords);
+        setCloudLastSyncedAt(null);
+        setIsDashboardUnlocked(true);
+        setDatabaseUnlocked(false);
+        setIsOfflineDevMode(false);
+        setShowDatabaseGate(false);
+        setConfigLoaded(false);
+        setCloudSyncState("connecting");
+        setAuthChecked(true);
+        return;
+      }
+
+      clearSessionCache();
+      resetProtectedAppState();
+      setIsDashboardUnlocked(false);
+      setDatabaseUnlocked(false);
+      setIsOfflineDevMode(false);
+      setShowDatabaseGate(false);
+      setCloudSyncState("locked");
+      setAuthChecked(true);
     }
-    clearSessionCache();
-    resetProtectedAppState();
-    setIsDashboardUnlocked(false);
-    setDatabaseUnlocked(false);
-    setIsOfflineDevMode(false);
-    setShowDatabaseGate(false);
-    setCloudSyncState("locked");
+
+    restoreDashboardSession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
+    if (OFFLINE_DEV_ACCESS_ENABLED) {
+      return;
+    }
     updateBrowserState({ tab }, "replace");
   }, []);
 
@@ -11247,6 +11305,24 @@ export default function CSCBilling() {
   }, [databaseRecords, configLoaded]);
 
   const isPreparingWorkspace = isDashboardUnlocked && !configLoaded;
+
+  if (!authChecked && !unlockAnimPhase) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#f8fbff",
+        fontFamily: APP_FONT_STACK,
+        color: "#0f172a",
+      }}>
+        <DatabaseAccessModal
+          allowClose={false}
+          busy
+          busyTitle="Restoring workspace"
+          busyMessage="Checking your operator session and bringing the dashboard back into view."
+        />
+      </div>
+    );
+  }
 
   if ((!isDashboardUnlocked || isPreparingWorkspace) && !unlockAnimPhase) {
     return (
