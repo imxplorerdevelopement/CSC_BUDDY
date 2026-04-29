@@ -8386,12 +8386,14 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     return { left, top };
   };
   const toggleOverflowMenu = (ticketNo, event) => {
+    event.stopPropagation();
+    const nextPosition = positionOverflowMenu(event.currentTarget);
     setOpenMenuTicketNo((current) => {
       if (current === ticketNo) {
         setOverflowMenuPosition(null);
         return null;
       }
-      setOverflowMenuPosition(positionOverflowMenu(event.currentTarget));
+      setOverflowMenuPosition(nextPosition);
       return ticketNo;
     });
   };
@@ -8403,10 +8405,11 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     const status = getTicketStatus(ticket);
     return (
       <div ref={overflowMenuPopoverRef} style={{ ...overflowMenuStyle, ...extraStyle }}>
-        <button onClick={() => { startEdit(ticket); closeOverflowMenu(); }} style={overflowMenuItemStyle}>Edit</button>
-        <button onClick={() => { printTicketSlip(ticket); closeOverflowMenu(); }} style={overflowMenuItemStyle}>Print</button>
+        <button type="button" onClick={() => { startEdit(ticket); closeOverflowMenu(); }} style={overflowMenuItemStyle}>Edit</button>
+        <button type="button" onClick={() => { printTicketSlip(ticket); closeOverflowMenu(); }} style={overflowMenuItemStyle}>Print</button>
         {status === "Open" ? (
           <button
+            type="button"
             onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Closed"); closeOverflowMenu(); }}
             style={{ ...overflowMenuItemStyle, border: "1px solid rgba(22,101,52,0.28)", background: "rgba(22,101,52,0.10)", color: OPS.success }}
           >
@@ -8414,6 +8417,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           </button>
         ) : (
           <button
+            type="button"
             onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Open"); closeOverflowMenu(); }}
             style={{ ...overflowMenuItemStyle, border: "1px solid rgba(161,98,7,0.28)", background: "rgba(161,98,7,0.10)", color: OPS.warning }}
           >
@@ -8421,6 +8425,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           </button>
         )}
         <button
+          type="button"
           onClick={() => { handleDeleteTicket(ticket); closeOverflowMenu(); }}
           style={{ ...overflowMenuItemStyle, border: "1px solid rgba(220, 38, 38, 0.34)", background: "rgba(220, 38, 38, 0.10)", color: OPS.danger }}
         >
@@ -8443,6 +8448,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     return (
       <div
         key={ticket.ticketNo}
+        onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); closeOverflowMenu(); }}
         style={{
           border: active ? `1px solid ${OPS.primaryBorder}` : `1px solid ${isClosed ? "rgba(100,116,139,0.16)" : OPS.borderSoft}`,
           borderLeft: active ? `4px solid ${OPS.primary}` : `4px solid ${isClosed ? "rgba(100,116,139,0.26)" : OPS.success}`,
@@ -8455,6 +8461,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           opacity: isClosed ? 0.82 : 1,
           position: "relative",
           zIndex: isMenuOpen ? 40 : 1,
+          cursor: "pointer",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
@@ -8479,12 +8486,18 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
         </div>
         <div
           ref={isMenuOpen ? overflowMenuRef : null}
+          onClick={(event) => event.stopPropagation()}
           style={{ display: "flex", gap: 6, flexWrap: "wrap", position: "relative", zIndex: isMenuOpen ? 50 : 1 }}
         >
-          <button onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); setOpenMenuTicketNo(null); }} style={listActionStyle}>
+          <button
+            type="button"
+            onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); closeOverflowMenu(); }}
+            style={listActionStyle}
+          >
             {active ? "Viewing" : "View"}
           </button>
           <button
+            type="button"
             onClick={(event) => toggleOverflowMenu(ticket.ticketNo, event)}
             aria-label={`More actions for ${ticket.ticketNo}`}
             aria-expanded={openMenuTicketNo === ticket.ticketNo}
