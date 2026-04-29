@@ -1,9 +1,11 @@
 import {
   buildSessionCookie,
+  consumeGateAttempt,
   createSessionToken,
   getConfigErrors,
   getSessionTtlSeconds,
   readJsonBody,
+  resetGateAttempts,
   verifyCredentials,
 } from "../_lib/database_auth.js";
 
@@ -21,6 +23,15 @@ export default async function handler(req, res) {
     });
   }
 
+  const rateLimit = await consumeGateAttempt(req);
+  if (!rateLimit.ok) {
+    res.setHeader("Retry-After", String(Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1000))));
+    return res.status(429).json({
+      ok: false,
+      message: "Too many verification attempts. Please wait before trying again.",
+    });
+  }
+
   const body = await readJsonBody(req);
   const verifyResult = verifyCredentials({
     securityCode: body?.securityCode,
@@ -34,7 +45,8 @@ export default async function handler(req, res) {
     });
   }
 
-  const sessionToken = createSessionToken();
+  await resetGateAttempts(req);
+  const sessionToken = createSessionToken(req);
   if (!sessionToken) {
     return res.status(500).json({ ok: false, message: "Unable to create database session." });
   }

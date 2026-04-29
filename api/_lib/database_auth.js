@@ -6,6 +6,11 @@ const DEFAULT_SESSION_TTL_MINUTES = 15;
 const MIN_SESSION_TTL_MINUTES = 5;
 const MAX_SESSION_TTL_MINUTES = 240;
 const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+const DEFAULT_GATE_RATE_LIMIT_ATTEMPTS = 5;
+const DEFAULT_GATE_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+
+const gateRateLimitStore = globalThis.__cscBuddyGateRateLimitStore || new Map();
+globalThis.__cscBuddyGateRateLimitStore = gateRateLimitStore;
 
 function normalizeText(value) {
   return String(value ?? "").trim();
@@ -20,6 +25,14 @@ function constantTimeEqual(left, right) {
   const b = Buffer.from(String(right ?? ""), "utf8");
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
+}
+
+function readEnv(...names) {
+  for (const name of names) {
+    const value = normalizeText(process.env[name]);
+    if (value) return value;
+  }
+  return "";
 }
 
 function parseHashValue(rawHash) {
@@ -83,11 +96,11 @@ function generateTotp(secret, counter) {
 
 function verifyTotpCode(codeInput) {
   const code = normalizeOtp(codeInput);
-  const secret = normalizeText(process.env.DB_TOTP_SECRET);
+  const secret = readEnv("GATE_TOTP_SECRET", "DB_TOTP_SECRET");
   if (!secret || code.length !== 6) return false;
   const nowCounter = Math.floor(Date.now() / 30000);
   for (let delta = -1; delta <= 1; delta += 1) {
-    if (generateTotp(secret, nowCounter + delta) === code) {
+    if (constantTimeEqual(generateTotp(secret, nowCounter + delta), code)) {
       return true;
     }
   }
@@ -97,9 +110,9 @@ function verifyTotpCode(codeInput) {
 function verifySecurityCode(codeInput) {
   const code = normalizeText(codeInput);
   if (!code) return false;
-  const hash = normalizeText(process.env.DB_SECURITY_CODE_HASH);
+  const hash = readEnv("GATE_SECURITY_CODE_HASH", "DB_SECURITY_CODE_HASH");
   if (hash) return matchesHash(code, hash);
-  const plain = normalizeText(process.env.DB_SECURITY_CODE);
+  const plain = readEnv("GATE_SECURITY_CODE", "DB_SECURITY_CODE");
   if (plain) return constantTimeEqual(code, plain);
   return false;
 }
@@ -107,26 +120,26 @@ function verifySecurityCode(codeInput) {
 function verifyBackupCode(codeInput) {
   const code = normalizeOtp(codeInput);
   if (code.length !== 6) return false;
-  const hash = normalizeText(process.env.DB_BACKUP_CODE_HASH);
+  const hash = readEnv("GATE_BACKUP_CODE_HASH", "DB_BACKUP_CODE_HASH");
   if (hash) return matchesHash(code, hash);
-  const plain = normalizeOtp(process.env.DB_BACKUP_CODE);
+  const plain = normalizeOtp(readEnv("GATE_BACKUP_CODE", "DB_BACKUP_CODE"));
   if (plain) return constantTimeEqual(code, plain);
   return false;
 }
 
 function verifySecondFactor(codeInput) {
-  if (normalizeText(process.env.DB_TOTP_SECRET)) {
+  if (readEnv("GATE_TOTP_SECRET", "DB_TOTP_SECRET")) {
     return verifyTotpCode(codeInput);
   }
   return verifyBackupCode(codeInput);
 }
 
 function getSessionSecret() {
-  return normalizeText(process.env.DB_SESSION_SECRET);
+  return readEnv("JWT_SECRET", "GATE_JWT_SECRET", "DB_SESSION_SECRET");
 }
 
 export function getSessionTtlSeconds() {
-  const minutes = Number(process.env.DB_SESSION_TTL_MINUTES);
+  const minutes = Number(readEnv("GATE_SESSION_TTL_MINUTES", "DB_SESSION_TTL_MINUTES"));
   const bounded = Number.isFinite(minutes)
     ? Math.min(MAX_SESSION_TTL_MINUTES, Math.max(MIN_SESSION_TTL_MINUTES, Math.floor(minutes)))
     : DEFAULT_SESSION_TTL_MINUTES;
@@ -135,16 +148,16 @@ export function getSessionTtlSeconds() {
 
 export function getConfigErrors() {
   const errors = [];
-  if (!getSessionSecret()) errors.push("DB_SESSION_SECRET");
-  if (!normalizeText(process.env.DB_SECURITY_CODE_HASH) && !normalizeText(process.env.DB_SECURITY_CODE)) {
-    errors.push("DB_SECURITY_CODE_HASH");
+  if (!getSessionSecret()) errors.push("JWT_SECRET");
+  if (!readEnv("GATE_SECURITY_CODE_HASH", "DB_SECURITY_CODE_HASH") && !readEnv("GATE_SECURITY_CODE", "DB_SECURITY_CODE")) {
+    errors.push("GATE_SECURITY_CODE_HASH");
   }
   if (
-    !normalizeText(process.env.DB_TOTP_SECRET)
-    && !normalizeText(process.env.DB_BACKUP_CODE_HASH)
-    && !normalizeText(process.env.DB_BACKUP_CODE)
+    !readEnv("GATE_TOTP_SECRET", "DB_TOTP_SECRET")
+    && !readEnv("GATE_BACKUP_CODE_HASH", "DB_BACKUP_CODE_HASH")
+    && !readEnv("GATE_BACKUP_CODE", "DB_BACKUP_CODE")
   ) {
-    errors.push("DB_TOTP_SECRET");
+    errors.push("GATE_TOTP_SECRET");
   }
   return errors;
 }
@@ -165,7 +178,110 @@ function signSessionPayload(payloadBase64) {
   return crypto.createHmac("sha256", secret).update(payloadBase64).digest("base64url");
 }
 
-export function createSessionToken() {
+function getClientIp(req) {
+  const forwarded = String(req?.headers?.["x-forwarded-for"] || "").split(",")[0].trim();
+  return normalizeText(req?.headers?.["cf-connecting-ip"])
+    || normalizeText(req?.headers?.["x-real-ip"])
+    || forwarded
+    || normalizeText(req?.socket?.remoteAddress)
+    || "unknown";
+}
+
+function getUserAgent(req) {
+  return normalizeText(req?.headers?.["user-agent"]) || "unknown";
+}
+
+function getRequestFingerprint(req) {
+  const secret = getSessionSecret();
+  if (!secret || !req) return "";
+  const source = `${getClientIp(req)}|${getUserAgent(req)}`;
+  return crypto.createHmac("sha256", secret).update(source).digest("base64url");
+}
+
+function getRateLimitConfig() {
+  const attempts = Number(readEnv("GATE_RATE_LIMIT_ATTEMPTS", "DB_RATE_LIMIT_ATTEMPTS"));
+  const windowMs = Number(readEnv("GATE_RATE_LIMIT_WINDOW_MS", "DB_RATE_LIMIT_WINDOW_MS"));
+  return {
+    attempts: Number.isFinite(attempts) && attempts > 0 ? Math.floor(attempts) : DEFAULT_GATE_RATE_LIMIT_ATTEMPTS,
+    windowMs: Number.isFinite(windowMs) && windowMs > 0 ? Math.floor(windowMs) : DEFAULT_GATE_RATE_LIMIT_WINDOW_MS,
+  };
+}
+
+function getRateLimitKey(req) {
+  return `gate:${getClientIp(req)}`;
+}
+
+function getKvRestConfig() {
+  const url = readEnv("KV_REST_API_URL", "UPSTASH_REDIS_REST_URL");
+  const token = readEnv("KV_REST_API_TOKEN", "UPSTASH_REDIS_REST_TOKEN");
+  if (!url || !token) return null;
+  return { url: url.replace(/\/+$/, ""), token };
+}
+
+async function runKvCommand(commandParts) {
+  const config = getKvRestConfig();
+  if (!config) return null;
+  const encoded = commandParts.map((part) => encodeURIComponent(String(part))).join("/");
+  const response = await fetch(`${config.url}/${encoded}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${config.token}` },
+  });
+  if (!response.ok) throw new Error(`KV command failed: ${response.status}`);
+  return response.json();
+}
+
+function consumeMemoryGateAttempt(req) {
+  const { attempts, windowMs } = getRateLimitConfig();
+  const key = getRateLimitKey(req);
+  const now = Date.now();
+  const current = gateRateLimitStore.get(key);
+  if (!current || current.resetAt <= now) {
+    const next = { count: 1, resetAt: now + windowMs };
+    gateRateLimitStore.set(key, next);
+    return { ok: true, remaining: Math.max(0, attempts - 1), resetAt: next.resetAt };
+  }
+  if (current.count >= attempts) {
+    return { ok: false, remaining: 0, resetAt: current.resetAt };
+  }
+  current.count += 1;
+  gateRateLimitStore.set(key, current);
+  return { ok: true, remaining: Math.max(0, attempts - current.count), resetAt: current.resetAt };
+}
+
+export async function consumeGateAttempt(req) {
+  const config = getKvRestConfig();
+  if (!config) return consumeMemoryGateAttempt(req);
+
+  try {
+    const { attempts, windowMs } = getRateLimitConfig();
+    const key = getRateLimitKey(req);
+    const resetAt = Date.now() + windowMs;
+    const increment = await runKvCommand(["incr", key]);
+    const count = Number(increment?.result) || 0;
+    if (count === 1) {
+      await runKvCommand(["pexpire", key, windowMs]);
+    }
+    if (count > attempts) {
+      return { ok: false, remaining: 0, resetAt };
+    }
+    return { ok: true, remaining: Math.max(0, attempts - count), resetAt };
+  } catch (_error) {
+    return consumeMemoryGateAttempt(req);
+  }
+}
+
+export async function resetGateAttempts(req) {
+  gateRateLimitStore.delete(getRateLimitKey(req));
+  if (getKvRestConfig()) {
+    try {
+      await runKvCommand(["del", getRateLimitKey(req)]);
+    } catch (_error) {
+      // Local in-memory fallback has already been cleared.
+    }
+  }
+}
+
+export function createSessionToken(req) {
   const secret = getSessionSecret();
   if (!secret) return null;
   const now = Math.floor(Date.now() / 1000);
@@ -175,6 +291,7 @@ export function createSessionToken() {
     iat: now,
     exp: now + ttl,
     nonce: crypto.randomBytes(12).toString("base64url"),
+    fp: getRequestFingerprint(req),
   };
   const payloadBase64 = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
   const signature = signSessionPayload(payloadBase64);
@@ -182,7 +299,7 @@ export function createSessionToken() {
   return `${payloadBase64}.${signature}`;
 }
 
-export function verifySessionToken(token) {
+export function verifySessionToken(token, req = null) {
   const rawToken = normalizeText(token);
   if (!rawToken || !rawToken.includes(".")) return { ok: false };
   const [payloadBase64, signature] = rawToken.split(".");
@@ -197,6 +314,9 @@ export function verifySessionToken(token) {
   }
   const now = Math.floor(Date.now() / 1000);
   if (!payload || typeof payload.exp !== "number" || payload.exp <= now) {
+    return { ok: false };
+  }
+  if (payload.fp && req && !constantTimeEqual(payload.fp, getRequestFingerprint(req))) {
     return { ok: false };
   }
   return { ok: true, payload };
@@ -217,7 +337,7 @@ export function parseCookies(req) {
 export function readSessionFromRequest(req) {
   const cookies = parseCookies(req);
   const token = cookies[DATABASE_SESSION_COOKIE] || "";
-  return verifySessionToken(token);
+  return verifySessionToken(token, req);
 }
 
 export function buildSessionCookie(token) {

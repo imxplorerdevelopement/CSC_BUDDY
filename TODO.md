@@ -5,6 +5,7 @@
 - Remove service subtitle/description lines from the Vendor Dashboard vendor detail header area.
 - Fix home appointment reminders so appointments booked for today are visible, not only tomorrow.
 - Reconstruct Ticket Dashboard browsing so tickets are separated by status and grouped by Today, Yesterday, and Older.
+- Harden app gate auth so code/TOTP checks stay server-side, are rate-limited, and issue httpOnly sessions.
 
 ## Root Cause
 - Vendor delete was only filtering React state in `deleteB2BLedgerEntry`.
@@ -34,6 +35,16 @@
   - Grouped each status section by Today, Yesterday, and Older.
   - Added visible Open/Closed badges to ticket cards and the selected ticket detail header.
   - Strengthened the selected ticket card state with border, accent bar, and active View label.
+- `api/_lib/database_auth.js`
+  - Added `GATE_*` and `JWT_SECRET` server env support with legacy `DB_*` aliases.
+  - Made TOTP comparison timing-safe.
+  - Added IP-based rate limiting with optional Vercel KV / Upstash REST persistence.
+  - Bound session tokens to a request fingerprint derived from IP and user-agent.
+- `api/database-auth/verify.js`
+  - Applies rate limiting before checking credentials.
+  - Resets failed-attempt counters after successful verification.
+- `.env.example` and `docs/DATABASE_AUTH_SETUP.md`
+  - Documented secure server env names and rate-limit/KV setup.
 
 ## Backend/API Considerations
 - No new API endpoint is required.
@@ -52,3 +63,6 @@
 - [x] Run production build with `npm.cmd run build`.
 - [x] Confirm Ticket Dashboard build passes after status/date grouping implementation.
 - [ ] Manually verify Ticket Dashboard with mixed open/closed tickets across today, yesterday, and older dates.
+- [x] Confirm auth helper imports after server-side hardening.
+- [x] Confirm production build passes after auth hardening.
+- [ ] Configure `JWT_SECRET`, `GATE_SECURITY_CODE_HASH`, `GATE_TOTP_SECRET`, and KV/Upstash rate-limit env vars in Vercel.
