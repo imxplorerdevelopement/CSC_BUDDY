@@ -572,6 +572,21 @@ const B2B_PARTNER_SEED = [
     },
   },
   {
+    id: "sonu",
+    name: "SONU",
+    roles: ["take"],
+    servicesByRole: {
+      take: [
+        {
+          label: "Certificates",
+          items: ["Caste Certificate", "Income Certificate", "Domicile Certificate"],
+        },
+      ],
+      give: [],
+      agent: [],
+    },
+  },
+  {
     id: "varun_riya",
     name: "Varun/Riya",
     roles: ["take"],
@@ -753,7 +768,8 @@ function getOperatorTicketMetrics(tickets, operatorName) {
 function getDefaultQuantityModeForService(service) {
   const id = String(service?.id || "").trim();
   const unit = String(service?.unit || "").toLowerCase();
-  if (["legal_rent_agreement", "legal_sale_agreement", "legal_indemnity_bond", "legal_affidavits", "inhouse_stamp_paper"].includes(id)) return "fixed";
+  if (id === "inhouse_stamp_paper") return "multiple";
+  if (["legal_rent_agreement", "legal_sale_agreement", "legal_indemnity_bond", "legal_affidavits"].includes(id)) return "fixed";
   if (unit.includes("page") || unit.includes("piece")) return "multiple";
   if (unit.includes("card") || unit.includes("application") || unit.includes("certificate") || unit.includes("document") || unit.includes("agreement")) return "people";
   return "fixed";
@@ -2393,13 +2409,20 @@ function BootLoadingScreen() {
 
 function HomeLaunchpad({ onOpenSection, onLogout, appointments = [] }) {
   const [now, setNow] = useState(() => new Date());
+  const todayISO = getTicketCounterDateKey(new Date());
   const tomorrowISO = (() => {
-    const d = new Date(); d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return getTicketCounterDateKey(d);
   })();
+  const todayAppts = appointments.filter(
+    (a) => a.status === "Upcoming" && a.appointmentDate === todayISO
+  );
   const tomorrowAppts = appointments.filter(
     (a) => a.status === "Upcoming" && a.appointmentDate === tomorrowISO
   );
+  const reminderAppts = todayAppts.length > 0 ? todayAppts : tomorrowAppts;
+  const reminderIsToday = todayAppts.length > 0;
   const homeNavById = useMemo(() => (
     HOME_NAV_BUTTONS.reduce((acc, item) => {
       acc[item.id] = item;
@@ -2514,12 +2537,12 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [] }) {
       `}</style>
       <div className="home-launchpad-shell">
 
-        {tomorrowAppts.length > 0 && (
+        {reminderAppts.length > 0 && (
           <div style={{
             borderRadius: 14,
-            border: "1px solid rgba(217,119,6,0.35)",
-            background: "linear-gradient(135deg, rgba(254,243,199,0.95), rgba(255,251,235,0.90))",
-            boxShadow: "0 4px 16px rgba(217,119,6,0.10)",
+            border: reminderIsToday ? "1px solid rgba(220,38,38,0.32)" : "1px solid rgba(217,119,6,0.35)",
+            background: reminderIsToday ? "linear-gradient(135deg, rgba(254,226,226,0.95), rgba(255,247,237,0.90))" : "linear-gradient(135deg, rgba(254,243,199,0.95), rgba(255,251,235,0.90))",
+            boxShadow: reminderIsToday ? "0 4px 16px rgba(220,38,38,0.10)" : "0 4px 16px rgba(217,119,6,0.10)",
             padding: "14px 18px",
             display: "flex",
             alignItems: "flex-start",
@@ -2527,10 +2550,10 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [] }) {
           }}>
             <span style={{
               width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: "rgba(217,119,6,0.14)",
-              border: "1px solid rgba(217,119,6,0.28)",
+              background: reminderIsToday ? "rgba(220,38,38,0.12)" : "rgba(217,119,6,0.14)",
+              border: reminderIsToday ? "1px solid rgba(220,38,38,0.24)" : "1px solid rgba(217,119,6,0.28)",
               display: "grid", placeItems: "center",
-              color: "#b45309",
+              color: reminderIsToday ? "#b91c1c" : "#b45309",
             }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -2547,26 +2570,26 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [] }) {
                 fontWeight: 700,
                 letterSpacing: "0.16em",
                 textTransform: "uppercase",
-                color: "#92400e",
+                color: reminderIsToday ? "#991b1b" : "#92400e",
                 marginBottom: 4,
               }}>
-                Tomorrow · Sector 71 Aadhaar Centre
+                {reminderIsToday ? "Today" : "Tomorrow"} - Sector 71 Aadhaar Centre
               </div>
               <div style={{
                 fontFamily: APP_FONT_STACK,
                 fontSize: "0.92rem",
                 fontWeight: 600,
-                color: "#78350f",
+                color: reminderIsToday ? "#7f1d1d" : "#78350f",
                 lineHeight: 1.5,
               }}>
-                {tomorrowAppts.length === 1
-                  ? <>Reminder: <strong>{tomorrowAppts[0].customerName.split(" ")[0]}</strong> has an Aadhaar appointment tomorrow. Don't forget!</>
-                  : <>Reminder: {tomorrowAppts.map((a, i) => (
+                {reminderAppts.length === 1
+                  ? <>Reminder: <strong>{reminderAppts[0].customerName.split(" ")[0]}</strong> has an Aadhaar appointment {reminderIsToday ? "today" : "tomorrow"}. Don't forget!</>
+                  : <>Reminder: {reminderAppts.map((a, i) => (
                       <span key={a.id}>
                         <strong>{a.customerName.split(" ")[0]}</strong>
-                        {i < tomorrowAppts.length - 2 ? ", " : i === tomorrowAppts.length - 2 ? " & " : ""}
+                        {i < reminderAppts.length - 2 ? ", " : i === reminderAppts.length - 2 ? " & " : ""}
                       </span>
-                    ))} have Aadhaar appointments tomorrow.</>
+                    ))} have Aadhaar appointments {reminderIsToday ? "today" : "tomorrow"}.</>
                 }
               </div>
               <button
@@ -2576,9 +2599,9 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [] }) {
                   marginTop: 8,
                   padding: "5px 14px",
                   borderRadius: 999,
-                  border: "1px solid rgba(217,119,6,0.35)",
-                  background: "rgba(217,119,6,0.12)",
-                  color: "#92400e",
+                  border: reminderIsToday ? "1px solid rgba(220,38,38,0.28)" : "1px solid rgba(217,119,6,0.35)",
+                  background: reminderIsToday ? "rgba(220,38,38,0.10)" : "rgba(217,119,6,0.12)",
+                  color: reminderIsToday ? "#991b1b" : "#92400e",
                   fontFamily: APP_BRAND_STACK,
                   fontWeight: 700,
                   fontSize: "0.62rem",
@@ -9174,28 +9197,6 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
                 </div>
               </div>
 
-              {/* Services — collapsed inline */}
-              {activeEntity.roles.some((roleId) => (activeEntity.servicesByRole[roleId] || []).length > 0) && (
-                <div style={{ display: "grid", gap: 6, marginBottom: 12, paddingBottom: 10, borderBottom: "1px solid rgba(15,23,42,0.06)" }}>
-                  {activeEntity.roles.map((roleId) => {
-                    const groups = activeEntity.servicesByRole[roleId] || [];
-                    if (groups.length === 0) return null;
-                    const items = groups.flatMap((g) => g.items);
-                    if (items.length === 0) return null;
-                    return (
-                      <div key={`${activeEntity.key}_${roleId}_services`} style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
-                        <span style={{ ...eb, color: B2B_ROLE_BADGE_META[roleId].color, minWidth: 70 }}>
-                          {roleId === "take" ? "We take" : roleId === "give" ? "We give" : "Refers"}
-                        </span>
-                        <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.70)", fontFamily: APP_FONT_STACK, lineHeight: 1.45 }}>
-                          {items.join(" · ")}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
               {activeEntity.entries.length === 0 ? null : (
                 <div style={{ display: "grid", gap: 8 }}>
                   {activeEntity.entries.slice(0, 6).map((entry) => (
@@ -10697,6 +10698,7 @@ export default function CSCBilling() {
   const [cloudSyncState, setCloudSyncState] = useState(() => "connecting");
   const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState(null);
   const dbSyncedRef = useRef(false);
+  const cloudSaveQueuesRef = useRef({});
   const todayDateKey = getTicketCounterDateKey(new Date());
   const openTicketCount = tickets.filter((ticket) => ticket.status !== "Closed").length;
   const ticketRevenueToday = useMemo(() => (
@@ -10837,7 +10839,12 @@ export default function CSCBilling() {
 
   const saveTicket = (ticket) => {
     const structured = withStructuredTicket(ticket);
-    setTickets((prev) => [...prev, structured]);
+    setTickets((prev) => {
+      const next = [...prev, structured];
+      writeStoredJSON(STORAGE_KEYS.tickets, serializeTickets(next));
+      void enqueueCloudSave("tickets", serializeTickets(next));
+      return next;
+    });
     const phonesToSync = [];
     const holderPhone = String(structured.customerPhone || "").replace(/\D/g, "");
     const holderName = String(structured.customerName || "").trim();
@@ -10867,15 +10874,29 @@ export default function CSCBilling() {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           }, prev.length + i));
-        return newRecords.length > 0 ? [...newRecords, ...prev] : prev;
+        if (newRecords.length === 0) return prev;
+        const next = [...newRecords, ...prev];
+        writeStoredJSON(STORAGE_KEYS.databaseRecords, serializeDatabaseRecords(next));
+        void enqueueCloudSave("database_records", serializeDatabaseRecords(next));
+        return next;
       });
     }
   };
   const addB2BLedgerEntry = (entry) => {
-    setB2BLedger((prev) => [...prev, normalizeB2BLedgerEntry(entry, prev.length)]);
+    setB2BLedger((prev) => {
+      const next = [...prev, normalizeB2BLedgerEntry(entry, prev.length)];
+      writeStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(next));
+      void enqueueCloudSave("b2b_ledger", serializeB2BLedger(next));
+      return next;
+    });
   };
   const deleteB2BLedgerEntry = (entryId) => {
-    setB2BLedger((prev) => prev.filter((entry) => entry.id !== entryId));
+    setB2BLedger((prev) => {
+      const next = prev.filter((entry) => entry.id !== entryId);
+      writeStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(next));
+      void enqueueCloudSave("b2b_ledger", serializeB2BLedger(next));
+      return next;
+    });
   };
   const upsertDatabaseRecord = (nextRecord) => {
     setDatabaseRecords((prev) => {
@@ -10897,6 +10918,7 @@ export default function CSCBilling() {
       const idx = prev.findIndex((a) => a.id === appt.id);
       const next = hydrateAppointments(idx >= 0 ? prev.map((a) => a.id === appt.id ? appt : a) : [appt, ...prev]);
       writeStoredJSON(STORAGE_KEYS.appointments, next);
+      void enqueueCloudSave("appointments", next);
       return next;
     });
   };
@@ -10904,6 +10926,7 @@ export default function CSCBilling() {
     setAppointments((prev) => {
       const next = prev.filter((a) => a.id !== id);
       writeStoredJSON(STORAGE_KEYS.appointments, next);
+      void enqueueCloudSave("appointments", next);
       return next;
     });
   };
@@ -10911,6 +10934,7 @@ export default function CSCBilling() {
     setAppointments((prev) => {
       const next = prev.map((a) => a.id === id ? { ...a, status, updatedAt: new Date().toISOString() } : a);
       writeStoredJSON(STORAGE_KEYS.appointments, next);
+      void enqueueCloudSave("appointments", next);
       return next;
     });
   };
@@ -11046,6 +11070,38 @@ export default function CSCBilling() {
   };
   const handleBackgroundSyncUnauthorized = () => {
     setCloudSyncState("sync_failed");
+  };
+  const enqueueCloudSave = (key, value) => {
+    if (!dbSyncedRef.current || !configLoaded) {
+      return Promise.resolve({ ok: false, reason: "not_ready" });
+    }
+
+    const previousSave = cloudSaveQueuesRef.current[key] || Promise.resolve();
+    const queuedSave = previousSave
+      .catch(() => {})
+      .then(async () => {
+        setCloudSyncState("syncing");
+        const result = await dbSave(key, value);
+        if (!result?.ok) {
+          if (result?.reason === "unauthorized") {
+            handleBackgroundSyncUnauthorized();
+            return result;
+          }
+          setCloudSyncState("sync_failed");
+          return result;
+        }
+        setCloudSyncState("synced");
+        setCloudLastSyncedAt(new Date());
+        return result;
+      })
+      .finally(() => {
+        if (cloudSaveQueuesRef.current[key] === queuedSave) {
+          delete cloudSaveQueuesRef.current[key];
+        }
+      });
+
+    cloudSaveQueuesRef.current[key] = queuedSave;
+    return queuedSave;
   };
 
   // Step 1: Main dashboard authentication — unlocks the dashboard but NOT the Database page.
@@ -11277,146 +11333,50 @@ export default function CSCBilling() {
 
   useEffect(() => {
     if (!dbSyncedRef.current || !configLoaded) return undefined;
-    let cancelled = false;
     async function syncServices() {
-      setCloudSyncState("syncing");
-      const result = await dbSave("services", services);
-      if (cancelled) return;
-      if (!result?.ok) {
-        if (result?.reason === "unauthorized") {
-          handleBackgroundSyncUnauthorized();
-          return;
-        }
-        setCloudSyncState("sync_failed");
-        return;
-      }
-      setCloudSyncState("synced");
-      setCloudLastSyncedAt(new Date());
+      await enqueueCloudSave("services", services);
     }
     syncServices();
-    return () => {
-      cancelled = true;
-    };
   }, [services, configLoaded]);
 
   useEffect(() => {
     if (!dbSyncedRef.current || !configLoaded) return undefined;
-    let cancelled = false;
     async function syncTickets() {
-      setCloudSyncState("syncing");
-      const result = await dbSave("tickets", serializeTickets(tickets));
-      if (cancelled) return;
-      if (!result?.ok) {
-        if (result?.reason === "unauthorized") {
-          handleBackgroundSyncUnauthorized();
-          return;
-        }
-        setCloudSyncState("sync_failed");
-        return;
-      }
-      setCloudSyncState("synced");
-      setCloudLastSyncedAt(new Date());
+      await enqueueCloudSave("tickets", serializeTickets(tickets));
     }
     syncTickets();
-    return () => {
-      cancelled = true;
-    };
   }, [tickets, configLoaded]);
 
   useEffect(() => {
     if (!dbSyncedRef.current || !configLoaded) return undefined;
-    let cancelled = false;
     async function syncQuickLinks() {
-      setCloudSyncState("syncing");
-      const result = await dbSave("quick_links", customQuickLinks);
-      if (cancelled) return;
-      if (!result?.ok) {
-        if (result?.reason === "unauthorized") {
-          handleBackgroundSyncUnauthorized();
-          return;
-        }
-        setCloudSyncState("sync_failed");
-        return;
-      }
-      setCloudSyncState("synced");
-      setCloudLastSyncedAt(new Date());
+      await enqueueCloudSave("quick_links", customQuickLinks);
     }
     syncQuickLinks();
-    return () => {
-      cancelled = true;
-    };
   }, [customQuickLinks, configLoaded]);
 
   useEffect(() => {
     if (!dbSyncedRef.current || !configLoaded) return undefined;
-    let cancelled = false;
     async function syncB2BLedger() {
-      setCloudSyncState("syncing");
-      const result = await dbSave("b2b_ledger", serializeB2BLedger(b2bLedger));
-      if (cancelled) return;
-      if (!result?.ok) {
-        if (result?.reason === "unauthorized") {
-          handleBackgroundSyncUnauthorized();
-          return;
-        }
-        setCloudSyncState("sync_failed");
-        return;
-      }
-      setCloudSyncState("synced");
-      setCloudLastSyncedAt(new Date());
+      await enqueueCloudSave("b2b_ledger", serializeB2BLedger(b2bLedger));
     }
     syncB2BLedger();
-    return () => {
-      cancelled = true;
-    };
   }, [b2bLedger, configLoaded]);
 
   useEffect(() => {
     if (!dbSyncedRef.current || !configLoaded) return undefined;
-    let cancelled = false;
     async function syncDatabaseRecords() {
-      setCloudSyncState("syncing");
-      const result = await dbSave("database_records", serializeDatabaseRecords(databaseRecords));
-      if (cancelled) return;
-      if (!result?.ok) {
-        if (result?.reason === "unauthorized") {
-          handleBackgroundSyncUnauthorized();
-          return;
-        }
-        setCloudSyncState("sync_failed");
-        return;
-      }
-      setCloudSyncState("synced");
-      setCloudLastSyncedAt(new Date());
+      await enqueueCloudSave("database_records", serializeDatabaseRecords(databaseRecords));
     }
     syncDatabaseRecords();
-    return () => {
-      cancelled = true;
-    };
   }, [databaseRecords, configLoaded]);
 
   useEffect(() => {
     if (!dbSyncedRef.current || !configLoaded) return undefined;
-    let cancelled = false;
     async function syncAppointments() {
-      setCloudSyncState("syncing");
-      const result = await dbSave("appointments", appointments);
-      if (cancelled) return;
-      if (!result?.ok) {
-        if (result?.reason === "unauthorized") {
-          handleBackgroundSyncUnauthorized();
-          return;
-        }
-        setCloudSyncState("sync_failed");
-        return;
-      }
-      setCloudSyncState("synced");
-      setCloudLastSyncedAt(new Date());
+      await enqueueCloudSave("appointments", appointments);
     }
     syncAppointments();
-    return () => {
-      cancelled = true;
-    };
   }, [appointments, configLoaded]);
 
   const isPreparingWorkspace = isDashboardUnlocked && !configLoaded;
