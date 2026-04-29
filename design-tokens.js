@@ -47,9 +47,9 @@ export const DS = {
   cardDeep:    "rgba(13,27,42,0.08)",
 
   // Fonts
-  sans:   "'Manrope', system-ui, -apple-system, sans-serif",
-  brand:  "'League Spartan', 'Manrope', sans-serif",
-  mono:   "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
+  sans:   "'Geist', system-ui, sans-serif",
+  brand:  "'Fraunces', Georgia, serif",
+  mono:   "'Geist Mono', monospace",
 
   // Radius
   rXs:   "4px",

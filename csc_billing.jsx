@@ -235,10 +235,10 @@ const DOCUMENT_PRESET_BY_NAME = DOCUMENT_PRESETS.reduce((acc, preset) => {
   acc[String(preset.label || "").trim().toLowerCase()] = preset;
   return acc;
 }, {});
-const APP_FONT_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
-const APP_SERIF_STACK = "'Manrope', system-ui, -apple-system, sans-serif";
-const APP_BRAND_STACK = "'League Spartan', 'Manrope', sans-serif";
-const APP_MONO_STACK = "'JetBrains Mono', 'Cascadia Code', Consolas, monospace";
+const APP_FONT_STACK = "'Geist', system-ui, sans-serif";
+const APP_SERIF_STACK = "'Fraunces', Georgia, serif";
+const APP_BRAND_STACK = "'Geist', system-ui, sans-serif";
+const APP_MONO_STACK = "'Geist Mono', monospace";
 const OPS = {
   bg: "#eef2f7",
   shell: "#ffffff",
@@ -1329,7 +1329,7 @@ function buildPrintableTicketHtml(ticket) {
         padding: 24px;
         background: #f8fafc;
         color: #0f172a;
-        font-family: Outfit, "Segoe UI", sans-serif;
+        font-family: "Geist", system-ui, sans-serif;
       }
       .slip {
         max-width: 420px;
@@ -5768,7 +5768,7 @@ function NewEntry({ services, onSave }) {
         <div id="receipt" style={{
           background: "rgba(255,255,255,0.82)", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 22,
           padding: "30px 24px", maxWidth: 420, margin: "0 auto",
-          fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif",
+          fontFamily: APP_FONT_STACK,
           boxShadow: "0 18px 45px rgba(0,0,0,0.45)",
           backdropFilter: "blur(18px)",
           WebkitBackdropFilter: "blur(18px)",
@@ -5837,14 +5837,14 @@ function NewEntry({ services, onSave }) {
           <button onClick={() => window.print()} style={{
             padding: "12px 24px", background: "rgba(255,255,255,0.74)", color: "#14B8A6",
             border: "1px solid #14B8A6", borderRadius: 8, fontWeight: 600, fontSize: 14,
-            cursor: "pointer", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif",
+            cursor: "pointer", fontFamily: APP_FONT_STACK,
           }}>
              Print Slip
           </button>
           <button onClick={resetEntry} style={{
             padding: "12px 24px", background: "#14B8A6", color: "white",
             border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14,
-            cursor: "pointer", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif",
+            cursor: "pointer", fontFamily: APP_FONT_STACK,
             boxShadow: "0 4px 12px rgba(20, 184, 166, 0.24)"
           }}>
             + New Entry
@@ -5862,17 +5862,17 @@ function NewEntry({ services, onSave }) {
         background: "rgba(255,255,255,0.74)", borderRadius: 12, border: "1px solid rgba(15,23,42,0.12)",
         padding: 20, marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#1E293B", marginBottom: 12, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", textTransform: "uppercase", letterSpacing: 0.5 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#1E293B", marginBottom: 12, fontFamily: APP_FONT_STACK, textTransform: "uppercase", letterSpacing: 0.5 }}>
           Customer Info <span style={{ fontWeight: 400, color: "#64748B", textTransform: "none", letterSpacing: 0 }}>(optional)</span>
         </div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <input placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
-            style={{ flex: 2, minWidth: 150, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 8, fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none", transition: "border 0.2s" }} 
+            style={{ flex: 2, minWidth: 150, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 8, fontSize: 14, fontFamily: APP_FONT_STACK, outline: "none", transition: "border 0.2s" }} 
             onFocus={(e) => e.target.style.borderColor = '#14B8A6'}
             onBlur={(e) => e.target.style.borderColor = '#CBD5E1'}
           />
           <input placeholder="Phone Number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
-            style={{ flex: 1, minWidth: 130, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 8, fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none", transition: "border 0.2s" }} 
+            style={{ flex: 1, minWidth: 130, padding: "10px 14px", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 8, fontSize: 14, fontFamily: APP_FONT_STACK, outline: "none", transition: "border 0.2s" }} 
             onFocus={(e) => e.target.style.borderColor = '#14B8A6'}
             onBlur={(e) => e.target.style.borderColor = '#CBD5E1'}
           />
@@ -5884,12 +5884,12 @@ function NewEntry({ services, onSave }) {
         background: "rgba(255,255,255,0.74)", borderRadius: 12, border: "1px solid rgba(15,23,42,0.12)",
         padding: 20, marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#1E293B", marginBottom: 12, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", textTransform: "uppercase", letterSpacing: 0.5 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#1E293B", marginBottom: 12, fontFamily: APP_FONT_STACK, textTransform: "uppercase", letterSpacing: 0.5 }}>
           Select Services
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
           <select value={selectedService} onChange={(e) => { setSelectedService(e.target.value); setCustomAmt(""); }}
-            style={{ flex: 3, minWidth: 180, padding: "11px 14px", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 8, fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none", background: "rgba(255,255,255,0.74)", color: selectedService ? "#0F172A" : "#64748B" }}>
+            style={{ flex: 3, minWidth: 180, padding: "11px 14px", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 8, fontSize: 14, fontFamily: APP_FONT_STACK, outline: "none", background: "rgba(255,255,255,0.74)", color: selectedService ? "#0F172A" : "#64748B" }}>
             <option value="" style={MENU_OPTION_STYLE}>Select a service...</option>
             {CATEGORIES.map((cat) => (
               <optgroup key={cat} label={cat} style={MENU_OPTGROUP_STYLE}>
@@ -5902,19 +5902,19 @@ function NewEntry({ services, onSave }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <span style={{ fontSize: 11, color: "#64748B", fontWeight: 500 }}>Qty</span>
             <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)}
-              style={{ width: 60, padding: "10px", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 8, fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none", textAlign: "center" }} />
+              style={{ width: 60, padding: "10px", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 8, fontSize: 14, fontFamily: APP_FONT_STACK, outline: "none", textAlign: "center" }} />
           </div>
           {selectedService && services.find((s) => s.id === selectedService)?.variable && (
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span style={{ fontSize: 11, color: "#D97706", fontWeight: 600 }}>Custom Rs.</span>
               <input type="number" value={customAmt} onChange={(e) => setCustomAmt(e.target.value)} placeholder="0"
-                style={{ width: 80, padding: "10px", border: "1px solid #F59E0B", borderRadius: 8, fontSize: 14, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", outline: "none", textAlign: "right", background: "#FFFBEB" }} />
+                style={{ width: 80, padding: "10px", border: "1px solid #F59E0B", borderRadius: 8, fontSize: 14, fontFamily: APP_FONT_STACK, outline: "none", textAlign: "right", background: "#FFFBEB" }} />
             </div>
           )}
           <button onClick={addItem} className="csc-hover-accent" style={{
             padding: "11px 20px", background: "rgba(255,255,255,0.82)", color: "#14B8A6",
             border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14,
-            cursor: "pointer", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", whiteSpace: "nowrap",
+            cursor: "pointer", fontFamily: APP_FONT_STACK, whiteSpace: "nowrap",
             transition: "all 0.2s"
           }}>
             Add
@@ -5928,7 +5928,7 @@ function NewEntry({ services, onSave }) {
           background: "rgba(255,255,255,0.74)", borderRadius: 12, border: "1px solid rgba(15,23,42,0.12)",
           padding: 20, marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 12, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 12, fontFamily: APP_FONT_STACK, textTransform: "uppercase", letterSpacing: 0.5 }}>
             Internal Summary <span style={{ fontWeight: 400, color: "#475569", textTransform: "none", letterSpacing: 0 }}>(Prices not shown on slip)</span>
           </div>
           {items.map((it, i) => (
@@ -5938,12 +5938,12 @@ function NewEntry({ services, onSave }) {
               gap: 12,
             }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "#0F172A", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>{it.name}</div>
-                <div style={{ fontSize: 12, color: "#64748B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", marginTop: 2 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "#0F172A", fontFamily: APP_FONT_STACK }}>{it.name}</div>
+                <div style={{ fontSize: 12, color: "#64748B", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
                   {it.qty > 1 ? `${it.qty} x Rs. ${Math.round(it.amount / it.qty)}` : it.unit}
                 </div>
               </div>
-              <div style={{ fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", fontSize: 15, fontWeight: 600, color: "#14B8A6" }}>
+              <div style={{ fontFamily: APP_FONT_STACK, fontSize: 15, fontWeight: 600, color: "#14B8A6" }}>
                 Rs. {it.amount}
               </div>
               <button onClick={() => removeItem(i)} style={{
@@ -5962,8 +5962,8 @@ function NewEntry({ services, onSave }) {
             display: "flex", justifyContent: "space-between", alignItems: "center",
             padding: "16px 16px", marginTop: 12, background: "rgba(255,255,255,0.72)", borderRadius: 8, border: "1px solid rgba(15,23,42,0.12)"
           }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#64748B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>AMOUNT TO COLLECT</span>
-            <span style={{ fontSize: 24, fontWeight: 800, color: "#0F172A", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>Rs. {total}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#64748B", fontFamily: APP_FONT_STACK }}>AMOUNT TO COLLECT</span>
+            <span style={{ fontSize: 24, fontWeight: 800, color: "#0F172A", fontFamily: APP_FONT_STACK }}>Rs. {total}</span>
           </div>
         </div>
       )}
@@ -5976,7 +5976,7 @@ function NewEntry({ services, onSave }) {
           display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center",
         }}>
           <div style={{ flex: 1, minWidth: 150 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#64748B", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#64748B", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: APP_FONT_STACK }}>
               Payment Mode
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -5986,7 +5986,7 @@ function NewEntry({ services, onSave }) {
                   borderRadius: 8, background: payMode === m ? "rgba(20, 184, 166, 0.16)" : "rgba(255,255,255,0.74)",
                   color: payMode === m ? "#14B8A6" : "#64748B",
                   fontWeight: payMode === m ? 600 : 500, fontSize: 13, cursor: "pointer",
-                  fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", transition: "all 0.2s"
+                  fontFamily: APP_FONT_STACK, transition: "all 0.2s"
                 }}>
                   {m}
                 </button>
@@ -5994,7 +5994,7 @@ function NewEntry({ services, onSave }) {
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 150 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#64748B", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#64748B", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: APP_FONT_STACK }}>
               Operator
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -6004,7 +6004,7 @@ function NewEntry({ services, onSave }) {
                   borderRadius: 8, background: operator === op ? "rgba(20, 184, 166, 0.16)" : "rgba(255,255,255,0.74)",
                   color: operator === op ? "#14B8A6" : "#64748B",
                   fontWeight: operator === op ? 600 : 500, fontSize: 13, cursor: "pointer",
-                  fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", transition: "all 0.2s"
+                  fontFamily: APP_FONT_STACK, transition: "all 0.2s"
                 }}>
                   {op}
                 </button>
@@ -6019,7 +6019,7 @@ function NewEntry({ services, onSave }) {
         <button onClick={saveEntry} style={{
           width: "100%", padding: "16px", background: "#14B8A6",
           color: "white", border: "none", borderRadius: 12, fontWeight: 700,
-          fontSize: 15, cursor: "pointer", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif",
+          fontSize: 15, cursor: "pointer", fontFamily: APP_FONT_STACK,
           boxShadow: "0 4px 14px rgba(20, 184, 166, 0.32)",
           letterSpacing: 0.5, transition: "transform 0.1s, boxShadow 0.2s"
         }}
@@ -6057,41 +6057,41 @@ function Dashboard({ bills }) {
       {/* Revenue Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
         <div style={{ background: "#14B8A6", borderRadius: 16, padding: "20px", color: "white", boxShadow: "0 4px 12px rgba(79, 70, 229, 0.2)" }}>
-          <div style={{ fontSize: 12, fontWeight: 500, opacity: 0.8, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>Today's Revenue</div>
-          <div style={{ fontSize: 28, fontWeight: 800, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", marginTop: 8 }}>{totalRevenue}</div>
+          <div style={{ fontSize: 12, fontWeight: 500, opacity: 0.8, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: APP_FONT_STACK }}>Today's Revenue</div>
+          <div style={{ fontSize: 28, fontWeight: 800, fontFamily: APP_FONT_STACK, marginTop: 8 }}>{totalRevenue}</div>
         </div>
         <div style={{ background: "rgba(255,255,255,0.74)", borderRadius: 16, padding: "20px", border: "1px solid rgba(15,23,42,0.12)", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}> Cash Collection</div>
-          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", marginTop: 8, color: "#10B981" }}>{cashTotal}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, fontFamily: APP_FONT_STACK }}> Cash Collection</div>
+          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: APP_FONT_STACK, marginTop: 8, color: "#10B981" }}>{cashTotal}</div>
         </div>
         <div style={{ background: "rgba(255,255,255,0.74)", borderRadius: 16, padding: "20px", border: "1px solid rgba(15,23,42,0.12)", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}> UPI Collection</div>
-          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", marginTop: 8, color: "#22D3EE" }}>{upiTotal}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, fontFamily: APP_FONT_STACK }}> UPI Collection</div>
+          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: APP_FONT_STACK, marginTop: 8, color: "#22D3EE" }}>{upiTotal}</div>
         </div>
       </div>
 
       {/* Analytics Stats */}
       <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
         <div style={{ flex: 1, background: "rgba(255,255,255,0.74)", borderRadius: 12, padding: "16px", border: "1px solid rgba(15,23,42,0.12)", textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#1E293B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>{todayBills.length}</div>
-          <div style={{ fontSize: 12, color: "#64748B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", fontWeight: 500, marginTop: 4 }}>Total Entries</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#1E293B", fontFamily: APP_FONT_STACK }}>{todayBills.length}</div>
+          <div style={{ fontSize: 12, color: "#64748B", fontFamily: APP_FONT_STACK, fontWeight: 500, marginTop: 4 }}>Total Entries</div>
         </div>
         <div style={{ flex: 1, background: "rgba(255,255,255,0.74)", borderRadius: 12, padding: "16px", border: "1px solid rgba(15,23,42,0.12)", textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#1E293B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#1E293B", fontFamily: APP_FONT_STACK }}>
             {todayBills.length > 0 ? `${Math.round(totalRevenue / todayBills.length)}` : ""}
           </div>
-          <div style={{ fontSize: 12, color: "#64748B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", fontWeight: 500, marginTop: 4 }}>Average Order</div>
+          <div style={{ fontSize: 12, color: "#64748B", fontFamily: APP_FONT_STACK, fontWeight: 500, marginTop: 4 }}>Average Order</div>
         </div>
         <div style={{ flex: 1, background: "rgba(255,255,255,0.74)", borderRadius: 12, padding: "16px", border: "1px solid rgba(15,23,42,0.12)", textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#1E293B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>{svcList.length}</div>
-          <div style={{ fontSize: 12, color: "#64748B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", fontWeight: 500, marginTop: 4 }}>Unique Services</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#1E293B", fontFamily: APP_FONT_STACK }}>{svcList.length}</div>
+          <div style={{ fontSize: 12, color: "#64748B", fontFamily: APP_FONT_STACK, fontWeight: 500, marginTop: 4 }}>Unique Services</div>
         </div>
       </div>
 
       {/* Detailed Service Breakdown */}
       {svcList.length > 0 && (
         <div style={{ background: "rgba(255,255,255,0.74)", borderRadius: 16, border: "1px solid rgba(15,23,42,0.12)", padding: 24, marginBottom: 24, boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#1E293B", marginBottom: 16, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#1E293B", marginBottom: 16, fontFamily: APP_FONT_STACK, letterSpacing: 0.5 }}>
             Revenue by Service
           </div>
           {svcList.map(([name, data], i) => (
@@ -6099,9 +6099,9 @@ function Dashboard({ bills }) {
               display: "flex", alignItems: "center", padding: "12px 0",
               borderBottom: i < svcList.length - 1 ? "1px solid #F1F5F9" : "none",
             }}>
-              <div style={{ flex: 1, fontSize: 14, fontWeight: 500, color: "#334155", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>{name}</div>
-              <div style={{ fontSize: 12, color: "#64748B", marginRight: 16, fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", background: "rgba(255,255,255,0.82)", padding: "4px 8px", borderRadius: 6 }}>{data.count} units</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#14B8A6", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", width: 80, textAlign: "right" }}>{data.revenue}</div>
+              <div style={{ flex: 1, fontSize: 14, fontWeight: 500, color: "#334155", fontFamily: APP_FONT_STACK }}>{name}</div>
+              <div style={{ fontSize: 12, color: "#64748B", marginRight: 16, fontFamily: APP_FONT_STACK, background: "rgba(255,255,255,0.82)", padding: "4px 8px", borderRadius: 6 }}>{data.count} units</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#14B8A6", fontFamily: APP_FONT_STACK, width: 80, textAlign: "right" }}>{data.revenue}</div>
             </div>
           ))}
         </div>
@@ -6110,7 +6110,7 @@ function Dashboard({ bills }) {
       {/* Transaction History */}
       {todayBills.length > 0 ? (
         <div style={{ background: "rgba(255,255,255,0.74)", borderRadius: 16, border: "1px solid rgba(15,23,42,0.12)", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
-          <div style={{ padding: "16px 24px", fontSize: 14, fontWeight: 700, color: "#1E293B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", letterSpacing: 0.5, borderBottom: "1px solid #E2E8F0", background: "rgba(255,255,255,0.72)" }}>
+          <div style={{ padding: "16px 24px", fontSize: 14, fontWeight: 700, color: "#1E293B", fontFamily: APP_FONT_STACK, letterSpacing: 0.5, borderBottom: "1px solid #E2E8F0", background: "rgba(255,255,255,0.72)" }}>
             Backend Transaction Log
           </div>
           {[...todayBills].reverse().map((b) => (
@@ -6120,20 +6120,20 @@ function Dashboard({ bills }) {
             }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#1E293B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>{b.customerName}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#1E293B", fontFamily: APP_FONT_STACK }}>{b.customerName}</span>
                   <span style={{
                     fontSize: 10, fontWeight: 700, padding: "4px 8px", borderRadius: 6,
                     background: b.payMode === "Cash" ? "#ECFDF5" : "rgba(34, 211, 238, 0.14)",
                     color: b.payMode === "Cash" ? "#059669" : "#0891B2",
-                    fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", letterSpacing: 0.5
+                    fontFamily: APP_FONT_STACK, letterSpacing: 0.5
                   }}>{b.payMode}</span>
                 </div>
-                <div style={{ fontSize: 12, color: "#64748B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", lineHeight: 1.4 }}>
+                <div style={{ fontSize: 12, color: "#64748B", fontFamily: APP_FONT_STACK, lineHeight: 1.4 }}>
                   {b.billNo}  {b.time}  Op: {b.operator}<br/>
                   <span style={{ color: "#64748B" }}>{b.items.map((it) => it.name).join(", ")}</span>
                 </div>
               </div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1E293B", fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#1E293B", fontFamily: APP_FONT_STACK }}>
                 {b.total}
               </div>
             </div>
@@ -6142,7 +6142,7 @@ function Dashboard({ bills }) {
       ) : (
         <div style={{
           textAlign: "center", padding: "60px 24px", color: "#64748B",
-          fontFamily: "'Sohne', 'Styrene B', 'Manrope', sans-serif", background: "rgba(255,255,255,0.74)", borderRadius: 16, border: "1px dashed #CBD5E1"
+          fontFamily: APP_FONT_STACK, background: "rgba(255,255,255,0.74)", borderRadius: 16, border: "1px dashed #CBD5E1"
         }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}></div>
           <div style={{ fontSize: 16, fontWeight: 600, color: "#475569" }}>No analytics available yet</div>
@@ -10221,10 +10221,10 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
           <path key={i} d={s.path} fill="none" stroke={s.color} strokeWidth={thickness - 1} strokeLinecap="butt" />
         ))}
         {centerLabel && (
-          <text x={cx} y={cy + 5} textAnchor="middle" fontSize={size * 0.145} fontWeight="700" fill="#0f172a" fontFamily="Manrope, system-ui, sans-serif">{centerLabel}</text>
+          <text x={cx} y={cy + 5} textAnchor="middle" fontSize={size * 0.145} fontWeight="700" fill="#0f172a" fontFamily="Geist, system-ui, sans-serif">{centerLabel}</text>
         )}
         {centerSub && (
-          <text x={cx} y={cy + size * 0.18} textAnchor="middle" fontSize={size * 0.085} fill="rgba(15,23,42,0.45)" fontFamily="Manrope, system-ui, sans-serif">{centerSub}</text>
+          <text x={cx} y={cy + size * 0.18} textAnchor="middle" fontSize={size * 0.085} fill="rgba(15,23,42,0.45)" fontFamily="Geist, system-ui, sans-serif">{centerSub}</text>
         )}
       </svg>
     );
@@ -10251,7 +10251,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             <g key={b.label}>
               {penH > 1 && <rect x={x} y={plotH - totalH} width={bw} height={penH} fill="rgba(220,38,38,0.45)" rx="2" />}
               {collH > 1 && <rect x={x} y={plotH - collH} width={bw} height={collH} fill="#16a34a" rx={penH > 1 ? "0" : "2"} />}
-              <text x={x + bw / 2} y={svgH - 4} textAnchor="middle" fontSize="8" fill="rgba(15,23,42,0.45)" fontFamily="Manrope,system-ui,sans-serif">{b.label}</text>
+              <text x={x + bw / 2} y={svgH - 4} textAnchor="middle" fontSize="8" fill="rgba(15,23,42,0.45)" fontFamily="Geist,system-ui,sans-serif">{b.label}</text>
             </g>
           );
         })}
@@ -12048,7 +12048,7 @@ export default function CSCBilling() {
           font-style: normal;
         }
         h1, h2, h3, h4, h5, h6 {
-          font-family: ${APP_BRAND_STACK};
+          font-family: ${APP_SERIF_STACK};
           font-style: normal;
           color: #0d1b2a;
           margin: 0;
@@ -12120,6 +12120,15 @@ export default function CSCBilling() {
           letter-spacing: 0.06em;
           padding: 8px 14px;
           cursor: pointer;
+        }
+        .ff-display {
+          font-family: ${APP_SERIF_STACK};
+        }
+        .ff-body {
+          font-family: ${APP_FONT_STACK};
+        }
+        .ff-mono {
+          font-family: ${APP_MONO_STACK};
         }
         .csc-ticket-dashboard-grid {
           display: grid;
@@ -12594,3 +12603,4 @@ export default function CSCBilling() {
     </div>
   );
 }
+

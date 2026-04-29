@@ -3,9 +3,9 @@
  * Values mirror the parent app (csc_billing.jsx) so the workspace stays visually consistent.
  */
 export const DT = {
-  font: "'Manrope', system-ui, -apple-system, sans-serif",
-  brand: "'League Spartan', 'Manrope', sans-serif",
-  mono: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
+  font: "'Geist', system-ui, sans-serif",
+  brand: "'Fraunces', Georgia, serif",
+  mono: "'Geist Mono', monospace",
 
   bg: "#f8fafc",
   surface: "#ffffff",

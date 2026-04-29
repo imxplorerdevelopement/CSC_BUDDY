@@ -1,7 +1,7 @@
 export const SD = {
-  font: "'Manrope', system-ui, -apple-system, sans-serif",
-  brand: "'League Spartan', 'Manrope', sans-serif",
-  mono: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
+  font: "'Geist', system-ui, sans-serif",
+  brand: "'Fraunces', Georgia, serif",
+  mono: "'Geist Mono', monospace",
 
   surface: "#ffffff",
   surfaceMuted: "#f4f7fa",
