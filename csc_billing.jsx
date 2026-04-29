@@ -636,6 +636,18 @@ const B2B_PARTNER_SEED = [
       agent: [],
     },
   },
+  {
+    id: "cyber_cafe",
+    name: "Cyber Cafe",
+    roles: ["give"],
+    servicesByRole: {
+      take: [],
+      give: [
+        { label: "Services We Provide", items: ["E-Stamp Paper"] },
+      ],
+      agent: [],
+    },
+  },
 ];
 const B2B_AGENT_SEED = [];
 
@@ -2830,6 +2842,32 @@ function ConfirmDialog({
           </button>
           <button onClick={onConfirm} style={{ border: "1px solid rgba(37,99,235,0.38)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: DS.wine, fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
             {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SessionExpiryWarningModal({ expiresAt, onDismiss }) {
+  const expiresLabel = (() => {
+    const ms = Date.parse(expiresAt || "");
+    if (!Number.isFinite(ms)) return "";
+    return new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  })();
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={onDismiss} style={{ position: "absolute", inset: 0, background: "rgba(2,6,23,0.58)", backdropFilter: "blur(2px)" }} />
+      <div role="dialog" aria-modal="true" style={{ position: "relative", width: "min(460px, 100%)", borderRadius: 16, border: "1px solid rgba(15,23,42,0.16)", background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 60px rgba(2,6,23,0.28)", padding: 18 }}>
+        <div style={{ fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.22em", textTransform: "uppercase", color: DS.wine, marginBottom: 8 }}>
+          Session expiring soon
+        </div>
+        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.9rem", lineHeight: 1.6, color: "rgba(15,23,42,0.80)", marginBottom: 16 }}>
+          Your dashboard session will expire {expiresLabel ? `at ${expiresLabel}` : "in about 5 minutes"}. Keep your authenticator code handy so you can re-authenticate without interruption.
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button onClick={onDismiss} style={{ border: "1px solid rgba(37,99,235,0.38)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: DS.wine, fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
+            Got it
           </button>
         </div>
       </div>
@@ -8952,7 +8990,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
 }
 
 // --- B2B TAB ---
-function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
+function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUpdateLedgerEntry }) {
   const [activeTrack, setActiveTrack] = useState("take");
   const [activeEntityKeys, setActiveEntityKeys] = useState({ take: "", give: "", agent: "" });
   const [entryForms, setEntryForms] = useState({
@@ -8962,6 +9000,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
   });
   const [formError, setFormError] = useState("");
   const [formOpen, setFormOpen] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: "", message: "", onConfirm: null });
   const [accessCodeDialog, setAccessCodeDialog] = useState({ isOpen: false, title: "", message: "", actionLabel: "", code: "", error: "", onAuthorized: null });
   const b2bFormRef = useRef(null);
@@ -9203,8 +9242,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
     }
 
     setFormError("");
-    onAddLedgerEntry?.({
-      id: `b2b_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    const entryPayload = {
       ecosystem: activeTrack,
       partnerId: generatedPartnerId,
       partnerName,
@@ -9222,8 +9260,18 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
       includeInDailyRevenue: activeTrack === "give" ? Boolean(activeForm.includeInDailyRevenue) : false,
       businessAmount: activeTrack === "agent" ? Math.max(0, Number(activeForm.businessAmount) || 0) : 0,
       referredClient: activeTrack === "agent" ? referredClient : "",
-      createdAt: new Date().toISOString(),
-    });
+    };
+
+    if (editingEntryId) {
+      onUpdateLedgerEntry?.(editingEntryId, entryPayload);
+      setEditingEntryId(null);
+    } else {
+      onAddLedgerEntry?.({
+        ...entryPayload,
+        id: `b2b_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        createdAt: new Date().toISOString(),
+      });
+    }
 
     setEntryForms((prev) => ({
       ...prev,
@@ -9232,6 +9280,43 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
         partnerName,
         paymentMode: prev[activeTrack].paymentMode || "UPI",
         includeInDailyRevenue: activeTrack === "give" ? Boolean(prev[activeTrack].includeInDailyRevenue) : false,
+      },
+    }));
+  };
+
+  const handleEditEntry = (entry) => {
+    if (!entry?.id) return;
+    setActiveTrack(entry.ecosystem);
+    setEditingEntryId(entry.id);
+    setEntryForms((prev) => ({
+      ...prev,
+      [entry.ecosystem]: {
+        partnerName: entry.partnerName || "",
+        serviceName: entry.serviceName || "",
+        quantity: String(entry.quantity ?? "1"),
+        rate: String(entry.rate ?? ""),
+        settledAmount: String(entry.paidAmount ?? ""),
+        paymentMode: entry.paymentMode || "UPI",
+        entryDate: entry.entryDate || getTicketCounterDateKey(new Date()),
+        note: entry.note || "",
+        includeInDailyRevenue: entry.ecosystem === "give" ? Boolean(entry.includeInDailyRevenue) : false,
+        referredClient: entry.referredClient || "",
+        businessAmount: String(entry.businessAmount ?? ""),
+      },
+    }));
+    setFormError("");
+    setFormOpen(true);
+    setTimeout(() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntryId(null);
+    setFormError("");
+    setEntryForms((prev) => ({
+      ...prev,
+      [activeTrack]: {
+        ...createB2BEntryForm(activeTrack),
+        partnerName: activeEntity?.name || "",
       },
     }));
   };
@@ -9320,7 +9405,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
           <div style={{ marginLeft: "auto" }}>
             <button
               type="button"
-              onClick={() => { setFormOpen((v) => !v); if (!formOpen) setTimeout(() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50); }}
+              onClick={() => { setFormOpen((v) => !v); if (formOpen && editingEntryId) handleCancelEdit(); if (!formOpen) setTimeout(() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50); }}
               style={{
                 border: formOpen ? "1px solid rgba(15,23,42,0.16)" : "1px solid rgba(30,64,175,0.32)",
                 borderRadius: 8,
@@ -9440,25 +9525,46 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
                             {activeTrack === "agent" ? `Client ${entry.referredClient || "N/A"} | Commission ${formatCurrency(entry.amount)}` : `Qty ${entry.quantity} x Rs. ${entry.rate} = ${formatCurrency(entry.amount)}`}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteEntry(entry)}
-                          style={{
-                            border: "1px solid rgba(185,28,28,0.24)",
-                            borderRadius: 999,
-                            background: "rgba(185,28,28,0.08)",
-                            color: "#991b1b",
-                            fontSize: "0.56rem",
-                            fontFamily: APP_BRAND_STACK,
-                            fontWeight: 700,
-                            letterSpacing: "0.14em",
-                            textTransform: "uppercase",
-                            padding: "5px 9px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Delete
-                        </button>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => handleEditEntry(entry)}
+                            style={{
+                              border: "1px solid rgba(30,64,175,0.28)",
+                              borderRadius: 999,
+                              background: "rgba(30,64,175,0.08)",
+                              color: "#1d4ed8",
+                              fontSize: "0.56rem",
+                              fontFamily: APP_BRAND_STACK,
+                              fontWeight: 700,
+                              letterSpacing: "0.14em",
+                              textTransform: "uppercase",
+                              padding: "5px 9px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteEntry(entry)}
+                            style={{
+                              border: "1px solid rgba(185,28,28,0.24)",
+                              borderRadius: 999,
+                              background: "rgba(185,28,28,0.08)",
+                              color: "#991b1b",
+                              fontSize: "0.56rem",
+                              fontFamily: APP_BRAND_STACK,
+                              fontWeight: 700,
+                              letterSpacing: "0.14em",
+                              textTransform: "uppercase",
+                              padding: "5px 9px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
                         {entry.paymentStatus} | {trackMeta.settledLabel} {formatCurrency(entry.paidAmount)} | {trackMeta.pendingLabel.replace("Total ", "")} {formatCurrency(entry.pendingAmount)} | {entry.paymentMode} | {formatEntryDate(entry.entryDate)}
@@ -9495,7 +9601,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
               {trackMeta.heading}
             </div>
             <div style={{ marginTop: 6, fontFamily: APP_SERIF_STACK, fontSize: "1.15rem", fontWeight: 300, color: "#0f172a" }}>
-              {trackMeta.submitLabel}
+              {editingEntryId ? `Edit ${trackMeta.submitLabel.replace(/^Add\s+/, "")}` : trackMeta.submitLabel}
             </div>
           </div>
           <div style={{ fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
@@ -9616,9 +9722,20 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry }) {
           <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK }}>
             {trackMeta.previewVerb} {formatCurrency(amountPreview)} | {trackMeta.settledLabel} {formatCurrency(settledPreview)} | {trackMeta.pendingLabel.replace("Total ", "")} {formatCurrency(pendingPreview)}
           </div>
-          <button type="submit" style={{ border: "1px solid rgba(30,64,175,0.32)", borderRadius: 999, background: "rgba(30,64,175,0.10)", color: "#1d4ed8", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
-            {trackMeta.submitLabel}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {editingEntryId && (
+              <button
+                type="button"
+                onClick={() => { handleCancelEdit(); setFormOpen(false); }}
+                style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 999, background: "rgba(255,255,255,0.82)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+            )}
+            <button type="submit" style={{ border: "1px solid rgba(30,64,175,0.32)", borderRadius: 999, background: "rgba(30,64,175,0.10)", color: "#1d4ed8", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
+              {editingEntryId ? "Save Changes" : trackMeta.submitLabel}
+            </button>
+          </div>
         </div>
         {formError && (
           <div style={{ marginTop: 10, color: "#991b1b", fontSize: "0.80rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
@@ -10927,6 +11044,8 @@ export default function CSCBilling() {
   const [entryWorkspaceKey, setEntryWorkspaceKey] = useState(0);
   const [cloudSyncState, setCloudSyncState] = useState(() => "connecting");
   const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState(null);
+  const [dashboardSessionExpiresAt, setDashboardSessionExpiresAt] = useState("");
+  const [showSessionExpiryWarning, setShowSessionExpiryWarning] = useState(false);
   const dbSyncedRef = useRef(false);
   const cloudSaveQueuesRef = useRef({});
   const todayDateKey = getTicketCounterDateKey(new Date());
@@ -11128,6 +11247,18 @@ export default function CSCBilling() {
       return next;
     });
   };
+  const updateB2BLedgerEntry = (entryId, updates) => {
+    setB2BLedger((prev) => {
+      const matchIndex = prev.findIndex((entry) => entry.id === entryId);
+      if (matchIndex === -1) return prev;
+      const merged = { ...prev[matchIndex], ...updates, id: entryId };
+      const next = [...prev];
+      next[matchIndex] = normalizeB2BLedgerEntry(merged, matchIndex);
+      writeStoredJSON(STORAGE_KEYS.b2bLedger, serializeB2BLedger(next));
+      void enqueueCloudSave("b2b_ledger", serializeB2BLedger(next));
+      return next;
+    });
+  };
   const upsertDatabaseRecord = (nextRecord) => {
     setDatabaseRecords((prev) => {
       const normalizedNext = normalizeDatabaseRecordEntry(nextRecord, prev.length);
@@ -11296,6 +11427,8 @@ export default function CSCBilling() {
     setIsOfflineDevMode(false);
     setShowDatabaseGate(false);
     setCloudSyncState("locked");
+    setDashboardSessionExpiresAt("");
+    setShowSessionExpiryWarning(false);
     navigateTab("home", "replace", { bypassDatabaseGate: true });
   };
   const handleBackgroundSyncUnauthorized = () => {
@@ -11351,6 +11484,8 @@ export default function CSCBilling() {
     setIsOfflineDevMode(false);
     setAuthChecked(true);
     setCloudSyncState("connecting");
+    setDashboardSessionExpiresAt(result.expiresAt || "");
+    setShowSessionExpiryWarning(false);
     setUnlockAnimPhase("success");
     return { ok: true };
   };
@@ -11398,6 +11533,8 @@ export default function CSCBilling() {
     setIsOfflineDevMode(false);
     setShowDatabaseGate(false);
     setCloudSyncState("locked");
+    setDashboardSessionExpiresAt("");
+    setShowSessionExpiryWarning(false);
     navigateTab("home", "replace", { bypassDatabaseGate: true });
   };
 
@@ -11430,6 +11567,8 @@ export default function CSCBilling() {
         setShowDatabaseGate(false);
         setConfigLoaded(false);
         setCloudSyncState("connecting");
+        setDashboardSessionExpiresAt(result.expiresAt || "");
+        setShowSessionExpiryWarning(false);
         setAuthChecked(true);
         return;
       }
@@ -11441,6 +11580,8 @@ export default function CSCBilling() {
       setIsOfflineDevMode(false);
       setShowDatabaseGate(false);
       setCloudSyncState("locked");
+      setDashboardSessionExpiresAt("");
+      setShowSessionExpiryWarning(false);
       setAuthChecked(true);
     }
 
@@ -11473,6 +11614,23 @@ export default function CSCBilling() {
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, [databaseUnlocked]);
+
+  useEffect(() => {
+    if (!isDashboardUnlocked || !dashboardSessionExpiresAt) return undefined;
+    const expiresMs = Date.parse(dashboardSessionExpiresAt);
+    if (!Number.isFinite(expiresMs)) return undefined;
+    const fireAt = expiresMs - 5 * 60 * 1000;
+    const delay = fireAt - Date.now();
+    if (expiresMs <= Date.now()) return undefined;
+    if (delay <= 0) {
+      setShowSessionExpiryWarning(true);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => {
+      setShowSessionExpiryWarning(true);
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [isDashboardUnlocked, dashboardSessionExpiresAt]);
 
   useEffect(() => {
     writeStoredJSON(STORAGE_KEYS.activeTab, tab);
@@ -11666,6 +11824,12 @@ export default function CSCBilling() {
         <HackerUnlockAnimation
           phase={unlockAnimPhase}
           onDone={handleUnlockAnimDone}
+        />
+      )}
+      {showSessionExpiryWarning && (
+        <SessionExpiryWarningModal
+          expiresAt={dashboardSessionExpiresAt}
+          onDismiss={() => setShowSessionExpiryWarning(false)}
         />
       )}
       <style>{`
@@ -12142,6 +12306,7 @@ export default function CSCBilling() {
                 ledger={b2bLedger}
                 onAddLedgerEntry={addB2BLedgerEntry}
                 onDeleteLedgerEntry={deleteB2BLedgerEntry}
+                onUpdateLedgerEntry={updateB2BLedgerEntry}
               />
             </TabPanel>
             <TabPanel active={tab === "monthly"}>
