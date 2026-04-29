@@ -6,8 +6,6 @@ import { ServicesDashboardWorkspace } from "./src/workspaces/services-dashboard/
 import { AppointmentsWorkspace } from "./src/workspaces/appointments/AppointmentsWorkspace.jsx";
 import { SERVICE_REGISTRY, SERVICE_CATEGORIES } from "./src/workspaces/services-dashboard/registry.js";
 
-const AUTH_HERO_BG_URL = "https://images.pexels.com/photos/32674962/pexels-photo-32674962.jpeg?auto=compress&cs=tinysrgb&w=1600";
-
 // Map registry category IDs to the billing category names used by
 // CATEGORY_DETAIL_SCHEMA_IDS and the service-entry dropdown grouping.
 const REGISTRY_CAT_TO_BILLING = {
@@ -4514,8 +4512,6 @@ function DatabaseAccessModal({
   onVerify,
   allowClose = true,
   busy = false,
-  busyTitle = "Preparing workspace",
-  busyMessage = "Just a moment while your private workspace comes into view.",
 }) {
   const [securityCode, setSecurityCode] = useState("");
   const [authCode, setAuthCode] = useState("");
@@ -4590,17 +4586,6 @@ function DatabaseAccessModal({
       {visible ? null : <path d="M4 4 20 20" />}
     </svg>
   );
-  const featureCards = [
-    { label: "Private Session", value: "Time-limited", tone: "#7c3aed" },
-    { label: "Workspace Scope", value: "Operator tools", tone: "#0f766e" },
-    { label: "Verification", value: "2-step access", tone: "#1d4ed8" },
-  ];
-  const authSteps = [
-    "Enter the private security code for the desk.",
-    "Confirm the 6-digit authenticator code.",
-    "Open the protected workspace and resume work.",
-  ];
-
   return (
     <div style={{
       position: isFullPage ? "relative" : "fixed",
@@ -4615,68 +4600,17 @@ function DatabaseAccessModal({
       overflow: "hidden",
     }}>
       <style>{`
-        @keyframes authBackdropFloat {
-          0% { transform: translate3d(0, 0, 0) scale(1); }
-          100% { transform: translate3d(-1.5%, -1.5%, 0) scale(1.04); }
-        }
-        @keyframes authHaloPulse {
-          0%, 100% { transform: scale(0.96); opacity: 0.38; }
-          50% { transform: scale(1.04); opacity: 0.65; }
-        }
         @keyframes authPanelLift {
           from { opacity: 0; transform: translateY(18px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes authSpin {
+          to { transform: rotate(360deg); }
         }
         @keyframes authScan {
           0% { transform: translateX(-120%); opacity: 0; }
           20% { opacity: 0.22; }
           100% { transform: translateX(240%); opacity: 0; }
-        }
-        @keyframes authStatusPulse {
-          0%, 100% { opacity: 0.45; transform: scale(0.95); }
-          50% { opacity: 1; transform: scale(1.05); }
-        }
-        .auth-redesign-shell {
-          grid-template-columns: minmax(0, 1.08fr) minmax(360px, 470px);
-        }
-        .auth-redesign-grid {
-          background-image:
-            linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px);
-          background-size: 92px 92px;
-          opacity: 0.32;
-        }
-        @media (max-width: 960px) {
-          .auth-redesign-shell {
-            grid-template-columns: 1fr !important;
-            padding: 24px 18px !important;
-            align-items: stretch !important;
-          }
-          .auth-redesign-hero {
-            min-height: auto !important;
-            padding: 18px 0 0 !important;
-            gap: 18px !important;
-          }
-          .auth-redesign-card {
-            width: 100% !important;
-            max-width: 100% !important;
-            justify-self: stretch !important;
-          }
-          .auth-redesign-backdrop {
-            inset: 0 !important;
-            width: 100% !important;
-            opacity: 0.18 !important;
-          }
-        }
-        @media (max-width: 640px) {
-          .auth-redesign-shell {
-            padding: 18px 14px !important;
-            gap: 16px !important;
-          }
-          .auth-redesign-title {
-            font-size: clamp(2.7rem, 15vw, 4.2rem) !important;
-            line-height: 0.94 !important;
-          }
         }
       `}</style>
       <div style={{
@@ -4688,172 +4622,30 @@ function DatabaseAccessModal({
         placeItems: "center",
       }}>
         {isFullPage && (
-          <>
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(180deg, #f6efe4 0%, #efe7db 100%)",
-            }} />
-            <div style={{
-              position: "absolute",
-              right: "-8%",
-              top: 0,
-              bottom: 0,
-              width: "46%",
-              backgroundImage: `url(${AUTH_HERO_BG_URL})`,
-              backgroundPosition: "center center",
-              backgroundSize: "cover",
-              animation: "authBackdropFloat 24s ease-in-out infinite alternate",
-              transformOrigin: "center center",
-              filter: "saturate(0.92) contrast(0.92)",
-            }} className="auth-redesign-backdrop" />
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(90deg, rgba(246,239,228,0.98) 0%, rgba(246,239,228,0.95) 48%, rgba(246,239,228,0.32) 72%, rgba(246,239,228,0.06) 100%)",
-            }} />
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "radial-gradient(circle at 18% 18%, rgba(30,64,175,0.12), transparent 24%), radial-gradient(circle at 58% 82%, rgba(124,58,237,0.10), transparent 26%)",
-            }} />
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              pointerEvents: "none",
-            }} className="auth-redesign-grid" />
-            <div style={{
-              position: "absolute",
-              left: "9%",
-              top: "14%",
-              width: 260,
-              height: 260,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(37,99,235,0.18) 0%, rgba(37,99,235,0.04) 55%, transparent 72%)",
-              filter: "blur(10px)",
-              animation: "authHaloPulse 7s ease-in-out infinite",
-            }} />
-          </>
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, #f7f1e8 0%, #eee5d8 100%)",
+          }} />
         )}
         <div style={{
           position: "relative",
           zIndex: 1,
-          width: "min(1380px, 100%)",
+          width: "100%",
           minHeight: isFullPage ? "100vh" : "auto",
-          padding: isFullPage ? "clamp(28px, 4vw, 48px)" : 0,
           display: "grid",
-          gridTemplateColumns: isFullPage ? undefined : "1fr",
-          alignItems: "stretch",
-          gap: "clamp(24px, 4vw, 60px)",
+          placeItems: "center",
+          padding: isFullPage ? "clamp(28px, 4vw, 48px)" : 0,
           animation: "authPanelLift 0.55s ease-out",
-        }} className="auth-redesign-shell">
-          {isFullPage && (
-            <div style={{
-              display: "grid",
-              alignContent: "space-between",
-              gap: 34,
-              padding: "clamp(10px, 2vw, 22px) 0",
-              minHeight: "calc(100vh - clamp(56px, 8vw, 88px))",
-            }} className="auth-redesign-hero">
-              <div style={{ display: "grid", gap: 22, maxWidth: 640, alignSelf: "start" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "rgba(15,23,42,0.58)", fontFamily: APP_BRAND_STACK, fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase" }}>
-                  <span style={{ width: 42, height: 1, background: "rgba(15,23,42,0.20)", display: "inline-block" }} />
-                  CSC Buddy
-                </div>
-                <div style={{ display: "grid", gap: 16 }}>
-                  <div style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.44)", fontFamily: APP_MONO_STACK, letterSpacing: "0.10em" }}>
-                    Operator Gate / Protected Desk
-                  </div>
-                  <h1 style={{ margin: 0, fontSize: "clamp(3.7rem, 7vw, 6.6rem)", lineHeight: 0.88, letterSpacing: "-0.03em", color: "#111827", fontFamily: APP_BRAND_STACK, fontWeight: 700 }} className="auth-redesign-title">
-                    Secure
-                    <br />
-                    operator desk.
-                  </h1>
-                </div>
-                <p style={{ margin: 0, maxWidth: 520, fontSize: "1rem", lineHeight: 1.85, color: "rgba(15,23,42,0.68)", fontFamily: APP_FONT_STACK }}>
-                  Rebuilt for clarity and focus: a calmer access screen before tickets, records, payments, and the database workspace come into view.
-                </p>
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-                  gap: 12,
-                }}>
-                {featureCards.map((feature) => (
-                  <div
-                    key={feature.label}
-                    style={{
-                      borderRadius: 18,
-                      border: "1px solid rgba(15,23,42,0.10)",
-                      background: "rgba(255,255,255,0.46)",
-                      backdropFilter: "blur(8px)",
-                      padding: "14px 16px",
-                      boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
-                    }}
-                  >
-                    <div style={{ fontSize: "0.64rem", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 7 }}>
-                      {feature.label}
-                    </div>
-                    <div style={{ fontSize: "1rem", color: feature.tone, fontFamily: APP_FONT_STACK, fontWeight: 700, letterSpacing: "-0.01em" }}>
-                      {feature.value}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              </div>
-              <div style={{
-                display: "grid",
-                gap: 12,
-                maxWidth: 560,
-                padding: "18px 20px",
-                borderRadius: 26,
-                border: "1px solid rgba(15,23,42,0.10)",
-                background: "rgba(255,255,255,0.42)",
-                backdropFilter: "blur(10px)",
-                boxShadow: "0 18px 36px rgba(15,23,42,0.08)",
-              }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: APP_BRAND_STACK, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.44)" }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#1d4ed8", display: "inline-block", animation: "authStatusPulse 2.2s ease-in-out infinite" }} />
-                  Access Flow
-                </div>
-                <div style={{ display: "grid", gap: 10 }}>
-                  {authSteps.map((step, index) => (
-                    <div key={step} style={{ display: "grid", gridTemplateColumns: "30px 1fr", gap: 12, alignItems: "start" }}>
-                      <div style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: "50%",
-                        background: "rgba(30,64,175,0.10)",
-                        color: "#1d4ed8",
-                        display: "grid",
-                        placeItems: "center",
-                        fontFamily: APP_BRAND_STACK,
-                        fontSize: "0.70rem",
-                        fontWeight: 700,
-                      }}>
-                        {index + 1}
-                      </div>
-                      <div style={{ fontSize: "0.92rem", color: "rgba(15,23,42,0.72)", fontFamily: APP_FONT_STACK, lineHeight: 1.65 }}>
-                        {step}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+        }}>
           <div style={{
-            alignSelf: "center",
-            justifySelf: isFullPage ? "end" : "center",
-            width: "min(100%, 470px)",
-            maxWidth: "470px",
-            borderRadius: isFullPage ? 34 : 26,
+            width: "min(100%, 440px)",
+            borderRadius: 28,
             border: "1px solid rgba(255,255,255,0.58)",
-            background: isFullPage ? "rgba(255,255,255,0.64)" : "rgba(255,255,255,0.96)",
+            background: "rgba(255,255,255,0.72)",
             backdropFilter: "blur(24px) saturate(150%)",
             WebkitBackdropFilter: "blur(24px) saturate(150%)",
-            boxShadow: isFullPage
-              ? "0 34px 84px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.78)"
-              : "0 24px 64px rgba(15,23,42,0.18)",
+            boxShadow: "0 34px 84px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.78)",
             overflow: "hidden",
             position: "relative",
           }} className="auth-redesign-card">
@@ -4872,26 +4664,10 @@ function DatabaseAccessModal({
             <div style={{
               position: "relative",
               zIndex: 1,
-              padding: isFullPage ? "34px 32px 30px" : "24px 22px",
+              padding: "28px 26px 24px",
               display: "grid",
-              gap: 22,
+              gap: 18,
             }}>
-              <div style={{ display: "grid", gap: 12 }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: busy ? "#0f766e" : "rgba(15,23,42,0.56)", fontFamily: APP_MONO_STACK, fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: busy ? "#059669" : "#1d4ed8", display: "inline-block", animation: "authStatusPulse 2s ease-in-out infinite" }} />
-                  {busy ? "Workspace Loading" : "Secure Verification"}
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  <div style={{ fontFamily: APP_BRAND_STACK, fontSize: isFullPage ? "2.35rem" : "1.38rem", lineHeight: 0.98, color: "#111827", fontWeight: 700 }}>
-                    {busy ? busyTitle : "Unlock access"}
-                  </div>
-                  <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.94rem", lineHeight: 1.75, color: "rgba(15,23,42,0.64)" }}>
-                    {busy
-                      ? busyMessage
-                      : "Enter the private desk code and the current authenticator code to open the protected workspace."}
-                  </div>
-                </div>
-              </div>
               {busy ? (
                 <div style={{
                   display: "grid",
@@ -4914,14 +4690,11 @@ function DatabaseAccessModal({
                         border: "2px solid rgba(15,23,42,0.16)",
                         borderTopColor: "#1d4ed8",
                         display: "inline-block",
-                        animation: "authBackdropFloat 0.95s linear infinite alternate",
+                        animation: "authSpin 0.85s linear infinite",
                       }} />
                       <span style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#1d4ed8" }}>
-                        Preparing Session
+                        Signing In
                       </span>
-                    </div>
-                    <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.92rem", lineHeight: 1.7, color: "rgba(15,23,42,0.66)" }}>
-                      Your verification has been accepted. We’re bringing your protected tools, records, and sync state back into view.
                     </div>
                     <div style={{ height: 8, borderRadius: 999, background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
                       <span style={{
@@ -4937,28 +4710,6 @@ function DatabaseAccessModal({
                 </div>
               ) : (
                 <div style={{ display: "grid", gap: 16 }}>
-                  <div style={{
-                    borderRadius: 18,
-                    border: "1px solid rgba(15,23,42,0.08)",
-                    background: "rgba(248,250,252,0.82)",
-                    padding: "14px 15px",
-                    display: "grid",
-                    gap: 10,
-                  }}>
-                    <div style={{ fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.44)", fontFamily: APP_BRAND_STACK }}>
-                      Access Requirements
-                    </div>
-                    <div style={{ display: "grid", gap: 8 }}>
-                      <div style={{ display: "flex", gap: 10, alignItems: "center", fontFamily: APP_FONT_STACK, fontSize: "0.84rem", color: "rgba(15,23,42,0.68)" }}>
-                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#1d4ed8", display: "inline-block", flexShrink: 0 }} />
-                        Private security code
-                      </div>
-                      <div style={{ display: "flex", gap: 10, alignItems: "center", fontFamily: APP_FONT_STACK, fontSize: "0.84rem", color: "rgba(15,23,42,0.68)" }}>
-                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#7c3aed", display: "inline-block", flexShrink: 0 }} />
-                        Current 6-digit authenticator code
-                      </div>
-                    </div>
-                  </div>
                   <label style={authFieldWrapStyle}>
                     <span style={{ fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(15,23,42,0.48)", fontFamily: APP_BRAND_STACK }}>
                       Security Code
@@ -5041,12 +4792,9 @@ function DatabaseAccessModal({
                     boxShadow: "0 16px 30px rgba(29,78,216,0.20)",
                   }}
                 >
-                  {busy ? "Preparing..." : checking ? "Verifying..." : "Unlock Workspace"}
+                  {busy ? "Opening..." : checking ? "Verifying..." : "Login"}
                 </button>
-                <div style={{ display: "flex", justifyContent: allowClose ? "space-between" : "flex-end", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.79rem", color: "rgba(15,23,42,0.54)", lineHeight: 1.65 }}>
-                    {busy ? "Verification complete. The protected workspace is opening now." : "This verification is private, session-based, and required before database access."}
-                  </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   {allowClose && (
                     <button
                       type="button"
@@ -6339,6 +6087,15 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const [paymentUpi, setPaymentUpi] = useState(() => draftSeed.paymentUpi || "");
   const [ticketTotal, setTicketTotal] = useState(() => draftSeed.ticketTotal ?? "");
   const [vendorAmount, setVendorAmount] = useState(() => draftSeed.vendorAmount ?? "");
+  const [stampDenomValue, setStampDenomValue] = useState("");
+  const [stampDenomQty, setStampDenomQty] = useState("1");
+  const [stampLines, setStampLines] = useState([]);
+  const [serviceRates, setServiceRates] = useState(() => (
+    draftSeed.serviceRates && typeof draftSeed.serviceRates === "object" ? draftSeed.serviceRates : {}
+  ));
+  const [serviceVendorAmounts, setServiceVendorAmounts] = useState(() => (
+    draftSeed.serviceVendorAmounts && typeof draftSeed.serviceVendorAmounts === "object" ? draftSeed.serviceVendorAmounts : {}
+  ));
   const [docName, setDocName] = useState(() => draftSeed.docName || "");
   const [docRequired, setDocRequired] = useState(() => (
     typeof draftSeed.docRequired === "boolean" ? draftSeed.docRequired : true
@@ -6415,7 +6172,14 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     : {};
   const selectedOperatorConfig = getOperatorConfig(operator);
 
-  const total = Math.max(0, Number(ticketTotal) || 0);
+  const total = useMemo(() => items.reduce((sum, item, i) => {
+    const val = Math.max(0, Number(serviceRates[i]) || 0);
+    if (item.id === "inhouse_stamp_paper") return sum + val;
+    return sum + val * Math.max(1, Number(item.qty) || 1);
+  }, 0), [items, serviceRates]);
+  const computedVendorTotal = useMemo(() => items.reduce((sum, _, i) => (
+    sum + Math.max(0, Number(serviceVendorAmounts[i]) || 0)
+  ), 0), [items, serviceVendorAmounts]);
   const cashCollected = Math.max(0, Number(paymentCash) || 0);
   const upiCollected = Math.max(0, Number(paymentUpi) || 0);
   const paidTotal = cashCollected + upiCollected;
@@ -6441,7 +6205,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     [uniqueServiceItems, documents]
   );
   const sanitizePhone = (value) => value.replace(/\D/g, "").slice(0, 10);
-  const hasNoTotal = ticketTotal === "" || ticketTotal === null;
+  const hasNoTotal = total === 0;
   const canSaveTicket = items.length > 0 && !isOverpaid && !hasNoTotal;
   const ENTRY_ACCENT = "#1a56db";
   const ENTRY_ACCENT_TEXT = "#1540b0";
@@ -6573,6 +6337,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     paymentUpi,
     ticketTotal,
     vendorAmount,
+    stampLines,
+    serviceRates,
+    serviceVendorAmounts,
     docName,
     docRequired,
     documents,
@@ -6773,10 +6540,77 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     setError("");
   };
 
+  const shiftRatesDown = (idx) => {
+    setServiceRates((prev) => {
+      const next = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        const ki = Number(k);
+        if (ki < idx) next[ki] = v;
+        else if (ki > idx) next[ki - 1] = v;
+      });
+      return next;
+    });
+    setServiceVendorAmounts((prev) => {
+      const next = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        const ki = Number(k);
+        if (ki < idx) next[ki] = v;
+        else if (ki > idx) next[ki - 1] = v;
+      });
+      return next;
+    });
+  };
+  const shiftRatesUp = (idx) => {
+    setServiceRates((prev) => {
+      const next = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        const ki = Number(k);
+        if (ki < idx) next[ki] = v;
+        else next[ki + 1] = v;
+      });
+      return next;
+    });
+    setServiceVendorAmounts((prev) => {
+      const next = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        const ki = Number(k);
+        if (ki < idx) next[ki] = v;
+        else next[ki + 1] = v;
+      });
+      return next;
+    });
+  };
   const addTask = () => {
     if (!selectedService) return;
     const svc = services.find((s) => s.id === selectedService);
     if (!svc) return;
+    const isStampPaper = svc.id === "inhouse_stamp_paper";
+    if (isStampPaper) {
+      if (stampLines.length === 0) {
+        setError("Add at least one denomination before adding Stamp Paper to the ticket.");
+        return;
+      }
+      const totalStampQty = stampLines.reduce((s, l) => s + l.qty, 0);
+      const faceValueTotal = stampLines.reduce((s, l) => s + l.value * l.qty, 0);
+      const newIndex = items.length;
+      setItems((prev) => [...prev, {
+        ...svc,
+        qty: totalStampQty,
+        stampLines: [...stampLines],
+        unitPrice: 0,
+        amount: 0,
+        detailValues: {},
+        detailSummary: stampLines.map((l) => `${l.qty}×₹${l.value}`).join(", "),
+        done: false,
+      }]);
+      setServiceRates((prev) => ({ ...prev, [newIndex]: String(faceValueTotal) }));
+      setStampLines([]);
+      setStampDenomValue("");
+      setStampDenomQty("1");
+      setSelectedService("");
+      setError("");
+      return;
+    }
     const quantityConfig = getQuantityModeConfig(svc.quantityMode);
     const minQty = svc.minQty || quantityConfig.min;
     const maxQty = svc.maxQty || quantityConfig.defaultMax;
@@ -6865,7 +6699,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const removeTask = (idx) => {
     if (idx < 0 || idx >= items.length) return;
     const removedItem = items[idx];
+    const removedRate = serviceRates[idx];
+    const removedVendorAmt = serviceVendorAmounts[idx];
     setItems((prev) => prev.filter((_, i) => i !== idx));
+    shiftRatesDown(idx);
     queueUndoAction(`Removed service "${removedItem.name}".`, () => {
       setItems((current) => {
         const insertAt = Math.min(idx, current.length);
@@ -6873,6 +6710,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         withUndo.splice(insertAt, 0, removedItem);
         return withUndo;
       });
+      shiftRatesUp(idx);
+      if (removedRate !== undefined) setServiceRates((prev) => ({ ...prev, [idx]: removedRate }));
+      if (removedVendorAmt !== undefined) setServiceVendorAmounts((prev) => ({ ...prev, [idx]: removedVendorAmt }));
     });
     setError("");
   };
@@ -6908,9 +6748,17 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         ? "Partial"
         : "Unpaid";
 
-    const vendorAmountVal = vendorAmount !== "" && vendorAmount !== null
-      ? Math.max(0, Number(vendorAmount) || 0)
-      : null;
+    const vendorAmountVal = computedVendorTotal > 0 ? computedVendorTotal : null;
+    const itemsWithRates = items.map((it, i) => ({
+      ...it,
+      unitPrice: it.id === "inhouse_stamp_paper"
+        ? Math.max(0, Number(serviceRates[i]) || 0)
+        : Math.max(0, Number(serviceRates[i]) || 0),
+      amount: it.id === "inhouse_stamp_paper"
+        ? Math.max(0, Number(serviceRates[i]) || 0)
+        : Math.max(0, Number(serviceRates[i]) || 0) * Math.max(1, Number(it.qty) || 1),
+      vendorAmt: Math.max(0, Number(serviceVendorAmounts[i]) || 0),
+    }));
     const ticket = withStructuredTicket({
       ...ticketMeta,
       status,
@@ -6922,7 +6770,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       pendingBalance,
       vendorAmount: vendorAmountVal,
       operator,
-      items: [...items],
+      items: itemsWithRates,
       documents: [...documents],
       total,
       updatedAt: `${todayStr()} ${timeStr()}`,
@@ -6952,6 +6800,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     setPaymentUpi("");
     setTicketTotal("");
     setVendorAmount("");
+    setStampDenomValue("");
+    setStampDenomQty("1");
+    setStampLines([]);
+    setServiceRates({});
+    setServiceVendorAmounts({});
     setDocName("");
     setDocRequired(true);
     setDocuments([]);
@@ -7425,30 +7278,109 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       ))}
                     </select>
                   </label>
-                  {selectedServiceConfig && (
-                    <>
-                      <label style={{ display: "grid", gap: 7 }}>
-                        <span style={sectionEyebrowStyle}>{selectedQuantityConfig?.inputLabel || "Quantity"}</span>
-                        <input
-                          type="number"
-                          min={selectedServiceConfig?.minQty || 1}
-                          max={selectedServiceConfig?.maxQty || 1}
-                          disabled={selectedServiceConfig?.quantityMode === "fixed"}
-                          value={selectedServiceConfig?.quantityMode === "fixed" ? 1 : qty}
-                          onChange={(e) => setQty(e.target.value)}
-                          style={{ ...inputStyle, textAlign: "center", background: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.82)", color: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.40)" : "#0f172a" }}
-                        />
-                      </label>
-                    </>
+                  {selectedServiceConfig && selectedServiceConfig.id !== "inhouse_stamp_paper" && (
+                    <label style={{ display: "grid", gap: 7 }}>
+                      <span style={sectionEyebrowStyle}>{selectedQuantityConfig?.inputLabel || "Quantity"}</span>
+                      <input
+                        type="number"
+                        min={selectedServiceConfig?.minQty || 1}
+                        max={selectedServiceConfig?.maxQty || 1}
+                        disabled={selectedServiceConfig?.quantityMode === "fixed"}
+                        value={selectedServiceConfig?.quantityMode === "fixed" ? 1 : qty}
+                        onChange={(e) => setQty(e.target.value)}
+                        style={{ ...inputStyle, textAlign: "center", background: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.82)", color: selectedServiceConfig?.quantityMode === "fixed" ? "rgba(15,23,42,0.40)" : "#0f172a" }}
+                      />
+                    </label>
                   )}
                 </div>
+
+                {selectedServiceConfig?.id === "inhouse_stamp_paper" && (
+                  <div style={{ ...softPanelStyle, marginBottom: 14, padding: "14px 15px" }}>
+                    <div style={{ ...sectionEyebrowStyle, marginBottom: 10 }}>Stamp Paper Denominations</div>
+                    <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK, marginBottom: 10, lineHeight: 1.5 }}>
+                      Add each denomination separately. Example: 10 pieces of ₹100, 1 piece of ₹500.
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "end", marginBottom: 10 }}>
+                      <label style={{ display: "grid", gap: 5 }}>
+                        <span style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Value (₹)</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={stampDenomValue}
+                          onChange={(e) => setStampDenomValue(e.target.value)}
+                          placeholder="e.g. 100"
+                          style={{ ...inputStyle }}
+                        />
+                      </label>
+                      <label style={{ display: "grid", gap: 5 }}>
+                        <span style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Quantity</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={stampDenomQty}
+                          onChange={(e) => setStampDenomQty(e.target.value)}
+                          placeholder="e.g. 4"
+                          style={{ ...inputStyle }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const val = Math.round(Number(stampDenomValue));
+                          const qtyN = Math.max(1, Math.round(Number(stampDenomQty)) || 1);
+                          if (!val || val <= 0) { setError("Enter a valid stamp value."); return; }
+                          setStampLines((prev) => {
+                            const existing = prev.findIndex((l) => l.value === val);
+                            if (existing >= 0) {
+                              const next = [...prev];
+                              next[existing] = { ...next[existing], qty: next[existing].qty + qtyN };
+                              return next;
+                            }
+                            return [...prev, { value: val, qty: qtyN }].sort((a, b) => a.value - b.value);
+                          });
+                          setStampDenomValue("");
+                          setStampDenomQty("1");
+                          setError("");
+                        }}
+                        style={{ ...secondaryButtonStyle, padding: "10px 16px", alignSelf: "end" }}
+                      >
+                        + Add
+                      </button>
+                    </div>
+                    {stampLines.length > 0 && (
+                      <div style={{ display: "grid", gap: 6 }}>
+                        {stampLines.map((line, li) => (
+                          <div key={line.value} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.09)", background: "rgba(255,255,255,0.80)" }}>
+                            <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.86rem", color: "#0f172a", fontWeight: 600 }}>
+                              {line.qty} × ₹{line.value.toLocaleString("en-IN")}
+                              <span style={{ marginLeft: 10, fontSize: "0.76rem", color: "rgba(15,23,42,0.45)", fontWeight: 400 }}>= ₹{(line.qty * line.value).toLocaleString("en-IN")}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setStampLines((prev) => prev.filter((_, i) => i !== li))}
+                              style={{ width: 26, height: 26, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 6, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}
+                            >×</button>
+                          </div>
+                        ))}
+                        <div style={{ paddingTop: 6, borderTop: "1px solid rgba(15,23,42,0.08)", fontSize: "0.82rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK, textAlign: "right" }}>
+                          Total: {stampLines.reduce((s, l) => s + l.qty, 0)} pcs — Face value ₹{stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {selectedServiceConfig && (
                   <div style={{ marginBottom: 20 }}>
                     <button onClick={addTask} style={{ ...primaryButtonStyle, padding: "13px 28px" }}>
                       + Add to Ticket
                     </button>
-                    {selectedServiceConfig?.quantityMode !== "fixed" && (
+                    {selectedServiceConfig?.id === "inhouse_stamp_paper" && stampLines.length === 0 && (
+                      <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
+                        Add at least one denomination above
+                      </span>
+                    )}
+                    {selectedServiceConfig?.id !== "inhouse_stamp_paper" && selectedServiceConfig?.quantityMode !== "fixed" && (
                       <span style={{ marginLeft: 12, fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
                         max qty {selectedServiceConfig.maxQty}
                       </span>
@@ -7474,10 +7406,25 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       <div key={i} style={{ ...softPanelStyle, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center" }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.90rem", fontFamily: APP_FONT_STACK }}>{it.name}</div>
-                          <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", marginTop: 2 }}>
-                            {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty}
-                          </div>
-                          {!!it.detailSummary && (
+                          {it.id === "inhouse_stamp_paper" && Array.isArray(it.stampLines) ? (
+                            <div style={{ marginTop: 4 }}>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                                {it.stampLines.map((line) => (
+                                  <span key={line.value} style={{ fontSize: "0.75rem", fontFamily: APP_FONT_STACK, color: "#1540b0", background: "rgba(26,86,219,0.07)", border: "1px solid rgba(26,86,219,0.18)", borderRadius: 5, padding: "2px 7px" }}>
+                                    {line.qty}×₹{line.value.toLocaleString("en-IN")}
+                                  </span>
+                                ))}
+                              </div>
+                              <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
+                                {it.qty} pcs · Face value ₹{it.stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.52)", marginTop: 2 }}>
+                              {getQuantityModeConfig(it.quantityMode).inputLabel} {it.qty}
+                            </div>
+                          )}
+                          {!!it.detailSummary && it.id !== "inhouse_stamp_paper" && (
                             <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.48)", lineHeight: 1.5, marginTop: 3 }}>{it.detailSummary}</div>
                           )}
                         </div>
@@ -7613,29 +7560,93 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     </div>
                   </div>
 
+                  {/* Rate charged per service */}
                   <div style={{ ...softPanelStyle, marginBottom: 14, padding: "14px 16px" }}>
-                    <div style={sectionEyebrowStyle}>Services Summary</div>
-                    <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-                      {items.map((it, i) => (
-                        <div key={i} style={{ fontSize: "0.86rem", color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                          {it.name} ×{it.qty}
-                        </div>
-                      ))}
+                    <div style={sectionEyebrowStyle}>Rate Charged Per Service</div>
+                    <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+                      {items.map((it, i) => {
+                        const rateVal = serviceRates[i] ?? "";
+                        const isStamp = it.id === "inhouse_stamp_paper";
+                        const lineTotal = isStamp
+                          ? Math.max(0, Number(rateVal) || 0)
+                          : Math.max(0, Number(rateVal) || 0) * Math.max(1, Number(it.qty) || 1);
+                        return (
+                          <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 10, alignItems: "center", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(255,255,255,0.82)" }}>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#0f172a", fontFamily: APP_FONT_STACK }}>{it.name}</div>
+                              {isStamp && Array.isArray(it.stampLines) ? (
+                                <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                                  {it.stampLines.map((line) => (
+                                    <span key={line.value} style={{ fontSize: "0.70rem", fontFamily: APP_FONT_STACK, color: "#1540b0", background: "rgba(26,86,219,0.07)", border: "1px solid rgba(26,86,219,0.15)", borderRadius: 4, padding: "1px 6px" }}>
+                                      {line.qty}×₹{line.value.toLocaleString("en-IN")}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div style={{ fontSize: "0.74rem", color: "rgba(15,23,42,0.48)", marginTop: 2 }}>Qty {it.qty}</div>
+                              )}
+                            </div>
+                            <label style={{ display: "grid", gap: 4, minWidth: 110 }}>
+                              <span style={{ fontSize: "0.62rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                                {isStamp ? "Total Amount (₹)" : `Rate per ${it.unit || "unit"} (₹)`}
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={rateVal}
+                                onChange={(e) => setServiceRates((prev) => ({ ...prev, [i]: e.target.value }))}
+                                placeholder="0"
+                                style={{ ...inputStyle, padding: "8px 10px", textAlign: "right", fontSize: "0.92rem", fontWeight: 700 }}
+                              />
+                            </label>
+                            <div style={{ textAlign: "right", minWidth: 80 }}>
+                              <div style={{ fontSize: "0.60rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>Line Total</div>
+                              <div style={{ fontSize: "0.94rem", fontWeight: 700, color: lineTotal > 0 ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.30)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
+                                {lineTotal > 0 ? `₹${lineTotal.toLocaleString("en-IN")}` : "—"}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>Total Amount Charged</span>
+                      <span style={{ fontSize: "1.10rem", fontWeight: 700, color: total > 0 ? "#0f172a" : "rgba(15,23,42,0.30)", fontFamily: APP_FONT_STACK }}>
+                        {total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}
+                      </span>
                     </div>
                   </div>
 
+                  {/* Vendor payment per service */}
+                  <div style={{ ...softPanelStyle, marginBottom: 14, padding: "14px 16px" }}>
+                    <div style={sectionEyebrowStyle}>Vendor Payment Per Service <span style={{ fontSize: "0.65rem", fontWeight: 400, letterSpacing: 0, textTransform: "none", color: "rgba(15,23,42,0.45)" }}>(our actual cost)</span></div>
+                    <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+                      {items.map((it, i) => (
+                        <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(255,255,255,0.82)" }}>
+                          <div style={{ fontWeight: 600, fontSize: "0.86rem", color: "#0f172a", fontFamily: APP_FONT_STACK }}>{it.name}</div>
+                          <label style={{ display: "grid", gap: 0, minWidth: 110 }}>
+                            <input
+                              type="number"
+                              min="0"
+                              value={serviceVendorAmounts[i] ?? ""}
+                              onChange={(e) => setServiceVendorAmounts((prev) => ({ ...prev, [i]: e.target.value }))}
+                              placeholder="₹ 0"
+                              style={{ ...inputStyle, padding: "8px 10px", textAlign: "right", fontSize: "0.88rem" }}
+                            />
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {computedVendorTotal > 0 && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>Total Vendor Payment</span>
+                        <span style={{ fontSize: "1.00rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>₹{computedVendorTotal.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Collection */}
                   <div style={{ maxWidth: 760, margin: "0 auto 14px", display: "grid", gap: 12 }}>
-                    <label style={{ display: "grid", gap: 7 }}>
-                      <span style={{ ...sectionEyebrowStyle, color: ENTRY_ACCENT_TEXT }}>Total Amount (Rs.) <span style={{ fontSize: "0.70rem", fontWeight: 400, color: "rgba(15,23,42,0.50)", textTransform: "none", letterSpacing: 0 }}>— final amount billed to customer</span></span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={ticketTotal}
-                        onChange={(e) => setTicketTotal(e.target.value)}
-                        placeholder="Enter total amount charged"
-                        style={{ ...inputStyle, fontSize: "1.15rem", fontWeight: 700, padding: "14px 16px", textAlign: "right", border: ticketTotal ? `1px solid ${ENTRY_ACCENT_BORDER}` : inputStyle.border }}
-                      />
-                    </label>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
                       <label style={{ display: "grid", gap: 7 }}>
                         <span style={sectionEyebrowStyle}>Cash Collected</span>
@@ -7644,10 +7655,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       <label style={{ display: "grid", gap: 7 }}>
                         <span style={sectionEyebrowStyle}>UPI Collected</span>
                         <input type="number" min="0" value={paymentUpi} onChange={(e) => setPaymentUpi(e.target.value)} placeholder="Rs. 0" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
-                      </label>
-                      <label style={{ display: "grid", gap: 7 }}>
-                        <span style={sectionEyebrowStyle}>Vendor Amount <span style={{ fontSize: "0.70rem", fontWeight: 400, color: "rgba(15,23,42,0.45)", textTransform: "none", letterSpacing: 0 }}>(our actual cost)</span></span>
-                        <input type="number" min="0" value={vendorAmount} onChange={(e) => setVendorAmount(e.target.value)} placeholder="Rs. 0 (optional)" style={{ ...inputStyle, fontSize: "1rem", padding: "12px 14px", textAlign: "right" }} />
                       </label>
                     </div>
                   </div>
@@ -7668,10 +7675,10 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                           <span>Pending Balance</span><span>Rs. {pendingBalance}</span>
                         </div>
                       )}
-                      {vendorAmount !== "" && vendorAmount !== null && (
+                      {computedVendorTotal > 0 && (
                         <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
-                          <span>Vendor Amount (our cost)</span>
-                          <span style={{ color: "#0f172a", fontWeight: 700 }}>Rs. {Math.max(0, Number(vendorAmount) || 0)}</span>
+                          <span>Total Vendor Payment</span>
+                          <span style={{ color: "#0f172a", fontWeight: 700 }}>₹{computedVendorTotal.toLocaleString("en-IN")}</span>
                         </div>
                       )}
                       <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10 }}>
@@ -9512,82 +9519,75 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                 </div>
               </div>
 
-              {activeEntity.entries.length === 0 ? null : (
-                <div style={{ display: "grid", gap: 8 }}>
-                  {activeEntity.entries.slice(0, 6).map((entry) => (
-                    <div key={entry.id} style={{ borderRadius: 12, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(255,255,255,0.78)", padding: "10px 11px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
-                        <div>
-                          <div style={{ fontSize: "0.84rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                            {entry.serviceName || entry.referredClient || "Untitled entry"}
+              {activeEntity.entries.length === 0 ? null : (() => {
+                const dateGroups = [];
+                const dateMap = new Map();
+                activeEntity.entries.forEach((entry) => {
+                  const dk = String(entry.entryDate || "").trim() || "unknown";
+                  if (!dateMap.has(dk)) { dateMap.set(dk, []); dateGroups.push(dk); }
+                  dateMap.get(dk).push(entry);
+                });
+                return (
+                  <div style={{ display: "grid", gap: 14 }}>
+                    {dateGroups.map((dk) => {
+                      const dayEntries = dateMap.get(dk);
+                      const dayTotal = dayEntries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                      const dayPaid = dayEntries.reduce((s, e) => s + (Number(e.paidAmount) || 0), 0);
+                      const dayPending = dayEntries.reduce((s, e) => s + (Number(e.pendingAmount) || 0), 0);
+                      return (
+                        <div key={dk}>
+                          {/* Date separator */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                            <div style={{ fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.20em", textTransform: "uppercase", color: "#1540b0", whiteSpace: "nowrap" }}>
+                              {formatEntryDate(dk)}
+                            </div>
+                            <div style={{ flex: 1, height: 1, background: "rgba(26,86,219,0.15)" }} />
+                            <div style={{ display: "flex", gap: 10, fontSize: "0.68rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.48)", whiteSpace: "nowrap" }}>
+                              {dayTotal > 0 && <span style={{ fontWeight: 600, color: "#0f172a" }}>{fmtMoneyCompact(dayTotal)}</span>}
+                              {dayPending > 0 && <span style={{ color: "#7c2d12", fontWeight: 600 }}>₹{Math.round(dayPending).toLocaleString("en-IN")} due</span>}
+                            </div>
                           </div>
-                          <div style={{ marginTop: 4, fontSize: "0.74rem", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK }}>
-                            {activeTrack === "agent" ? `Client ${entry.referredClient || "N/A"} | Commission ${formatCurrency(entry.amount)}` : `Qty ${entry.quantity} x Rs. ${entry.rate} = ${formatCurrency(entry.amount)}`}
+                          {/* Entries for this date */}
+                          <div style={{ display: "grid", gap: 7 }}>
+                            {dayEntries.map((entry) => (
+                              <div key={entry.id} style={{ borderRadius: 10, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(255,255,255,0.82)", padding: "10px 11px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
+                                  <div>
+                                    <div style={{ fontSize: "0.84rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
+                                      {entry.serviceName || entry.referredClient || "Untitled entry"}
+                                    </div>
+                                    <div style={{ marginTop: 3, fontSize: "0.74rem", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK }}>
+                                      {activeTrack === "agent"
+                                        ? `Client ${entry.referredClient || "N/A"} | Commission ${formatCurrency(entry.amount)}`
+                                        : `Qty ${entry.quantity} × Rs. ${entry.rate} = ${formatCurrency(entry.amount)}`}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: "flex", gap: 6 }}>
+                                    <button type="button" onClick={() => handleEditEntry(entry)} style={{ border: "1px solid rgba(30,64,175,0.28)", borderRadius: 999, background: "rgba(30,64,175,0.08)", color: "#1d4ed8", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Edit</button>
+                                    <button type="button" onClick={() => handleDeleteEntry(entry)} style={{ border: "1px solid rgba(185,28,28,0.24)", borderRadius: 999, background: "rgba(185,28,28,0.08)", color: "#991b1b", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Delete</button>
+                                  </div>
+                                </div>
+                                <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
+                                  {entry.paymentStatus} · {trackMeta.settledLabel} {formatCurrency(entry.paidAmount)} · Pending {formatCurrency(entry.pendingAmount)} · {entry.paymentMode}
+                                </div>
+                                {entry.ecosystem === "agent" && Number(entry.businessAmount) > 0 && (
+                                  <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>Referred business {formatCurrency(entry.businessAmount)}</div>
+                                )}
+                                {entry.ecosystem === "give" && entry.includeInDailyRevenue && (
+                                  <div style={{ marginTop: 3, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#1d4ed8", fontFamily: APP_BRAND_STACK }}>Included in daily revenue</div>
+                                )}
+                                {entry.note && (
+                                  <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>Note: {entry.note}</div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            type="button"
-                            onClick={() => handleEditEntry(entry)}
-                            style={{
-                              border: "1px solid rgba(30,64,175,0.28)",
-                              borderRadius: 999,
-                              background: "rgba(30,64,175,0.08)",
-                              color: "#1d4ed8",
-                              fontSize: "0.56rem",
-                              fontFamily: APP_BRAND_STACK,
-                              fontWeight: 700,
-                              letterSpacing: "0.14em",
-                              textTransform: "uppercase",
-                              padding: "5px 9px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteEntry(entry)}
-                            style={{
-                              border: "1px solid rgba(185,28,28,0.24)",
-                              borderRadius: 999,
-                              background: "rgba(185,28,28,0.08)",
-                              color: "#991b1b",
-                              fontSize: "0.56rem",
-                              fontFamily: APP_BRAND_STACK,
-                              fontWeight: 700,
-                              letterSpacing: "0.14em",
-                              textTransform: "uppercase",
-                              padding: "5px 9px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                      <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
-                        {entry.paymentStatus} | {trackMeta.settledLabel} {formatCurrency(entry.paidAmount)} | {trackMeta.pendingLabel.replace("Total ", "")} {formatCurrency(entry.pendingAmount)} | {entry.paymentMode} | {formatEntryDate(entry.entryDate)}
-                      </div>
-                      {entry.ecosystem === "agent" && Number(entry.businessAmount) > 0 && (
-                        <div style={{ marginTop: 4, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
-                          Referred business {formatCurrency(entry.businessAmount)}
-                        </div>
-                      )}
-                      {entry.ecosystem === "give" && entry.includeInDailyRevenue && (
-                        <div style={{ marginTop: 4, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#1d4ed8", fontFamily: APP_BRAND_STACK }}>
-                          Included in daily revenue
-                        </div>
-                      )}
-                      {entry.note && (
-                        <div style={{ marginTop: 4, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
-                          Note: {entry.note}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
@@ -11780,8 +11780,6 @@ export default function CSCBilling() {
         <DatabaseAccessModal
           allowClose={false}
           busy
-          busyTitle="Restoring workspace"
-          busyMessage="Checking your operator session and bringing the dashboard back into view."
         />
       </div>
     );
