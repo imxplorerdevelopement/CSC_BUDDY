@@ -7748,6 +7748,8 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   const [editTicketNo, setEditTicketNo] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
   const [editDraft, setEditDraft] = useState({
     customerName: "",
     customerPhone: "",
@@ -7803,7 +7805,28 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   const getTypeFilterCount = (nextTypeFilter) => (
     normalizedTickets.filter((ticket) => doesTicketMatchTypeFilter(ticket, nextTypeFilter)).length
   );
-  const filteredTickets = normalizedTickets.filter((ticket) => {
+  const todayKey = getTicketCounterDateKey(new Date());
+  const yesterdayKey = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return getTicketCounterDateKey(d);
+  })();
+  const getTicketDateKey = (ticket) => {
+    const structured = ticket.structured || toStructuredTicket(ticket);
+    return toIsoDateKey(ticket.entryDateKey || structured.meta.createdDate || ticket.date || "") || "";
+  };
+  const getTicketDateBucket = (ticket) => {
+    const key = getTicketDateKey(ticket);
+    if (key === todayKey) return "today";
+    if (key === yesterdayKey) return "yesterday";
+    return "older";
+  };
+  const dateGroupMeta = [
+    { id: "today", label: "Today", caption: todayKey },
+    { id: "yesterday", label: "Yesterday", caption: yesterdayKey },
+    { id: "older", label: "Older", caption: `Before ${yesterdayKey}` },
+  ];
+  const baseFilteredTickets = normalizedTickets.filter((ticket) => {
     const structured = ticket.structured || toStructuredTicket(ticket);
     const matchesType = doesTicketMatchTypeFilter(ticket, typeFilter);
     const matchesPayment = paymentFilter === "all"
@@ -7811,8 +7834,45 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       : structured.payment.status.toLowerCase() === paymentFilter;
     return matchesType && matchesPayment;
   });
-  const openTickets = filteredTickets.filter((t) => t.status === "Open");
+  const filteredTickets = baseFilteredTickets.filter((ticket) => {
+    const ticketStatus = ticket.status === "Closed" ? "Closed" : "Open";
+    const matchesStatus = statusFilter === "all" ? true : ticketStatus === statusFilter;
+    const matchesDate = dateFilter === "all" ? true : getTicketDateBucket(ticket) === dateFilter;
+    return matchesStatus && matchesDate;
+  }).sort((a, b) => {
+    const byDate = getTicketDateKey(b).localeCompare(getTicketDateKey(a));
+    if (byDate !== 0) return byDate;
+    return String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || ""));
+  });
+  const openTickets = filteredTickets.filter((t) => t.status !== "Closed");
   const closedTickets = filteredTickets.filter((t) => t.status === "Closed");
+  const groupedOpenTickets = dateGroupMeta.map((group) => ({
+    ...group,
+    tickets: openTickets.filter((ticket) => getTicketDateBucket(ticket) === group.id),
+  }));
+  const groupedClosedTickets = dateGroupMeta.map((group) => ({
+    ...group,
+    tickets: closedTickets.filter((ticket) => getTicketDateBucket(ticket) === group.id),
+  }));
+  const statusCountTickets = baseFilteredTickets.filter((ticket) => (
+    dateFilter === "all" ? true : getTicketDateBucket(ticket) === dateFilter
+  ));
+  const dateCountTickets = baseFilteredTickets.filter((ticket) => (
+    statusFilter === "all" ? true : ticket.status === statusFilter
+  ));
+  const statusFilterOptions = [
+    { id: "all", label: "All", count: statusCountTickets.length },
+    { id: "Open", label: "Open", count: statusCountTickets.filter((ticket) => ticket.status !== "Closed").length },
+    { id: "Closed", label: "Closed", count: statusCountTickets.filter((ticket) => ticket.status === "Closed").length },
+  ];
+  const dateFilterOptions = [
+    { id: "all", label: "All Dates", count: dateCountTickets.length },
+    ...dateGroupMeta.map((group) => ({
+      id: group.id,
+      label: group.label,
+      count: dateCountTickets.filter((ticket) => getTicketDateBucket(ticket) === group.id).length,
+    })),
+  ];
   const totalTasks = filteredTickets.reduce((sum, t) => sum + t.items.length, 0);
   const doneTasks = filteredTickets.reduce((sum, t) => sum + t.items.filter((it) => it.done).length, 0);
   const activeTypeFilterLabel = typeFilterOptions.find((option) => option.id === typeFilter)?.label || "All Types";
@@ -8122,6 +8182,148 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     padding: "7px 9px",
     cursor: "pointer",
   };
+  const getStatusBadgeStyle = (status) => {
+    const isClosed = status === "Closed";
+    return {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 999,
+      border: `1px solid ${isClosed ? "rgba(100,116,139,0.24)" : "rgba(5,150,105,0.30)"}`,
+      background: isClosed ? "rgba(100,116,139,0.10)" : "rgba(5,150,105,0.11)",
+      color: isClosed ? "#475569" : OPS.success,
+      fontFamily: APP_BRAND_STACK,
+      fontSize: "0.56rem",
+      fontWeight: 800,
+      letterSpacing: "0.13em",
+      textTransform: "uppercase",
+      padding: "4px 9px",
+      lineHeight: 1,
+      whiteSpace: "nowrap",
+    };
+  };
+  const getTicketStatus = (ticket) => ticket.status === "Closed" ? "Closed" : "Open";
+  const renderStatusBadge = (ticket) => {
+    const status = getTicketStatus(ticket);
+    return <span style={getStatusBadgeStyle(status)}>{status}</span>;
+  };
+  const renderTicketCard = (ticket) => {
+    const structured = ticket.structured || toStructuredTicket(ticket);
+    const active = viewingTicket?.ticketNo === ticket.ticketNo;
+    const status = getTicketStatus(ticket);
+    const isClosed = status === "Closed";
+    const paymentTone = structured.payment.status === "Paid"
+      ? STATUS_THEME.success
+      : structured.payment.status === "Partial"
+        ? STATUS_THEME.warning
+        : STATUS_THEME.danger;
+    return (
+      <div
+        key={ticket.ticketNo}
+        style={{
+          border: active ? `1px solid ${OPS.primaryBorder}` : `1px solid ${isClosed ? "rgba(100,116,139,0.16)" : OPS.borderSoft}`,
+          borderLeft: active ? `4px solid ${OPS.primary}` : `4px solid ${isClosed ? "rgba(100,116,139,0.26)" : OPS.success}`,
+          background: active ? OPS.primarySoft : isClosed ? "rgba(248,250,252,0.82)" : OPS.surface,
+          borderRadius: 10,
+          padding: "10px 10px 10px 12px",
+          display: "grid",
+          gap: 8,
+          boxShadow: active ? "0 10px 22px rgba(26,86,219,0.12)" : "none",
+          opacity: isClosed ? 0.82 : 1,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginBottom: 3 }}>
+              <span style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_MONO_STACK }}>{ticket.ticketNo}</span>
+              {renderStatusBadge(ticket)}
+            </div>
+            <div style={{ fontSize: "0.9rem", fontWeight: isClosed ? 600 : 750, color: OPS.text, fontFamily: APP_FONT_STACK, lineHeight: 1.25 }}>
+              {ticket.customerName || "Unknown customer"}
+            </div>
+          </div>
+          <div style={{ color: paymentTone.text, background: paymentTone.bg, border: `1px solid ${paymentTone.border}`, borderRadius: 999, padding: "3px 8px", fontSize: "0.66rem", fontWeight: 700, fontFamily: APP_FONT_STACK, whiteSpace: "nowrap" }}>
+            {structured.payment.status}
+          </div>
+        </div>
+        <div style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK, lineHeight: 1.5 }}>
+          {structured.meta.primaryType || "Unassigned"} | Rs. {ticket.total || 0} | Pending Rs. {structured.payment.pendingBalance}
+        </div>
+        <div style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
+          Created {getTicketDateBucket(ticket) === "today" ? "Today" : getTicketDateBucket(ticket) === "yesterday" ? "Yesterday" : (getTicketDateKey(ticket) || "N/A")} {structured.meta.createdTime || ""}
+        </div>
+        <div
+          ref={openMenuTicketNo === ticket.ticketNo ? overflowMenuRef : null}
+          style={{ display: "flex", gap: 6, flexWrap: "wrap", position: "relative" }}
+        >
+          <button onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); setOpenMenuTicketNo(null); }} style={listActionStyle}>
+            {active ? "Viewing" : "View"}
+          </button>
+          <button
+            onClick={() => setOpenMenuTicketNo((prev) => (prev === ticket.ticketNo ? null : ticket.ticketNo))}
+            aria-label={`More actions for ${ticket.ticketNo}`}
+            aria-expanded={openMenuTicketNo === ticket.ticketNo}
+            style={{ ...listActionStyle, minWidth: 40, textAlign: "center", padding: "7px 12px" }}
+          >
+            ...
+          </button>
+          {openMenuTicketNo === ticket.ticketNo && (
+            <div style={overflowMenuStyle}>
+              <button onClick={() => { startEdit(ticket); setOpenMenuTicketNo(null); }} style={overflowMenuItemStyle}>Edit</button>
+              <button onClick={() => { printTicketSlip(ticket); setOpenMenuTicketNo(null); }} style={overflowMenuItemStyle}>Print</button>
+              {status === "Open" ? (
+                <button
+                  onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Closed"); setOpenMenuTicketNo(null); }}
+                  style={{ ...overflowMenuItemStyle, border: "1px solid rgba(22,101,52,0.28)", background: "rgba(22,101,52,0.10)", color: OPS.success }}
+                >
+                  Close
+                </button>
+              ) : (
+                <button
+                  onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Open"); setOpenMenuTicketNo(null); }}
+                  style={{ ...overflowMenuItemStyle, border: "1px solid rgba(161,98,7,0.28)", background: "rgba(161,98,7,0.10)", color: OPS.warning }}
+                >
+                  Reopen
+                </button>
+              )}
+              <button
+                onClick={() => { handleDeleteTicket(ticket); setOpenMenuTicketNo(null); }}
+                style={{ ...overflowMenuItemStyle, border: "1px solid rgba(220, 38, 38, 0.34)", background: "rgba(220, 38, 38, 0.10)", color: OPS.danger }}
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+  const renderDateGroup = (group) => (
+    group.tickets.length === 0 ? null : (
+      <div key={group.id} style={{ display: "grid", gap: 6 }}>
+        <div style={{
+          position: "sticky",
+          top: -10,
+          zIndex: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 8,
+          padding: "7px 3px 5px",
+          background: "rgba(255,255,255,0.94)",
+          borderBottom: `1px solid ${OPS.borderSoft}`,
+        }}>
+          <span style={{ fontSize: "0.68rem", fontFamily: APP_BRAND_STACK, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: OPS.textMuted }}>
+            {group.label}
+          </span>
+          <span style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
+            {group.caption} | {group.tickets.length}
+          </span>
+        </div>
+        {group.tickets.map((ticket) => renderTicketCard(ticket))}
+      </div>
+    )
+  );
   const closeConfirmDialog = () => {
     setConfirmDialog({
       isOpen: false,
@@ -8211,6 +8413,55 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
               Showing {filteredTickets.length} of {normalizedTickets.length}
             </div>
           </div>
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" }}>
+            {statusFilterOptions.map((option) => {
+              const active = statusFilter === option.id;
+              const isOpenChip = option.id === "Open";
+              return (
+                <button
+                  key={`ticket_status_filter_${option.id}`}
+                  type="button"
+                  onClick={() => setStatusFilter(option.id)}
+                  style={{
+                    borderRadius: 999,
+                    border: active ? `1px solid ${isOpenChip ? "rgba(5,150,105,0.36)" : OPS.primaryBorder}` : `1px solid ${OPS.border}`,
+                    background: active ? (isOpenChip ? "rgba(5,150,105,0.11)" : OPS.primarySoft) : OPS.surfaceMuted,
+                    color: active ? (isOpenChip ? OPS.success : OPS.primary) : OPS.textMuted,
+                    padding: "7px 11px",
+                    fontSize: "0.74rem",
+                    fontWeight: 700,
+                    fontFamily: APP_FONT_STACK,
+                    cursor: "pointer",
+                  }}
+                >
+                  {option.label} {option.count}
+                </button>
+              );
+            })}
+            {dateFilterOptions.map((option) => {
+              const active = dateFilter === option.id;
+              return (
+                <button
+                  key={`ticket_date_filter_${option.id}`}
+                  type="button"
+                  onClick={() => setDateFilter(option.id)}
+                  style={{
+                    borderRadius: 999,
+                    border: active ? `1px solid ${OPS.primaryBorder}` : `1px solid ${OPS.border}`,
+                    background: active ? OPS.primarySoft : "rgba(255,255,255,0.70)",
+                    color: active ? OPS.primary : OPS.textMuted,
+                    padding: "7px 11px",
+                    fontSize: "0.74rem",
+                    fontWeight: 700,
+                    fontFamily: APP_FONT_STACK,
+                    cursor: "pointer",
+                  }}
+                >
+                  {option.label} {option.count}
+                </button>
+              );
+            })}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
             <label style={{ display: "grid", gap: 6 }}>
               <span style={dashLabel}>Type Filter</span>
@@ -8275,70 +8526,43 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                 </button>
               </div>
             ) : (
-              filteredTickets.map((ticket) => {
-                const structured = ticket.structured || toStructuredTicket(ticket);
-                const active = viewingTicket?.ticketNo === ticket.ticketNo;
-                const paymentTone = structured.payment.status === "Paid"
-                  ? STATUS_THEME.success
-                  : structured.payment.status === "Partial"
-                    ? STATUS_THEME.warning
-                    : STATUS_THEME.danger;
-                return (
-                  <div key={ticket.ticketNo} style={{ border: active ? `1px solid ${OPS.primaryBorder}` : `1px solid ${OPS.borderSoft}`, background: active ? OPS.primarySoft : OPS.surface, borderRadius: 10, padding: 10, display: "grid", gap: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                      <div>
-                        <div style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_MONO_STACK }}>{ticket.ticketNo}</div>
-                        <div style={{ fontSize: "0.88rem", fontWeight: 600, color: OPS.text, fontFamily: APP_FONT_STACK }}>{ticket.customerName}</div>
+              <div style={{ display: "grid", gap: 12 }}>
+                {statusFilter !== "Closed" && (
+                  <section style={{ display: "grid", gap: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "3px 2px" }}>
+                      <span style={{ fontSize: "0.7rem", fontFamily: APP_BRAND_STACK, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: OPS.success }}>
+                        Open Tickets
+                      </span>
+                      <span style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{openTickets.length}</span>
+                    </div>
+                    {openTickets.length === 0 ? (
+                      <div style={{ border: `1px dashed ${OPS.border}`, borderRadius: 10, padding: 12, color: OPS.textMuted, fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
+                        No open tickets in this view.
                       </div>
-                      <div style={{ fontSize: "0.72rem", fontWeight: 700, color: paymentTone.text, fontFamily: APP_FONT_STACK }}>{structured.payment.status}</div>
+                    ) : (
+                      groupedOpenTickets.map(renderDateGroup)
+                    )}
+                  </section>
+                )}
+
+                {statusFilter !== "Open" && (
+                  <section style={{ display: "grid", gap: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "8px 2px 3px", borderTop: `1px solid ${OPS.borderSoft}` }}>
+                      <span style={{ fontSize: "0.7rem", fontFamily: APP_BRAND_STACK, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: OPS.textMuted }}>
+                        Closed Tickets
+                      </span>
+                      <span style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{closedTickets.length}</span>
                     </div>
-                    <div style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
-                      {structured.meta.primaryType || "Unassigned"}  |  Rs. {ticket.total || 0}  |  Pending Rs. {structured.payment.pendingBalance}
-                    </div>
-                    <div
-                      ref={openMenuTicketNo === ticket.ticketNo ? overflowMenuRef : null}
-                      style={{ display: "flex", gap: 6, flexWrap: "wrap", position: "relative" }}
-                    >
-                      <button onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); setOpenMenuTicketNo(null); }} style={listActionStyle}>View</button>
-                      <button
-                        onClick={() => setOpenMenuTicketNo((prev) => (prev === ticket.ticketNo ? null : ticket.ticketNo))}
-                        aria-label={`More actions for ${ticket.ticketNo}`}
-                        aria-expanded={openMenuTicketNo === ticket.ticketNo}
-                        style={{ ...listActionStyle, minWidth: 40, textAlign: "center", padding: "7px 12px" }}
-                      >
-                        ...
-                      </button>
-                      {openMenuTicketNo === ticket.ticketNo && (
-                        <div style={overflowMenuStyle}>
-                          <button onClick={() => { startEdit(ticket); setOpenMenuTicketNo(null); }} style={overflowMenuItemStyle}>Edit</button>
-                          <button onClick={() => { printTicketSlip(ticket); setOpenMenuTicketNo(null); }} style={overflowMenuItemStyle}>Print</button>
-                          {ticket.status === "Open" ? (
-                            <button
-                              onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Closed"); setOpenMenuTicketNo(null); }}
-                              style={{ ...overflowMenuItemStyle, border: "1px solid rgba(22,101,52,0.28)", background: "rgba(22,101,52,0.10)", color: OPS.success }}
-                            >
-                              Close
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Open"); setOpenMenuTicketNo(null); }}
-                              style={{ ...overflowMenuItemStyle, border: "1px solid rgba(161,98,7,0.28)", background: "rgba(161,98,7,0.10)", color: OPS.warning }}
-                            >
-                              Reopen
-                            </button>
-                          )}
-                          <button
-                            onClick={() => { handleDeleteTicket(ticket); setOpenMenuTicketNo(null); }}
-                            style={{ ...overflowMenuItemStyle, border: "1px solid rgba(220, 38, 38, 0.34)", background: "rgba(220, 38, 38, 0.10)", color: OPS.danger }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
+                    {closedTickets.length === 0 ? (
+                      <div style={{ border: `1px dashed ${OPS.border}`, borderRadius: 10, padding: 12, color: OPS.textMuted, fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
+                        No closed tickets in this view.
+                      </div>
+                    ) : (
+                      groupedClosedTickets.map(renderDateGroup)
+                    )}
+                  </section>
+                )}
+              </div>
             )}
           </div>
 
@@ -8347,10 +8571,16 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
               <div style={{ color: OPS.textMuted, fontFamily: APP_FONT_STACK, fontSize: "0.86rem" }}>Select a ticket from the left list to inspect full details.</div>
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap", borderBottom: `1px solid ${OPS.borderSoft}`, paddingBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_MONO_STACK }}>{viewingTicket.ticketNo}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                      <span style={{ fontSize: "0.72rem", color: OPS.textMuted, fontFamily: APP_MONO_STACK }}>{viewingTicket.ticketNo}</span>
+                      {renderStatusBadge(viewingTicket)}
+                    </div>
                     <div style={{ fontSize: "1rem", fontWeight: 700, color: OPS.text, fontFamily: APP_FONT_STACK }}>{viewingTicket.customerName}</div>
+                    <div style={{ marginTop: 3, fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>
+                      Created {getTicketDateBucket(viewingTicket) === "today" ? "Today" : getTicketDateBucket(viewingTicket) === "yesterday" ? "Yesterday" : (getTicketDateKey(viewingTicket) || "N/A")} {viewingStructured.meta.createdTime || ""}
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <button onClick={() => setShowRawJson((prev) => !prev)} style={listActionStyle}>{showRawJson ? "Hide JSON" : "Show JSON"}</button>

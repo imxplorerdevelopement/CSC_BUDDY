@@ -4,6 +4,7 @@
 - Fix Vendor Dashboard entry deletion so deleted B2B/vendor ledger entries stay deleted after refresh.
 - Remove service subtitle/description lines from the Vendor Dashboard vendor detail header area.
 - Fix home appointment reminders so appointments booked for today are visible, not only tomorrow.
+- Reconstruct Ticket Dashboard browsing so tickets are separated by status and grouped by Today, Yesterday, and Older.
 
 ## Root Cause
 - Vendor delete was only filtering React state in `deleteB2BLedgerEntry`.
@@ -27,6 +28,12 @@
   - Removed the Vendor Dashboard services/subtitle block under the selected vendor header.
   - Added `todayAppts`, `reminderAppts`, and `reminderIsToday` in `HomeLaunchpad`.
   - Updated the home reminder card to show today appointments first, otherwise tomorrow appointments.
+  - Added Ticket Dashboard status filters for All, Open, and Closed.
+  - Added Ticket Dashboard date filters for All Dates, Today, Yesterday, and Older.
+  - Replaced the mixed ticket stream with Open Tickets and Closed Tickets sections.
+  - Grouped each status section by Today, Yesterday, and Older.
+  - Added visible Open/Closed badges to ticket cards and the selected ticket detail header.
+  - Strengthened the selected ticket card state with border, accent bar, and active View label.
 
 ## Backend/API Considerations
 - No new API endpoint is required.
@@ -43,3 +50,5 @@
 - [ ] Book an appointment for today and confirm the home screen shows a Today appointment reminder.
 - [ ] Book only a tomorrow appointment and confirm the home screen still shows the Tomorrow reminder.
 - [x] Run production build with `npm.cmd run build`.
+- [x] Confirm Ticket Dashboard build passes after status/date grouping implementation.
+- [ ] Manually verify Ticket Dashboard with mixed open/closed tickets across today, yesterday, and older dates.
