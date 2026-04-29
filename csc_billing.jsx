@@ -2430,8 +2430,9 @@ function BootLoadingScreen() {
   );
 }
 
-function HomeLaunchpad({ onOpenSection, onLogout, appointments = [] }) {
+function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpiresAt = "" }) {
   const [now, setNow] = useState(() => new Date());
+  const fallbackSessionExpiresAtRef = useRef(Date.now() + 30 * 60 * 1000);
   const todayISO = getTicketCounterDateKey(new Date());
   const tomorrowISO = (() => {
     const d = new Date();
@@ -2485,6 +2486,16 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [] }) {
     second: "2-digit",
     hour12: true,
   });
+  const sessionExpiresMs = (() => {
+    const parsed = Date.parse(sessionExpiresAt || "");
+    return Number.isFinite(parsed) ? parsed : fallbackSessionExpiresAtRef.current;
+  })();
+  const sessionRemainingMs = Math.max(0, sessionExpiresMs - now.getTime());
+  const sessionRemainingMinutes = Math.floor(sessionRemainingMs / 60000);
+  const sessionRemainingSeconds = Math.floor((sessionRemainingMs % 60000) / 1000);
+  const sessionRemainingLabel = sessionRemainingMs <= 0
+    ? "Expired"
+    : `${String(sessionRemainingMinutes).padStart(2, "0")}:${String(sessionRemainingSeconds).padStart(2, "0")}`;
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -2683,6 +2694,25 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [] }) {
               color: "rgba(15,23,42,0.62)",
             }}>
               {displayDate}
+            </div>
+            <div style={{
+              marginTop: 10,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              borderRadius: 999,
+              border: "1px solid rgba(37,99,235,0.18)",
+              background: "rgba(37,99,235,0.07)",
+              padding: "5px 10px",
+              fontFamily: APP_FONT_STACK,
+              fontSize: "0.76rem",
+              fontWeight: 700,
+              color: sessionRemainingMs <= 5 * 60 * 1000 ? "#991b1b" : "rgba(15,23,42,0.66)",
+            }}>
+              <span style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.56rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(26,86,219,0.72)" }}>
+                Logout in
+              </span>
+              <span style={{ fontFamily: APP_MONO_STACK }}>{sessionRemainingLabel}</span>
             </div>
           </div>
           <span style={{
@@ -7907,6 +7937,8 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   });
   const [openMenuTicketNo, setOpenMenuTicketNo] = useState(null);
   const overflowMenuRef = useRef(null);
+  const overflowMenuPopoverRef = useRef(null);
+  const [overflowMenuPosition, setOverflowMenuPosition] = useState(null);
 
   const normalizedTickets = tickets.map((t) => (t.structured ? t : withStructuredTicket(t)));
   const typeFilterOptions = [
@@ -8007,6 +8039,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   const activeTypeFilterLabel = typeFilterOptions.find((option) => option.id === typeFilter)?.label || "All Types";
   const activePaymentFilterLabel = paymentFilterOptions.find((option) => option.id === paymentFilter)?.label || "All Payments";
   const viewingTicket = normalizedTickets.find((t) => t.ticketNo === viewTicketNo) || null;
+  const overflowMenuTicket = normalizedTickets.find((t) => t.ticketNo === openMenuTicketNo) || null;
   const viewingStructured = viewingTicket ? (viewingTicket.structured || toStructuredTicket(viewingTicket)) : null;
   const editingTicket = normalizedTickets.find((t) => t.ticketNo === editTicketNo) || null;
   const detailCardStyle = {
@@ -8285,16 +8318,14 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     color: OPS.danger,
   };
   const overflowMenuStyle = {
-    position: "absolute",
-    right: 0,
-    top: "100%",
-    marginTop: 6,
-    zIndex: 10,
+    position: "fixed",
+    zIndex: 1000,
     minWidth: 170,
+    maxWidth: "calc(100vw - 24px)",
     borderRadius: 10,
     border: `1px solid ${OPS.border}`,
     background: "#ffffff",
-    boxShadow: "0 12px 30px rgba(15,23,42,0.14)",
+    boxShadow: "0 18px 42px rgba(15,23,42,0.18)",
     padding: 6,
     display: "grid",
     gap: 4,
@@ -8336,11 +8367,74 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     const status = getTicketStatus(ticket);
     return <span style={getStatusBadgeStyle(status)}>{status}</span>;
   };
+  const positionOverflowMenu = (button) => {
+    if (typeof window === "undefined" || !button?.getBoundingClientRect) return null;
+    const rect = button.getBoundingClientRect();
+    const menuWidth = 178;
+    const menuHeight = 190;
+    const gap = 8;
+    const viewportWidth = window.innerWidth || 0;
+    const viewportHeight = window.innerHeight || 0;
+    const preferredRight = rect.right + gap;
+    const preferredLeft = rect.left - menuWidth - gap;
+    const left = preferredRight + menuWidth <= viewportWidth - 12
+      ? preferredRight
+      : preferredLeft >= 12
+        ? preferredLeft
+        : Math.max(12, Math.min(rect.left, viewportWidth - menuWidth - 12));
+    const top = Math.max(12, Math.min(rect.top, viewportHeight - menuHeight - 12));
+    return { left, top };
+  };
+  const toggleOverflowMenu = (ticketNo, event) => {
+    setOpenMenuTicketNo((current) => {
+      if (current === ticketNo) {
+        setOverflowMenuPosition(null);
+        return null;
+      }
+      setOverflowMenuPosition(positionOverflowMenu(event.currentTarget));
+      return ticketNo;
+    });
+  };
+  const closeOverflowMenu = () => {
+    setOpenMenuTicketNo(null);
+    setOverflowMenuPosition(null);
+  };
+  const renderOverflowMenu = (ticket, extraStyle = {}) => {
+    const status = getTicketStatus(ticket);
+    return (
+      <div ref={overflowMenuPopoverRef} style={{ ...overflowMenuStyle, ...extraStyle }}>
+        <button onClick={() => { startEdit(ticket); closeOverflowMenu(); }} style={overflowMenuItemStyle}>Edit</button>
+        <button onClick={() => { printTicketSlip(ticket); closeOverflowMenu(); }} style={overflowMenuItemStyle}>Print</button>
+        {status === "Open" ? (
+          <button
+            onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Closed"); closeOverflowMenu(); }}
+            style={{ ...overflowMenuItemStyle, border: "1px solid rgba(22,101,52,0.28)", background: "rgba(22,101,52,0.10)", color: OPS.success }}
+          >
+            Close
+          </button>
+        ) : (
+          <button
+            onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Open"); closeOverflowMenu(); }}
+            style={{ ...overflowMenuItemStyle, border: "1px solid rgba(161,98,7,0.28)", background: "rgba(161,98,7,0.10)", color: OPS.warning }}
+          >
+            Reopen
+          </button>
+        )}
+        <button
+          onClick={() => { handleDeleteTicket(ticket); closeOverflowMenu(); }}
+          style={{ ...overflowMenuItemStyle, border: "1px solid rgba(220, 38, 38, 0.34)", background: "rgba(220, 38, 38, 0.10)", color: OPS.danger }}
+        >
+          Delete
+        </button>
+      </div>
+    );
+  };
   const renderTicketCard = (ticket) => {
     const structured = ticket.structured || toStructuredTicket(ticket);
     const active = viewingTicket?.ticketNo === ticket.ticketNo;
     const status = getTicketStatus(ticket);
     const isClosed = status === "Closed";
+    const isMenuOpen = openMenuTicketNo === ticket.ticketNo;
     const paymentTone = structured.payment.status === "Paid"
       ? STATUS_THEME.success
       : structured.payment.status === "Partial"
@@ -8359,6 +8453,8 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           gap: 8,
           boxShadow: active ? "0 10px 22px rgba(26,86,219,0.12)" : "none",
           opacity: isClosed ? 0.82 : 1,
+          position: "relative",
+          zIndex: isMenuOpen ? 40 : 1,
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
@@ -8382,47 +8478,20 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           Created {getTicketDateBucket(ticket) === "today" ? "Today" : getTicketDateBucket(ticket) === "yesterday" ? "Yesterday" : (getTicketDateKey(ticket) || "N/A")} {structured.meta.createdTime || ""}
         </div>
         <div
-          ref={openMenuTicketNo === ticket.ticketNo ? overflowMenuRef : null}
-          style={{ display: "flex", gap: 6, flexWrap: "wrap", position: "relative" }}
+          ref={isMenuOpen ? overflowMenuRef : null}
+          style={{ display: "flex", gap: 6, flexWrap: "wrap", position: "relative", zIndex: isMenuOpen ? 50 : 1 }}
         >
           <button onClick={() => { setViewTicketNo(ticket.ticketNo); setShowRawJson(false); setOpenMenuTicketNo(null); }} style={listActionStyle}>
             {active ? "Viewing" : "View"}
           </button>
           <button
-            onClick={() => setOpenMenuTicketNo((prev) => (prev === ticket.ticketNo ? null : ticket.ticketNo))}
+            onClick={(event) => toggleOverflowMenu(ticket.ticketNo, event)}
             aria-label={`More actions for ${ticket.ticketNo}`}
             aria-expanded={openMenuTicketNo === ticket.ticketNo}
             style={{ ...listActionStyle, minWidth: 40, textAlign: "center", padding: "7px 12px" }}
           >
             ...
           </button>
-          {openMenuTicketNo === ticket.ticketNo && (
-            <div style={overflowMenuStyle}>
-              <button onClick={() => { startEdit(ticket); setOpenMenuTicketNo(null); }} style={overflowMenuItemStyle}>Edit</button>
-              <button onClick={() => { printTicketSlip(ticket); setOpenMenuTicketNo(null); }} style={overflowMenuItemStyle}>Print</button>
-              {status === "Open" ? (
-                <button
-                  onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Closed"); setOpenMenuTicketNo(null); }}
-                  style={{ ...overflowMenuItemStyle, border: "1px solid rgba(22,101,52,0.28)", background: "rgba(22,101,52,0.10)", color: OPS.success }}
-                >
-                  Close
-                </button>
-              ) : (
-                <button
-                  onClick={() => { onToggleTicketStatus(ticket.ticketNo, "Open"); setOpenMenuTicketNo(null); }}
-                  style={{ ...overflowMenuItemStyle, border: "1px solid rgba(161,98,7,0.28)", background: "rgba(161,98,7,0.10)", color: OPS.warning }}
-                >
-                  Reopen
-                </button>
-              )}
-              <button
-                onClick={() => { handleDeleteTicket(ticket); setOpenMenuTicketNo(null); }}
-                style={{ ...overflowMenuItemStyle, border: "1px solid rgba(220, 38, 38, 0.34)", background: "rgba(220, 38, 38, 0.10)", color: OPS.danger }}
-              >
-                Delete
-              </button>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -8452,6 +8521,41 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
         {group.tickets.map((ticket) => renderTicketCard(ticket))}
       </div>
     )
+  );
+  const renderTicketColumn = ({ title, count, tone, groups, emptyMessage }) => (
+    <section style={{
+      minWidth: 0,
+      border: `1px solid ${OPS.borderSoft}`,
+      borderRadius: 12,
+      background: "rgba(255,255,255,0.74)",
+      display: "grid",
+      gridTemplateRows: "auto minmax(0, 1fr)",
+      overflow: "hidden",
+    }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 8,
+        padding: "10px 12px",
+        borderBottom: `1px solid ${OPS.borderSoft}`,
+        background: "rgba(248,250,252,0.86)",
+      }}>
+        <span style={{ fontSize: "0.7rem", fontFamily: APP_BRAND_STACK, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: tone }}>
+          {title}
+        </span>
+        <span style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{count}</span>
+      </div>
+      <div style={{ display: "grid", alignContent: "start", gap: 10, padding: 10, maxHeight: "62vh", overflowY: "auto", overflowX: "hidden" }}>
+        {count === 0 ? (
+          <div style={{ border: `1px dashed ${OPS.border}`, borderRadius: 10, padding: 12, color: OPS.textMuted, fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
+            {emptyMessage}
+          </div>
+        ) : (
+          groups.map(renderDateGroup)
+        )}
+      </div>
+    </section>
   );
   const closeConfirmDialog = () => {
     setConfirmDialog({
@@ -8524,12 +8628,21 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
   useEffect(() => {
     if (!openMenuTicketNo) return undefined;
     const handleOutsideClick = (event) => {
-      if (overflowMenuRef.current && !overflowMenuRef.current.contains(event.target)) {
-        setOpenMenuTicketNo(null);
+      const clickedTrigger = overflowMenuRef.current?.contains(event.target);
+      const clickedPopover = overflowMenuPopoverRef.current?.contains(event.target);
+      if (!clickedTrigger && !clickedPopover) {
+        closeOverflowMenu();
       }
     };
+    const handleViewportChange = () => closeOverflowMenu();
     document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("scroll", handleViewportChange, true);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange, true);
+    };
   }, [openMenuTicketNo]);
 
   if (true) {
@@ -8644,7 +8757,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
         )}
 
         <div className="csc-ticket-dashboard-grid" style={{ gap: 12, alignItems: "start" }}>
-          <div style={{ ...dashboardCard, padding: 10, display: "grid", gap: 8, maxHeight: "68vh", overflowY: "auto" }}>
+          <div style={{ ...dashboardCard, padding: 10, display: "grid", gap: 10, overflow: "visible" }}>
             {filteredTickets.length === 0 ? (
               <div className="csc-empty-state" style={{ margin: 6 }}>
                 <div className="csc-empty-state-icon">TK</div>
@@ -8655,41 +8768,33 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                 </button>
               </div>
             ) : (
-              <div style={{ display: "grid", gap: 12 }}>
+              <div
+                className="csc-ticket-status-columns"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: statusFilter === "all" ? "repeat(2, minmax(260px, 1fr))" : "1fr",
+                  gap: 12,
+                  alignItems: "start",
+                }}
+              >
                 {statusFilter !== "Closed" && (
-                  <section style={{ display: "grid", gap: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "3px 2px" }}>
-                      <span style={{ fontSize: "0.7rem", fontFamily: APP_BRAND_STACK, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: OPS.success }}>
-                        Open Tickets
-                      </span>
-                      <span style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{openTickets.length}</span>
-                    </div>
-                    {openTickets.length === 0 ? (
-                      <div style={{ border: `1px dashed ${OPS.border}`, borderRadius: 10, padding: 12, color: OPS.textMuted, fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
-                        No open tickets in this view.
-                      </div>
-                    ) : (
-                      groupedOpenTickets.map(renderDateGroup)
-                    )}
-                  </section>
+                  renderTicketColumn({
+                    title: "Open Tickets",
+                    count: openTickets.length,
+                    tone: OPS.success,
+                    groups: groupedOpenTickets,
+                    emptyMessage: "No open tickets in this view.",
+                  })
                 )}
 
                 {statusFilter !== "Open" && (
-                  <section style={{ display: "grid", gap: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "8px 2px 3px", borderTop: `1px solid ${OPS.borderSoft}` }}>
-                      <span style={{ fontSize: "0.7rem", fontFamily: APP_BRAND_STACK, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: OPS.textMuted }}>
-                        Closed Tickets
-                      </span>
-                      <span style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{closedTickets.length}</span>
-                    </div>
-                    {closedTickets.length === 0 ? (
-                      <div style={{ border: `1px dashed ${OPS.border}`, borderRadius: 10, padding: 12, color: OPS.textMuted, fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
-                        No closed tickets in this view.
-                      </div>
-                    ) : (
-                      groupedClosedTickets.map(renderDateGroup)
-                    )}
-                  </section>
+                  renderTicketColumn({
+                    title: "Closed Tickets",
+                    count: closedTickets.length,
+                    tone: OPS.textMuted,
+                    groups: groupedClosedTickets,
+                    emptyMessage: "No closed tickets in this view.",
+                  })
                 )}
               </div>
             )}
@@ -8712,6 +8817,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <button onClick={() => { setViewTicketNo(null); setShowRawJson(false); }} style={{ ...listActionStyle, border: `1px solid ${OPS.border}`, background: OPS.surfaceMuted, color: OPS.textMuted }}>Close Details</button>
                     <button onClick={() => setShowRawJson((prev) => !prev)} style={listActionStyle}>{showRawJson ? "Hide JSON" : "Show JSON"}</button>
                     <button onClick={() => handleDeleteTicket(viewingTicket)} style={dangerActionStyle}>Delete Ticket</button>
                   </div>
@@ -8777,6 +8883,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
             )}
           </div>
         </div>
+        {overflowMenuTicket && overflowMenuPosition && renderOverflowMenu(overflowMenuTicket, overflowMenuPosition)}
       </div>
     );
   }
@@ -12003,7 +12110,10 @@ export default function CSCBilling() {
         }
         .csc-ticket-dashboard-grid {
           display: grid;
-          grid-template-columns: minmax(320px, 1fr) minmax(0, 1.3fr);
+          grid-template-columns: minmax(520px, 1.25fr) minmax(320px, 0.9fr);
+        }
+        .csc-ticket-status-columns {
+          min-width: 0;
         }
         .csc-customers-grid {
           display: grid;
@@ -12053,6 +12163,7 @@ export default function CSCBilling() {
         }
         @media (max-width: 1100px) {
           .csc-ticket-dashboard-grid { grid-template-columns: 1fr !important; }
+          .csc-ticket-status-columns { grid-template-columns: 1fr !important; }
           .csc-db-main-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 1024px) {
@@ -12366,6 +12477,7 @@ export default function CSCBilling() {
                 onOpenSection={(sectionId) => navigateTab(sectionId)}
                 onLogout={lockDatabaseAccess}
                 appointments={appointments}
+                sessionExpiresAt={dashboardSessionExpiresAt}
               />
             )}
             <TabPanel active={tab === "entry"}>
