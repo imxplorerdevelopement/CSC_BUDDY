@@ -8559,7 +8559,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
         </span>
         <span style={{ fontSize: "0.76rem", color: OPS.textMuted, fontFamily: APP_FONT_STACK }}>{count}</span>
       </div>
-      <div style={{ display: "grid", alignContent: "start", gap: 10, padding: 10, maxHeight: "62vh", overflowY: "auto", overflowX: "hidden" }}>
+      <div className="csc-ticket-column-scroll" style={{ display: "grid", alignContent: "start", gap: 10, padding: 10, maxHeight: "62vh", overflowY: "auto", overflowX: "hidden" }}>
         {count === 0 ? (
           <div style={{ border: `1px dashed ${OPS.border}`, borderRadius: 10, padding: 12, color: OPS.textMuted, fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
             {emptyMessage}
@@ -12208,6 +12208,23 @@ export default function CSCBilling() {
         }
         .csc-ticket-status-columns {
           min-width: 0;
+        }
+        .csc-ticket-column-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(13,27,42,0.18) transparent;
+        }
+        .csc-ticket-column-scroll::-webkit-scrollbar {
+          width: 5px;
+        }
+        .csc-ticket-column-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .csc-ticket-column-scroll::-webkit-scrollbar-thumb {
+          background: rgba(13,27,42,0.16);
+          border-radius: 999px;
+        }
+        .csc-ticket-column-scroll:hover::-webkit-scrollbar-thumb {
+          background: rgba(13,27,42,0.26);
         }
         .csc-customers-grid {
           display: grid;
