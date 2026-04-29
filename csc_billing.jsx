@@ -5,6 +5,19 @@ import { DocumentToolsWorkspace } from "./src/workspaces/document-tools/Document
 import { ServicesDashboardWorkspace } from "./src/workspaces/services-dashboard/ServicesDashboardWorkspace.jsx";
 import { AppointmentsWorkspace } from "./src/workspaces/appointments/AppointmentsWorkspace.jsx";
 import { SERVICE_REGISTRY, SERVICE_CATEGORIES } from "./src/workspaces/services-dashboard/registry.js";
+import authFallbackBg from "./src/assets/auth-hero-bg.jpg";
+
+const AUTH_SLIDESHOW_INTERVAL_MS = 6500;
+const AUTH_SLIDESHOW_IMAGES = Object.values(
+  import.meta.glob("./src/assets/auth-slideshow/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP,AVIF}", {
+    eager: true,
+    import: "default",
+    query: "?url",
+  })
+);
+const AUTH_SLIDE_ROTATION_BY_NAME = {
+  "0e180ae7b31cce67ce4b0b36cb939d5e.jpg": -90,
+};
 
 // Map registry category IDs to the billing category names used by
 // CATEGORY_DETAIL_SCHEMA_IDS and the service-entry dropdown grouping.
@@ -4507,6 +4520,83 @@ function HackerUnlockAnimation({ phase, onDone }) {
   );
 }
 
+function AuthSlideshowBackground() {
+  const slides = AUTH_SLIDESHOW_IMAGES.length ? AUTH_SLIDESHOW_IMAGES : [authFallbackBg];
+  const [activeIndex, setActiveIndex] = useState(() => Math.floor(Math.random() * slides.length));
+  const [portraitMap, setPortraitMap] = useState({});
+
+  useEffect(() => {
+    setActiveIndex(Math.floor(Math.random() * slides.length));
+    setPortraitMap({});
+  }, [slides.length]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return undefined;
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => {
+        const nextOffset = Math.floor(Math.random() * (slides.length - 1)) + 1;
+        return (current + nextOffset) % slides.length;
+      });
+    }, AUTH_SLIDESHOW_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [slides.length]);
+
+  const getSlideRotation = (src) => {
+    const cleanSrc = String(src || "").split("?")[0];
+    const fileName = decodeURIComponent(cleanSrc.substring(cleanSrc.lastIndexOf("/") + 1));
+    const matchedEntry = Object.entries(AUTH_SLIDE_ROTATION_BY_NAME).find(([sourceName]) => {
+      const extensionIndex = sourceName.lastIndexOf(".");
+      const baseName = extensionIndex >= 0 ? sourceName.slice(0, extensionIndex) : sourceName;
+      return fileName === sourceName || fileName.startsWith(`${baseName}-`);
+    });
+    return matchedEntry?.[1] ?? (portraitMap[src] ? 90 : 0);
+  };
+
+  const handleImageLoad = (src, event) => {
+    const image = event.currentTarget;
+    if (!image?.naturalWidth || !image?.naturalHeight) return;
+    const isPortrait = image.naturalHeight > image.naturalWidth;
+    setPortraitMap((current) => current[src] === isPortrait ? current : { ...current, [src]: isPortrait });
+  };
+
+  return (
+    <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", background: "#0f172a" }}>
+      {slides.map((src, index) => {
+        const rotation = getSlideRotation(src);
+        const isRotated = Math.abs(rotation) === 90 || Math.abs(rotation) === 270;
+        return (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            onLoad={(event) => handleImageLoad(src, event)}
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              width: isRotated ? "100vh" : "100%",
+              height: isRotated ? "100vw" : "100%",
+              maxWidth: "none",
+              maxHeight: "none",
+              objectFit: "cover",
+              opacity: index === activeIndex ? 1 : 0,
+              transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+              transformOrigin: "center",
+              transition: "opacity 1.2s ease",
+              filter: "saturate(0.96) contrast(1.01)",
+            }}
+          />
+        );
+      })}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(90deg, rgba(15,23,42,0.58) 0%, rgba(15,23,42,0.26) 44%, rgba(239,233,222,0.34) 100%), linear-gradient(180deg, rgba(255,255,255,0.18), rgba(15,23,42,0.22))",
+      }} />
+    </div>
+  );
+}
+
 function DatabaseAccessModal({
   onClose,
   onVerify,
@@ -4621,13 +4711,7 @@ function DatabaseAccessModal({
         display: "grid",
         placeItems: "center",
       }}>
-        {isFullPage && (
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(180deg, #f7f1e8 0%, #eee5d8 100%)",
-          }} />
-        )}
+        {isFullPage && <AuthSlideshowBackground />}
         <div style={{
           position: "relative",
           zIndex: 1,
