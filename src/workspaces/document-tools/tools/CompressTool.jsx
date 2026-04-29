@@ -311,7 +311,7 @@ function ResultsList({ results }) {
           color: DT.text,
         }}>
           <span>
-            {r.source} -> {formatBytes(r.original)} <span style={{ color: DT.textMuted }}>to</span> {formatBytes(r.final)}
+            {r.source} {"->"} {formatBytes(r.original)} <span style={{ color: DT.textMuted }}>to</span> {formatBytes(r.final)}
             {r.width && r.height ? ` @ ${r.width}x${r.height}px` : ""}
             {r.profile ? ` @ ${r.profile}` : ""}
             {!r.reachedTarget ? <span style={{ color: DT.textMuted }}> · best effort</span> : null}
