@@ -270,7 +270,7 @@ function FilterBar({ active, onChange, counts }) {
               fontFamily: AP.mono,
               fontSize: "0.70rem",
               color: isActive ? AP.primary : AP.textSubtle,
-              background: isActive ? "rgba(26,86,219,0.12)" : AP.surfaceMuted,
+              background: isActive ? "rgba(9,153,142,0.12)" : AP.surfaceMuted,
               borderRadius: 99,
               padding: "1px 7px",
             }}>

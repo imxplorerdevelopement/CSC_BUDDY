@@ -1,6 +1,6 @@
 /**
  * CSC Buddy Design Tokens - IMxplorer Design System
- * Variation 5: White and Blue Ops Theme
+ * Variation 5: White and Teal Ops Theme
  */
 
 export const DS = {
@@ -11,19 +11,19 @@ export const DS = {
   cream:       "#ffffff",
   creamSoft:   "#f4f7fa",
   creamText:   "#eef2f7",
-  wine:        "#1a56db",
-  gold:        "#2563eb",
-  goldDark:    "#1540b0",
+  wine:        "#067366",
+  gold:        "#09998e",
+  goldDark:    "#045a50",
   redBright:   "#dc2626",
   inkBlack:    "#0d1b2a",
 
   // Category semantic accents
   cat: {
-    "Government ID":        "#1a56db",
-    "Certificates":         "#0284c7",
-    "Legal & Docs":         "#1540b0",
-    "Government Services":  "#2563eb",
-    "Typing & Print":       "#3b82f6",
+    "Government ID":        "#067366",
+    "Certificates":         "#09998e",
+    "Legal & Docs":         "#045a50",
+    "Government Services":  "#2caea5",
+    "Typing & Print":       "#7fc8c1",
   },
 
   // Foreground tiers on dark

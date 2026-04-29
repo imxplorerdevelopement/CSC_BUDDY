@@ -10,19 +10,19 @@ export const DT = {
   bg: "#f8fafc",
   surface: "#ffffff",
   surfaceMuted: "#f1f5f9",
-  surfaceActive: "rgba(37,99,235,0.08)",
+  surfaceActive: "rgba(9,153,142,0.08)",
 
   border: "rgba(15,23,42,0.12)",
   borderSoft: "rgba(15,23,42,0.08)",
-  borderAccent: "rgba(37,99,235,0.35)",
+  borderAccent: "rgba(9,153,142,0.35)",
 
   text: "#0f172a",
   textMuted: "#475569",
   textSubtle: "rgba(15,23,42,0.55)",
 
-  primary: "#2563eb",
-  primaryDark: "#1d4ed8",
-  primarySoft: "rgba(37,99,235,0.12)",
+  primary: "#09998e",
+  primaryDark: "#067366",
+  primarySoft: "rgba(9,153,142,0.12)",
 
   success: "#166534",
   successSoft: "rgba(22,101,52,0.10)",

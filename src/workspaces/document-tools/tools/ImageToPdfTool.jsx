@@ -253,7 +253,7 @@ export function ImageToPdfTool({ onQueue }) {
                     borderRadius: DT.rSm,
                     background: isDragTarget ? DT.primarySoft : DT.surface,
                     opacity: isDragging ? 0.4 : 1,
-                    boxShadow: isDragTarget ? "0 0 0 2px rgba(37,99,235,0.18)" : "none",
+                    boxShadow: isDragTarget ? "0 0 0 2px rgba(9,153,142,0.18)" : "none",
                     transition: "border-color 120ms ease, background 120ms ease, box-shadow 120ms ease",
                     cursor: "grab",
                     userSelect: "none",

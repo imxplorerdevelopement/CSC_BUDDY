@@ -9,15 +9,15 @@ export const SD = {
 
   border: "rgba(13,27,42,0.10)",
   borderSoft: "rgba(13,27,42,0.06)",
-  borderAccent: "rgba(26,86,219,0.30)",
+  borderAccent: "rgba(9,153,142,0.30)",
 
   text: "#0d1b2a",
   textMuted: "#3d5068",
   textSubtle: "rgba(13,27,42,0.52)",
 
-  primary: "#1a56db",
-  primaryDark: "#1540b0",
-  primarySoft: "rgba(26,86,219,0.09)",
+  primary: "#067366",
+  primaryDark: "#045a50",
+  primarySoft: "rgba(9,153,142,0.09)",
 
   shadowSoft: "0 1px 3px rgba(13,27,42,0.06), 0 0 0 1px rgba(13,27,42,0.05)",
 

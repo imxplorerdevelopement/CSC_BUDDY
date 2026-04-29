@@ -204,7 +204,7 @@ function CustomerIcon({ active }) {
         width: 32,
         height: 32,
         borderRadius: 999,
-        background: active ? "rgba(37,99,235,0.15)" : DT.surfaceMuted,
+        background: active ? "rgba(9,153,142,0.15)" : DT.surfaceMuted,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",

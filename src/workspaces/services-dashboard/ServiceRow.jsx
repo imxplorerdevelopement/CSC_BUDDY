@@ -6,8 +6,8 @@ const FLAG_BORDER  = "rgba(220,38,38,0.30)";
 const FLAG_TEXT    = "#b91c1c";
 const FLAG_ACCENT  = "#dc2626";
 
-const COST_BG      = "rgba(26,86,219,0.06)";
-const COST_BORDER  = "rgba(26,86,219,0.18)";
+const COST_BG      = "rgba(9,153,142,0.06)";
+const COST_BORDER  = "rgba(9,153,142,0.18)";
 
 
 /**

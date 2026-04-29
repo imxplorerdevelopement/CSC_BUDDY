@@ -77,17 +77,17 @@ const INITIAL_SERVICES = SERVICE_REGISTRY.map((entry) => ({
 
 const CATEGORIES = SERVICE_CATEGORIES.map((c) => REGISTRY_CAT_TO_BILLING[c.id] || c.id);
 const CAT_COLORS = {
-  "PAN Card":               "#2563eb",
-  "Aadhaar Card":           "#0284c7",
-  "Certificates":           "#0ea5e9",
-  "Government IDs":         "#1d4ed8",
-  "In House":               "#6d28d9",
-  "Agreements & Affidavits":"#1540b0",
+  "PAN Card":               "#09998e",
+  "Aadhaar Card":           "#09998e",
+  "Certificates":           "#56b3aa",
+  "Government IDs":         "#067366",
+  "In House":               "#0f766e",
+  "Agreements & Affidavits":"#045a50",
   // legacy fallbacks for any old stored ticket data
-  "Government ID":          "#2563eb",
-  "Legal & Docs":           "#1d4ed8",
-  "Government Services":    "#3b82f6",
-  "Typing & Print":         "#60a5fa",
+  "Government ID":          "#09998e",
+  "Legal & Docs":           "#067366",
+  "Government Services":    "#2caea5",
+  "Typing & Print":         "#7fc8c1",
 };
 
 const OPERATOR_DIRECTORY = [
@@ -206,9 +206,9 @@ const DELETE_ACCESS_CODE = "241100";
 const MENU_OPTION_STYLE = { color: "#0f172a", backgroundColor: "#ffffff" };
 const MENU_OPTGROUP_STYLE = { color: "rgba(15,23,42,0.58)", backgroundColor: "#f1f5f9" };
 const OFFLINE_DEV_ACCESS_ENABLED = import.meta.env.DEV && String(import.meta.env.VITE_ENABLE_OFFLINE_DEV_ACCESS || "").trim().toLowerCase() === "true";
-const BRAND_PRIMARY = "#1a56db";
-const BRAND_PRIMARY_DARK = "#1540b0";
-const BRAND_PRIMARY_SOFT = "rgba(26,86,219,0.12)";
+const BRAND_PRIMARY = "#067366";
+const BRAND_PRIMARY_DARK = "#045a50";
+const BRAND_PRIMARY_SOFT = "rgba(6,115,102,0.12)";
 const NEGOTIATION_FACTOR_MIN = 0.5;
 const NEGOTIATION_FACTOR_MAX = 1.5;
 const NEGOTIATION_FACTOR_STEP = 0.05;
@@ -248,9 +248,9 @@ const OPS = {
   borderSoft: "rgba(13,27,42,0.07)",
   text: "#0d1b2a",
   textMuted: "#3d5068",
-  primary: "#1a56db",
-  primarySoft: "rgba(26,86,219,0.10)",
-  primaryBorder: "rgba(26,86,219,0.32)",
+  primary: "#067366",
+  primarySoft: "rgba(6,115,102,0.10)",
+  primaryBorder: "rgba(6,115,102,0.32)",
   success: "#059669",
   successSoft: "rgba(5,150,105,0.10)",
   warning: "#b45309",
@@ -262,9 +262,9 @@ const OPS = {
 };
 const STATUS_THEME = {
   info: {
-    text: "#1a56db",
-    bg: "rgba(26,86,219,0.09)",
-    border: "rgba(26,86,219,0.24)",
+    text: "#067366",
+    bg: "rgba(6,115,102,0.09)",
+    border: "rgba(6,115,102,0.24)",
   },
   success: {
     text: "#059669",
@@ -536,7 +536,7 @@ const B2B_TRACK_META = {
   },
 };
 const B2B_ROLE_BADGE_META = {
-  take: { label: "Supplies to Us", color: "#1e3a8a", border: "rgba(30,58,138,0.28)", background: "rgba(30,58,138,0.08)" },
+  take: { label: "Supplies to Us", color: "#045a50", border: "rgba(4,90,80,0.28)", background: "rgba(4,90,80,0.08)" },
   give: { label: "Buys from Us", color: "#0f766e", border: "rgba(15,118,110,0.28)", background: "rgba(15,118,110,0.10)" },
   agent: { label: "Agent", color: "#7c2d12", border: "rgba(124,45,18,0.24)", background: "rgba(124,45,18,0.08)" },
 };
@@ -2319,7 +2319,7 @@ function BootLoadingScreen() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "radial-gradient(circle at 18% 12%, rgba(59,130,246,0.16), transparent 36%), linear-gradient(160deg, #f8fbff 0%, #eef4ff 52%, #f8fbff 100%)",
+      background: "radial-gradient(circle at 18% 12%, rgba(86,179,170,0.16), transparent 36%), linear-gradient(160deg, #f7fcfb 0%, #edf8f6 52%, #f7fcfb 100%)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -2355,8 +2355,8 @@ function BootLoadingScreen() {
           width: 34,
           height: 34,
           borderRadius: 10,
-          background: "rgba(37,99,235,0.13)",
-          border: "1px solid rgba(37,99,235,0.28)",
+          background: "rgba(9,153,142,0.13)",
+          border: "1px solid rgba(9,153,142,0.28)",
           display: "grid",
           placeItems: "center",
           animation: "cscDiceTilt 1.2s ease-in-out infinite",
@@ -2369,7 +2369,7 @@ function BootLoadingScreen() {
                   width: 5,
                   height: 5,
                   borderRadius: "50%",
-                  background: "#1d4ed8",
+                  background: "#067366",
                   display: "inline-block",
                 }}
               />
@@ -2382,7 +2382,7 @@ function BootLoadingScreen() {
           letterSpacing: "0.20em",
           textTransform: "uppercase",
           fontWeight: 700,
-          color: "#1d4ed8",
+          color: "#067366",
         }}>
           CSC BUDDY
         </div>
@@ -2397,8 +2397,8 @@ function BootLoadingScreen() {
           width: "100%",
           height: 8,
           borderRadius: 999,
-          background: "rgba(37,99,235,0.12)",
-          border: "1px solid rgba(37,99,235,0.16)",
+          background: "rgba(9,153,142,0.12)",
+          border: "1px solid rgba(9,153,142,0.16)",
           overflow: "hidden",
           position: "relative",
         }}>
@@ -2410,7 +2410,7 @@ function BootLoadingScreen() {
             left: 0,
             width: "42%",
             borderRadius: 999,
-            background: "linear-gradient(90deg, rgba(37,99,235,0.18) 0%, rgba(37,99,235,0.85) 52%, rgba(37,99,235,0.18) 100%)",
+            background: "linear-gradient(90deg, rgba(9,153,142,0.18) 0%, rgba(9,153,142,0.85) 52%, rgba(9,153,142,0.18) 100%)",
             animation: "cscBarShimmer 1.35s ease-in-out infinite",
           }} />
         </div>
@@ -2420,7 +2420,7 @@ function BootLoadingScreen() {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: "#2563eb",
+              background: "#09998e",
               animation: `cscDotWave 1.05s ${idx * 0.14}s infinite`,
             }} />
           ))}
@@ -2510,7 +2510,7 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "radial-gradient(circle at 14% 6%, rgba(59,130,246,0.16), transparent 32%), radial-gradient(circle at 85% 85%, rgba(14,165,233,0.12), transparent 28%), #f8fbff",
+      background: "radial-gradient(circle at 14% 6%, rgba(86,179,170,0.16), transparent 32%), radial-gradient(circle at 85% 85%, rgba(86,179,170,0.12), transparent 28%), #f7fcfb",
     }}>
       <style>{`
         .home-launchpad-shell {
@@ -2539,7 +2539,7 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
         .home-launchpad-button:hover {
           transform: translateY(-1px);
           box-shadow: 0 10px 22px rgba(15,23,42,0.08);
-          border-color: rgba(37,99,235,0.36);
+          border-color: rgba(9,153,142,0.36);
         }
         @media (max-width: 900px) {
           .home-launchpad-top {
@@ -2653,7 +2653,7 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
       <div className="home-launchpad-top">
         <div style={{
           borderRadius: 18,
-          border: "1px solid rgba(37,99,235,0.24)",
+          border: "1px solid rgba(9,153,142,0.24)",
           background: "linear-gradient(135deg, rgba(239,246,255,0.96), rgba(255,255,255,0.92))",
           boxShadow: "0 10px 26px rgba(15,23,42,0.08)",
           padding: "18px 20px",
@@ -2670,7 +2670,7 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
               fontSize: "0.68rem",
               letterSpacing: 0,
               textTransform: "uppercase",
-              color: "rgba(26,86,219,0.72)",
+              color: "rgba(6,115,102,0.72)",
               marginBottom: 6,
             }}>
               Current Date & Time
@@ -2701,15 +2701,15 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
               alignItems: "center",
               gap: 8,
               borderRadius: 999,
-              border: "1px solid rgba(37,99,235,0.18)",
-              background: "rgba(37,99,235,0.07)",
+              border: "1px solid rgba(9,153,142,0.18)",
+              background: "rgba(9,153,142,0.07)",
               padding: "5px 10px",
               fontFamily: APP_FONT_STACK,
               fontSize: "0.76rem",
               fontWeight: 700,
               color: sessionRemainingMs <= 5 * 60 * 1000 ? "#991b1b" : "rgba(15,23,42,0.66)",
             }}>
-              <span style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.56rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(26,86,219,0.72)" }}>
+              <span style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.56rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(6,115,102,0.72)" }}>
                 Logout in
               </span>
               <span style={{ fontFamily: APP_MONO_STACK }}>{sessionRemainingLabel}</span>
@@ -2719,9 +2719,9 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
             width: 48,
             height: 48,
             borderRadius: 14,
-            border: "1px solid rgba(37,99,235,0.25)",
-            background: "rgba(37,99,235,0.10)",
-            color: "#1d4ed8",
+            border: "1px solid rgba(9,153,142,0.25)",
+            background: "rgba(9,153,142,0.10)",
+            color: "#067366",
             display: "grid",
             placeItems: "center",
             flexShrink: 0,
@@ -2808,7 +2808,7 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
                     style={{
                       minHeight: 62,
                       borderRadius: 14,
-                      border: item.id === "database" ? "1px solid rgba(220,38,38,0.28)" : "1px solid rgba(37,99,235,0.24)",
+                      border: item.id === "database" ? "1px solid rgba(220,38,38,0.28)" : "1px solid rgba(9,153,142,0.24)",
                       background: item.id === "database" ? "linear-gradient(160deg, rgba(220,38,38,0.08), rgba(248,113,113,0.03))" : "rgba(239,246,255,0.64)",
                       padding: "15px 14px",
                       textAlign: "left",
@@ -2881,7 +2881,7 @@ function ConfirmDialog({
           <button onClick={onCancel} style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 999, background: "rgba(255,255,255,0.82)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
             {cancelLabel}
           </button>
-          <button onClick={onConfirm} style={{ border: "1px solid rgba(37,99,235,0.38)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: DS.wine, fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
+          <button onClick={onConfirm} style={{ border: "1px solid rgba(9,153,142,0.38)", borderRadius: 999, background: "rgba(9,153,142,0.12)", color: DS.wine, fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
             {confirmLabel}
           </button>
         </div>
@@ -2907,7 +2907,7 @@ function SessionExpiryWarningModal({ expiresAt, onDismiss }) {
           Your dashboard session will expire {expiresLabel ? `at ${expiresLabel}` : "in about 5 minutes"}. Keep your authenticator code handy so you can re-authenticate without interruption.
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button onClick={onDismiss} style={{ border: "1px solid rgba(37,99,235,0.38)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: DS.wine, fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
+          <button onClick={onDismiss} style={{ border: "1px solid rgba(9,153,142,0.38)", borderRadius: 999, background: "rgba(9,153,142,0.12)", color: DS.wine, fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
             Got it
           </button>
         </div>
@@ -2952,7 +2952,7 @@ function AccessCodeDialog({
           style={{ width: "100%", padding: "11px 12px", borderRadius: 10, border: error ? "1px solid rgba(214,5,43,0.40)" : "1px solid rgba(15,23,42,0.16)", background: "rgba(255,255,255,0.86)", color: "#0f172a", outline: "none", fontFamily: APP_MONO_STACK, fontSize: "0.88rem", marginBottom: error ? 8 : 14 }}
         />
         {error && (
-          <div style={{ marginBottom: 12, color: "#1d4ed8", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
+          <div style={{ marginBottom: 12, color: "#067366", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>
             {error}
           </div>
         )}
@@ -2960,7 +2960,7 @@ function AccessCodeDialog({
           <button onClick={onCancel} style={{ border: "1px solid rgba(15,23,42,0.16)", borderRadius: 999, background: "rgba(255,255,255,0.82)", color: "rgba(15,23,42,0.72)", fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
             Cancel
           </button>
-          <button onClick={onConfirm} style={{ border: "1px solid rgba(37,99,235,0.38)", borderRadius: 999, background: "rgba(37,99,235,0.12)", color: DS.wine, fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
+          <button onClick={onConfirm} style={{ border: "1px solid rgba(9,153,142,0.38)", borderRadius: 999, background: "rgba(9,153,142,0.12)", color: DS.wine, fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", padding: "10px 14px", cursor: "pointer" }}>
             Verify
           </button>
         </div>
@@ -2994,10 +2994,10 @@ function QuickLinksWorkspace({
           <button
             onClick={onToggleAddQuickLink}
             style={{
-              border: "1px solid rgba(37,99,235,0.28)",
+              border: "1px solid rgba(9,153,142,0.28)",
               borderRadius: 10,
-              background: "rgba(37,99,235,0.10)",
-              color: "#1d4ed8",
+              background: "rgba(9,153,142,0.10)",
+              color: "#067366",
               fontFamily: APP_BRAND_STACK,
               fontSize: "0.62rem",
               fontWeight: 700,
@@ -3060,10 +3060,10 @@ function QuickLinksWorkspace({
               <button
                 onClick={() => onOpenQuickLink(link.url)}
                 style={{
-                  border: "1px solid rgba(37,99,235,0.30)",
+                  border: "1px solid rgba(9,153,142,0.30)",
                   borderRadius: 9,
-                  background: "rgba(37,99,235,0.10)",
-                  color: "#1d4ed8",
+                  background: "rgba(9,153,142,0.10)",
+                  color: "#067366",
                   fontFamily: APP_BRAND_STACK,
                   fontSize: "0.58rem",
                   fontWeight: 700,
@@ -3421,9 +3421,9 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                 <div
                   key={section.id}
                   style={{
-                    border: i === 0 ? "1px solid rgba(26,86,219,0.18)" : "1px solid rgba(13,27,42,0.08)",
+                    border: i === 0 ? "1px solid rgba(6,115,102,0.18)" : "1px solid rgba(13,27,42,0.08)",
                     borderRadius: 8,
-                    background: i === 0 ? "rgba(26,86,219,0.05)" : "#ffffff",
+                    background: i === 0 ? "rgba(6,115,102,0.05)" : "#ffffff",
                     color: i === 0 ? "rgba(21,64,176,0.45)" : "rgba(13,27,42,0.35)",
                     padding: "8px 12px",
                     fontFamily: APP_BRAND_STACK,
@@ -3508,7 +3508,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ height: 8, width: 110, borderRadius: 4, background: "rgba(15,23,42,0.07)" }} />
                     <div style={{ display: "flex", gap: 6 }}>
-                      <div style={{ height: 26, width: 42, borderRadius: 7, background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.10)" }} />
+                      <div style={{ height: 26, width: 42, borderRadius: 7, background: "rgba(9,153,142,0.06)", border: "1px solid rgba(9,153,142,0.10)" }} />
                       <div style={{ height: 26, width: 46, borderRadius: 7, background: "rgba(220,38,38,0.05)", border: "1px solid rgba(220,38,38,0.08)" }} />
                     </div>
                   </div>
@@ -4802,11 +4802,11 @@ function DatabaseAccessModal({
                         height: 16,
                         borderRadius: "50%",
                         border: "2px solid rgba(15,23,42,0.16)",
-                        borderTopColor: "#1d4ed8",
+                        borderTopColor: "#067366",
                         display: "inline-block",
                         animation: "authSpin 0.85s linear infinite",
                       }} />
-                      <span style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#1d4ed8" }}>
+                      <span style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#067366" }}>
                         Signing In
                       </span>
                     </div>
@@ -4816,7 +4816,7 @@ function DatabaseAccessModal({
                         width: "42%",
                         height: "100%",
                         borderRadius: 999,
-                        background: "linear-gradient(90deg, rgba(29,78,216,0.26) 0%, rgba(29,78,216,0.88) 52%, rgba(29,78,216,0.26) 100%)",
+                        background: "linear-gradient(90deg, rgba(6,115,102,0.26) 0%, rgba(6,115,102,0.88) 52%, rgba(6,115,102,0.26) 100%)",
                         animation: "authScan 1.85s ease-in-out infinite",
                       }} />
                     </div>
@@ -4892,9 +4892,9 @@ function DatabaseAccessModal({
                   onClick={handleVerify}
                   disabled={checking || busy}
                   style={{
-                    border: "1px solid rgba(29,78,216,0.16)",
+                    border: "1px solid rgba(6,115,102,0.16)",
                     borderRadius: 20,
-                    background: checking || busy ? "rgba(29,78,216,0.76)" : "linear-gradient(135deg, #1d4ed8, #1e3a8a)",
+                    background: checking || busy ? "rgba(6,115,102,0.76)" : "linear-gradient(135deg, #067366, #045a50)",
                     color: "#ffffff",
                     fontFamily: APP_BRAND_STACK,
                     fontSize: "0.74rem",
@@ -4903,7 +4903,7 @@ function DatabaseAccessModal({
                     textTransform: "uppercase",
                     cursor: checking || busy ? "wait" : "pointer",
                     padding: "16px 18px",
-                    boxShadow: "0 16px 30px rgba(29,78,216,0.20)",
+                    boxShadow: "0 16px 30px rgba(6,115,102,0.20)",
                   }}
                 >
                   {busy ? "Opening..." : checking ? "Verifying..." : "Login"}
@@ -5022,9 +5022,9 @@ function WorkspaceSidebar({
   };
   const menuButtonStyle = (active) => ({
     width: "100%",
-    border: active ? "1px solid rgba(26,86,219,0.30)" : "1px solid rgba(13,27,42,0.10)",
+    border: active ? "1px solid rgba(6,115,102,0.30)" : "1px solid rgba(13,27,42,0.10)",
     borderRadius: 10,
-    background: active ? "rgba(26,86,219,0.09)" : "#ffffff",
+    background: active ? "rgba(6,115,102,0.09)" : "#ffffff",
     cursor: "pointer",
     padding: "10px 12px",
     textAlign: "left",
@@ -5062,8 +5062,8 @@ function WorkspaceSidebar({
                   borderRadius: 9,
                   display: "grid",
                   placeItems: "center",
-                  background: active ? "rgba(26,86,219,0.14)" : "rgba(13,27,42,0.06)",
-                  color: active ? "#1a56db" : "rgba(13,27,42,0.60)",
+                  background: active ? "rgba(6,115,102,0.14)" : "rgba(13,27,42,0.06)",
+                  color: active ? "#067366" : "rgba(13,27,42,0.60)",
                   fontSize: "0.60rem",
                   fontWeight: 800,
                   fontFamily: APP_BRAND_STACK,
@@ -5076,7 +5076,7 @@ function WorkspaceSidebar({
                   fontFamily: APP_FONT_STACK,
                   fontSize: "0.88rem",
                   fontWeight: 700,
-                  color: active ? "#1540b0" : "#0d1b2a",
+                  color: active ? "#045a50" : "#0d1b2a",
                   lineHeight: 1.2,
                   letterSpacing: "-0.01em",
                   whiteSpace: "nowrap",
@@ -5090,9 +5090,9 @@ function WorkspaceSidebar({
                 <span style={{
                   borderRadius: 6,
                   padding: "3px 7px",
-                  border: "1px solid rgba(26,86,219,0.20)",
-                  background: "rgba(26,86,219,0.08)",
-                  color: "#1a56db",
+                  border: "1px solid rgba(6,115,102,0.20)",
+                  background: "rgba(6,115,102,0.08)",
+                  color: "#067366",
                   fontFamily: APP_MONO_STACK,
                   fontSize: "0.68rem",
                   fontWeight: 700,
@@ -5137,7 +5137,7 @@ function WorkspaceSidebar({
               width: 34,
               height: 34,
               borderRadius: 8,
-              background: "#1a56db",
+              background: "#067366",
               border: "none",
               display: "grid",
               placeItems: "center",
@@ -5180,10 +5180,10 @@ function WorkspaceSidebar({
           onClick={() => onNavigate("home")}
           style={{
             width: "100%",
-            border: "1px solid rgba(26,86,219,0.28)",
+            border: "1px solid rgba(6,115,102,0.28)",
             borderRadius: 8,
-            background: "rgba(26,86,219,0.08)",
-            color: "#1a56db",
+            background: "rgba(6,115,102,0.08)",
+            color: "#067366",
             fontFamily: APP_BRAND_STACK,
             fontSize: "0.72rem",
             fontWeight: 700,
@@ -5495,7 +5495,7 @@ function RateCard({ services, setServices }) {
           background: "rgba(214,5,43,0.06)", border: "1px solid rgba(214,5,43,0.20)",
           borderRadius: 12, padding: "13px 18px", marginBottom: 22,
           display: "flex", alignItems: "center", gap: 12,
-          fontSize: "0.86rem", fontFamily: APP_FONT_STACK, color: "#1d4ed8",
+          fontSize: "0.86rem", fontFamily: APP_FONT_STACK, color: "#067366",
         }}>
           <span style={{ fontWeight: 700, fontSize: "1rem", color: "#c0001a" }}>!</span>
           <span><strong>{unpriced} services</strong> still have a Rs. 0 rate. Tickets with only zero-rated items are blocked at save time.</span>
@@ -5520,7 +5520,7 @@ function RateCard({ services, setServices }) {
       {CATEGORIES.map((cat) => {
         const catServices = services.filter((s) => s.category === cat);
         if (catServices.length === 0) return null;
-        const color = CAT_COLORS[cat] || "#1a56db";
+        const color = CAT_COLORS[cat] || "#067366";
         const rgb = color.replace("#","").match(/.{2}/g).map(h=>parseInt(h,16)).join(",");
         return (
           <div key={cat} style={{
@@ -5565,7 +5565,7 @@ function RateCard({ services, setServices }) {
                     </div>
                     <div style={{ fontSize: "0.76rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK, marginTop: 3, display: "flex", alignItems: "center", gap: 8 }}>
                       <span>{s.unit}</span>
-                      {s.variable && <span style={{ background: "rgba(59,130,246,0.18)", color: "#1d4ed8", borderRadius: 999, padding: "1px 8px", fontSize: "0.62rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>variable</span>}
+                      {s.variable && <span style={{ background: "rgba(86,179,170,0.18)", color: "#067366", borderRadius: 999, padding: "1px 8px", fontSize: "0.62rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>variable</span>}
                     </div>
                     <div style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.38)", marginTop: 5, fontFamily: APP_FONT_STACK }}>
                       Template: <strong style={{ color: "rgba(15,23,42,0.55)" }}>{getDetailSchemaTitle(s.detailSchemaId)}</strong>
@@ -5602,7 +5602,7 @@ function RateCard({ services, setServices }) {
                         onKeyDown={(e) => { if (e.key === "Enter") { updatePrice(s.id, e.target.value); setEditingId(null); } }}
                         style={{
                           width: 80, padding: "8px 10px",
-                          border: "2px solid rgba(37,99,235,0.50)", borderRadius: 8,
+                          border: "2px solid rgba(9,153,142,0.50)", borderRadius: 8,
                           fontSize: "0.88rem", fontWeight: 600, fontFamily: APP_MONO_STACK,
                           outline: "none", textAlign: "right",
                           background: "rgba(255,255,255,0.90)", color: "#0f172a",
@@ -5616,9 +5616,9 @@ function RateCard({ services, setServices }) {
                       style={{
                         cursor: "pointer", padding: "7px 14px", borderRadius: 8, paddingTop: 4,
                         fontSize: "0.88rem", fontWeight: 600, fontFamily: APP_MONO_STACK,
-                        color: s.price > 0 ? "#1d4ed8" : "rgba(15,23,42,0.30)",
-                        background: s.price > 0 ? "rgba(59,130,246,0.14)" : "rgba(15,23,42,0.04)",
-                        border: s.price > 0 ? "1px solid rgba(59,130,246,0.30)" : "1px dashed rgba(15,23,42,0.16)",
+                        color: s.price > 0 ? "#067366" : "rgba(15,23,42,0.30)",
+                        background: s.price > 0 ? "rgba(86,179,170,0.14)" : "rgba(15,23,42,0.04)",
+                        border: s.price > 0 ? "1px solid rgba(86,179,170,0.30)" : "1px dashed rgba(15,23,42,0.16)",
                         minWidth: 88, textAlign: "right", transition: DS.transColor,
                       }}
                     >
@@ -5646,7 +5646,7 @@ function RateCard({ services, setServices }) {
         </button>
       ) : (
         <div style={{
-          border: "1px solid rgba(37,99,235,0.22)", borderRadius: 16, padding: 22,
+          border: "1px solid rgba(9,153,142,0.22)", borderRadius: 16, padding: 22,
           background: "rgba(255,255,255,0.72)", boxShadow: "0 6px 18px rgba(15,23,42,0.06)",
         }}>
           <div style={rcEyebrow}>New Service</div>
@@ -5654,7 +5654,7 @@ function RateCard({ services, setServices }) {
             <input placeholder="Service name" value={customName} onChange={(e) => setCustomName(e.target.value)}
               style={{ ...rcInput, flex: 2, minWidth: 160 }} />
             <div style={{ display: "flex", alignItems: "center", border: "1px solid rgba(15,23,42,0.13)", borderRadius: 10, background: "rgba(255,255,255,0.80)", paddingRight: 10 }}>
-              <span style={{ paddingLeft: 12, color: "#1d4ed8", fontWeight: 600, fontSize: "0.85rem", fontFamily: APP_MONO_STACK }}>Rs.</span>
+              <span style={{ paddingLeft: 12, color: "#067366", fontWeight: 600, fontSize: "0.85rem", fontFamily: APP_MONO_STACK }}>Rs.</span>
               <input placeholder="0" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} type="number"
                 style={{ width: 80, padding: "9px 8px", border: "none", background: "transparent", fontSize: "0.88rem", fontFamily: APP_MONO_STACK, outline: "none", textAlign: "right", color: "#0f172a" }} />
             </div>
@@ -5691,8 +5691,8 @@ function RateCard({ services, setServices }) {
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={addCustom} style={{
               flex: 1, padding: "12px", borderRadius: 999,
-              background: "rgba(37,99,235,0.12)", color: "#1e40af",
-              border: "1px solid rgba(37,99,235,0.38)",
+              background: "rgba(9,153,142,0.12)", color: "#045a50",
+              border: "1px solid rgba(9,153,142,0.38)",
               fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.20em",
               textTransform: "uppercase", cursor: "pointer", fontFamily: APP_BRAND_STACK,
             }}>
@@ -6321,11 +6321,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const sanitizePhone = (value) => value.replace(/\D/g, "").slice(0, 10);
   const hasNoTotal = total === 0;
   const canSaveTicket = items.length > 0 && !isOverpaid && !hasNoTotal;
-  const ENTRY_ACCENT = "#1a56db";
-  const ENTRY_ACCENT_TEXT = "#1540b0";
-  const ENTRY_ACCENT_SOFT = "rgba(26,86,219,0.10)";
-  const ENTRY_ACCENT_SOFTER = "rgba(26,86,219,0.06)";
-  const ENTRY_ACCENT_BORDER = "rgba(26,86,219,0.30)";
+  const ENTRY_ACCENT = "#067366";
+  const ENTRY_ACCENT_TEXT = "#045a50";
+  const ENTRY_ACCENT_SOFT = "rgba(6,115,102,0.10)";
+  const ENTRY_ACCENT_SOFTER = "rgba(6,115,102,0.06)";
+  const ENTRY_ACCENT_BORDER = "rgba(6,115,102,0.30)";
   const ticketReferenceSummary = ticketMeta
     ? formatReferenceSummary({
       hasReference: getHasReferenceValue(ticketMeta),
@@ -6381,7 +6381,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     letterSpacing: "0.06em",
     cursor: "pointer",
     transition: "all 0.15s ease",
-    boxShadow: "0 1px 3px rgba(26,86,219,0.25)",
+    boxShadow: "0 1px 3px rgba(6,115,102,0.25)",
   };
   const secondaryButtonStyle = {
     border: "1px solid rgba(13,27,42,0.15)",
@@ -6957,7 +6957,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         <div id="receipt" style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(15,23,42,0.10)", borderRadius: 20, padding: "24px 22px", maxWidth: 470, margin: "0 auto", color: "#0f172a", boxShadow: "0 16px 44px rgba(15,23,42,0.11)" }}>
           <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", letterSpacing: "0.34em", textTransform: "uppercase", color: "rgba(15,23,42,0.50)", textAlign: "center", marginBottom: 6 }}>CSC Ticket Slip</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 12 }}>
-            <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", letterSpacing: "0.16em", textTransform: "uppercase", color: saved.status === "Open" ? "#1d4ed8" : DS.wine, fontWeight: 700, paddingTop: 2 }}>
+            <div style={{ fontFamily: APP_BRAND_STACK, fontSize: "0.58rem", letterSpacing: "0.16em", textTransform: "uppercase", color: saved.status === "Open" ? "#067366" : DS.wine, fontWeight: 700, paddingTop: 2 }}>
               {saved.status}
             </div>
             <div style={{ textAlign: "right" }}>
@@ -7172,7 +7172,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                           letterSpacing: "0.08em",
                           textTransform: "uppercase",
                           cursor: "pointer",
-                          boxShadow: active ? "0 0 0 2px rgba(26,86,219,0.08)" : "0 1px 2px rgba(13,27,42,0.05)",
+                          boxShadow: active ? "0 0 0 2px rgba(6,115,102,0.08)" : "0 1px 2px rgba(13,27,42,0.05)",
                         }}
                       >
                         {operatorOption.name}
@@ -7524,7 +7524,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             <div style={{ marginTop: 4 }}>
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                                 {it.stampLines.map((line) => (
-                                  <span key={line.value} style={{ fontSize: "0.75rem", fontFamily: APP_FONT_STACK, color: "#1540b0", background: "rgba(26,86,219,0.07)", border: "1px solid rgba(26,86,219,0.18)", borderRadius: 5, padding: "2px 7px" }}>
+                                  <span key={line.value} style={{ fontSize: "0.75rem", fontFamily: APP_FONT_STACK, color: "#045a50", background: "rgba(6,115,102,0.07)", border: "1px solid rgba(6,115,102,0.18)", borderRadius: 5, padding: "2px 7px" }}>
                                     {line.qty}×₹{line.value.toLocaleString("en-IN")}
                                   </span>
                                 ))}
@@ -7691,7 +7691,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               {isStamp && Array.isArray(it.stampLines) ? (
                                 <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
                                   {it.stampLines.map((line) => (
-                                    <span key={line.value} style={{ fontSize: "0.70rem", fontFamily: APP_FONT_STACK, color: "#1540b0", background: "rgba(26,86,219,0.07)", border: "1px solid rgba(26,86,219,0.15)", borderRadius: 4, padding: "1px 6px" }}>
+                                    <span key={line.value} style={{ fontSize: "0.70rem", fontFamily: APP_FONT_STACK, color: "#045a50", background: "rgba(6,115,102,0.07)", border: "1px solid rgba(6,115,102,0.15)", borderRadius: 4, padding: "1px 6px" }}>
                                       {line.qty}×₹{line.value.toLocaleString("en-IN")}
                                     </span>
                                   ))}
@@ -8109,15 +8109,15 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     },
     print: {
       ...actionButtonBase,
-      border: "1px solid rgba(37,99,235,0.35)",
-      background: "rgba(37,99,235,0.08)",
+      border: "1px solid rgba(9,153,142,0.35)",
+      background: "rgba(9,153,142,0.08)",
       color: DS.wine,
     },
     edit: {
       ...actionButtonBase,
-      border: "1px solid rgba(59,130,246,0.38)",
-      background: "rgba(59,130,246,0.10)",
-      color: "#1d4ed8",
+      border: "1px solid rgba(86,179,170,0.38)",
+      background: "rgba(86,179,170,0.10)",
+      color: "#067366",
     },
     neutral: {
       ...actionButtonBase,
@@ -8133,9 +8133,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
     },
     warning: {
       ...actionButtonBase,
-      border: "1px solid rgba(59,130,246,0.38)",
-      background: "rgba(59,130,246,0.10)",
-      color: "#1d4ed8",
+      border: "1px solid rgba(86,179,170,0.38)",
+      background: "rgba(86,179,170,0.10)",
+      color: "#067366",
     },
   };
 
@@ -8457,7 +8457,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
           padding: "10px 10px 10px 12px",
           display: "grid",
           gap: 8,
-          boxShadow: active ? "0 10px 22px rgba(26,86,219,0.12)" : "none",
+          boxShadow: active ? "0 10px 22px rgba(6,115,102,0.12)" : "none",
           opacity: isClosed ? 0.82 : 1,
           position: "relative",
           zIndex: isMenuOpen ? 40 : 1,
@@ -9054,8 +9054,8 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                   style={{
                     padding: "7px 12px",
                     borderRadius: 999,
-                    border: active ? "1px solid rgba(37,99,235,0.35)" : "1px solid rgba(15,23,42,0.10)",
-                    background: active ? "rgba(37,99,235,0.09)" : "rgba(255,255,255,0.65)",
+                    border: active ? "1px solid rgba(9,153,142,0.35)" : "1px solid rgba(15,23,42,0.10)",
+                    background: active ? "rgba(9,153,142,0.09)" : "rgba(255,255,255,0.65)",
                     color: active ? DS.wine : "rgba(15,23,42,0.65)",
                     cursor: "pointer",
                     fontSize: "0.72rem",
@@ -9082,9 +9082,9 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
                   style={{
                     padding: "7px 12px",
                     borderRadius: 999,
-                    border: active ? "1px solid rgba(59,130,246,0.38)" : "1px solid rgba(15,23,42,0.10)",
-                    background: active ? "rgba(59,130,246,0.10)" : "rgba(255,255,255,0.65)",
-                    color: active ? "#1d4ed8" : "rgba(15,23,42,0.65)",
+                    border: active ? "1px solid rgba(86,179,170,0.38)" : "1px solid rgba(15,23,42,0.10)",
+                    background: active ? "rgba(86,179,170,0.10)" : "rgba(255,255,255,0.65)",
+                    color: active ? "#067366" : "rgba(15,23,42,0.65)",
                     cursor: "pointer",
                     fontSize: "0.72rem",
                     fontFamily: APP_BRAND_STACK,
@@ -9106,7 +9106,7 @@ function TicketDashboard({ tickets, onToggleTicketStatus, onToggleTaskDone, onUp
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
         {[
           { label: "Visible", value: filteredTickets.length, color: "#0f172a" },
-          { label: "Open", value: openTickets.length, color: "#1d4ed8" },
+          { label: "Open", value: openTickets.length, color: "#067366" },
           { label: "Closed", value: closedTickets.length, color: DS.wine },
           { label: "Task Progress", value: `${doneTasks}/${totalTasks || 0}`, color: "#2a5a8f" },
         ].map((stat) => (
@@ -9583,9 +9583,9 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                   onClick={() => { setActiveTrack(track.id); setFormError(""); }}
                   style={{
                     borderRadius: 8,
-                    border: active ? "1px solid rgba(30,64,175,0.28)" : "1px solid rgba(15,23,42,0.10)",
-                    background: active ? "rgba(30,64,175,0.10)" : "transparent",
-                    color: active ? "#1d4ed8" : "rgba(15,23,42,0.62)",
+                    border: active ? "1px solid rgba(4,90,80,0.28)" : "1px solid rgba(15,23,42,0.10)",
+                    background: active ? "rgba(4,90,80,0.10)" : "transparent",
+                    color: active ? "#067366" : "rgba(15,23,42,0.62)",
                     padding: "6px 11px",
                     fontFamily: APP_FONT_STACK,
                     fontSize: "0.74rem",
@@ -9618,10 +9618,10 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
               type="button"
               onClick={() => { setFormOpen((v) => !v); if (formOpen && editingEntryId) handleCancelEdit(); if (!formOpen) setTimeout(() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50); }}
               style={{
-                border: formOpen ? "1px solid rgba(15,23,42,0.16)" : "1px solid rgba(30,64,175,0.32)",
+                border: formOpen ? "1px solid rgba(15,23,42,0.16)" : "1px solid rgba(4,90,80,0.32)",
                 borderRadius: 8,
-                background: formOpen ? "rgba(255,255,255,0.92)" : "rgba(30,64,175,0.10)",
-                color: formOpen ? "rgba(15,23,42,0.65)" : "#1d4ed8",
+                background: formOpen ? "rgba(255,255,255,0.92)" : "rgba(4,90,80,0.10)",
+                color: formOpen ? "rgba(15,23,42,0.65)" : "#067366",
                 padding: "8px 14px",
                 fontFamily: APP_FONT_STACK,
                 fontSize: "0.78rem",
@@ -9658,8 +9658,8 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                     onClick={() => selectEntity(entity)}
                     style={{
                       borderRadius: 8,
-                      border: active ? "1px solid rgba(30,64,175,0.24)" : "1px solid transparent",
-                      background: active ? "rgba(30,64,175,0.08)" : "transparent",
+                      border: active ? "1px solid rgba(4,90,80,0.24)" : "1px solid transparent",
+                      background: active ? "rgba(4,90,80,0.08)" : "transparent",
                       padding: "8px 10px",
                       textAlign: "left",
                       cursor: "pointer",
@@ -9742,10 +9742,10 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                         <div key={dk}>
                           {/* Date separator */}
                           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                            <div style={{ fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.20em", textTransform: "uppercase", color: "#1540b0", whiteSpace: "nowrap" }}>
+                            <div style={{ fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.60rem", letterSpacing: "0.20em", textTransform: "uppercase", color: "#045a50", whiteSpace: "nowrap" }}>
                               {formatEntryDate(dk)}
                             </div>
-                            <div style={{ flex: 1, height: 1, background: "rgba(26,86,219,0.15)" }} />
+                            <div style={{ flex: 1, height: 1, background: "rgba(6,115,102,0.15)" }} />
                             <div style={{ display: "flex", gap: 10, fontSize: "0.68rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.48)", whiteSpace: "nowrap" }}>
                               {dayTotal > 0 && <span style={{ fontWeight: 600, color: "#0f172a" }}>{fmtMoneyCompact(dayTotal)}</span>}
                               {dayPending > 0 && <span style={{ color: "#7c2d12", fontWeight: 600 }}>₹{Math.round(dayPending).toLocaleString("en-IN")} due</span>}
@@ -9767,7 +9767,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                                     </div>
                                   </div>
                                   <div style={{ display: "flex", gap: 6 }}>
-                                    <button type="button" onClick={() => handleEditEntry(entry)} style={{ border: "1px solid rgba(30,64,175,0.28)", borderRadius: 999, background: "rgba(30,64,175,0.08)", color: "#1d4ed8", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Edit</button>
+                                    <button type="button" onClick={() => handleEditEntry(entry)} style={{ border: "1px solid rgba(4,90,80,0.28)", borderRadius: 999, background: "rgba(4,90,80,0.08)", color: "#067366", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Edit</button>
                                     <button type="button" onClick={() => handleDeleteEntry(entry)} style={{ border: "1px solid rgba(185,28,28,0.24)", borderRadius: 999, background: "rgba(185,28,28,0.08)", color: "#991b1b", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Delete</button>
                                   </div>
                                 </div>
@@ -9778,7 +9778,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                                   <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>Referred business {formatCurrency(entry.businessAmount)}</div>
                                 )}
                                 {entry.ecosystem === "give" && entry.includeInDailyRevenue && (
-                                  <div style={{ marginTop: 3, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#1d4ed8", fontFamily: APP_BRAND_STACK }}>Included in daily revenue</div>
+                                  <div style={{ marginTop: 3, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#067366", fontFamily: APP_BRAND_STACK }}>Included in daily revenue</div>
                                 )}
                                 {entry.note && (
                                   <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>Note: {entry.note}</div>
@@ -9798,7 +9798,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
       </div>
 
       {formOpen && (
-      <form ref={b2bFormRef} onSubmit={(event) => { event.preventDefault(); handleAddEntry(); setFormOpen(false); }} style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(30,64,175,0.20)", background: "rgba(255,255,255,0.96)", padding: "14px 16px" }}>
+      <form ref={b2bFormRef} onSubmit={(event) => { event.preventDefault(); handleAddEntry(); setFormOpen(false); }} style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(4,90,80,0.20)", background: "rgba(255,255,255,0.96)", padding: "14px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK }}>
@@ -9914,7 +9914,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
         </div>
 
         {activeTrack === "give" && (
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, padding: "8px 10px", border: "1px solid rgba(30,64,175,0.18)", borderRadius: 10, background: "rgba(30,64,175,0.06)", cursor: "pointer" }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, padding: "8px 10px", border: "1px solid rgba(4,90,80,0.18)", borderRadius: 10, background: "rgba(4,90,80,0.06)", cursor: "pointer" }}>
             <input type="checkbox" checked={Boolean(activeForm.includeInDailyRevenue)} onChange={(event) => updateActiveForm("includeInDailyRevenue", event.target.checked)} />
             <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.70)", fontFamily: APP_FONT_STACK }}>
               Include this sales entry in daily revenue
@@ -9936,7 +9936,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                 Cancel
               </button>
             )}
-            <button type="submit" style={{ border: "1px solid rgba(30,64,175,0.32)", borderRadius: 999, background: "rgba(30,64,175,0.10)", color: "#1d4ed8", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
+            <button type="submit" style={{ border: "1px solid rgba(4,90,80,0.32)", borderRadius: 999, background: "rgba(4,90,80,0.10)", color: "#067366", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.56rem", letterSpacing: "0.20em", textTransform: "uppercase", padding: "11px 18px", cursor: "pointer" }}>
               {editingEntryId ? "Save Changes" : trackMeta.submitLabel}
             </button>
           </div>
@@ -10298,7 +10298,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
     };
   });
 
-  const modeColors = { Cash: "#d97706", UPI: "#16a34a", "Bank Transfer": "#2563eb", Other: "rgba(15,23,42,0.30)" };
+  const modeColors = { Cash: "#d97706", UPI: "#16a34a", "Bank Transfer": "#09998e", Other: "rgba(15,23,42,0.30)" };
   const modeDonutData = Object.entries(modeStats).map(([mode, val]) => ({ label: mode, value: val, color: modeColors[mode] || "#94a3b8" }));
 
   const totalCatRevenue = Object.values(catRevenue).reduce((a, b) => a + b, 0);
@@ -10306,7 +10306,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
 
   const fullyPaidCount = normalized.filter((t) => t.structured?.payment?.status === "Paid").length;
   const funnelDonutData = [
-    { label: "Paid", value: fullyPaidCount, color: "#2563eb" },
+    { label: "Paid", value: fullyPaidCount, color: "#09998e" },
     { label: "Closed", value: Math.max(0, closedCount - fullyPaidCount), color: "#16a34a" },
     { label: "Open", value: openCount, color: "rgba(15,23,42,0.20)" },
   ];
@@ -10376,9 +10376,9 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
               <MiniKPI eyebrow="Invoiced (All)" value={fmtINR(allInvoiced)} />
               <MiniKPI eyebrow="Collected" value={fmtINR(allRevenue)} color="#16a34a" />
               <MiniKPI eyebrow="Pending" value={fmtINR(allPending)} color="#dc2626" />
-              <MiniKPI eyebrow="Daily Avg (30d)" value={fmtINR(dailyAvg)} color="#2563eb" />
-              <MiniKPI eyebrow="Last 7 Days" value={fmtINR(sumPaid(last7))} color="#2563eb" />
-              <MiniKPI eyebrow="This Month" value={fmtINR(months[0] ? byMonth[months[0]].reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0) : 0)} color="#2563eb" />
+              <MiniKPI eyebrow="Daily Avg (30d)" value={fmtINR(dailyAvg)} color="#09998e" />
+              <MiniKPI eyebrow="Last 7 Days" value={fmtINR(sumPaid(last7))} color="#09998e" />
+              <MiniKPI eyebrow="This Month" value={fmtINR(months[0] ? byMonth[months[0]].reduce((s, t) => s + (Number(t.structured?.payment?.paidTotal) || 0), 0) : 0)} color="#09998e" />
             </div>
             {/* Payment mode donut */}
             <div style={S.cardFlat}>
@@ -10487,7 +10487,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             value={`${concentration}%`}
             color={concentration >= 50 && concentration <= 65 ? "#16a34a" : concentration > 75 ? "#dc2626" : "#d97706"}
           />
-          <MiniKPI eyebrow="Most Frequent" value={topServicesByCount[0]?.name?.split(" ").slice(0, 2).join(" ") || "—"} color="#2563eb" />
+          <MiniKPI eyebrow="Most Frequent" value={topServicesByCount[0]?.name?.split(" ").slice(0, 2).join(" ") || "—"} color="#09998e" />
           <MiniKPI eyebrow="Highest Revenue" value={topServicesByRevenue[0]?.name?.split(" ").slice(0, 2).join(" ") || "—"} color="#16a34a" />
         </div>
 
@@ -10498,7 +10498,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
               {topServicesByRevenue.slice(0, 6).map((s) => {
                 const maxR = topServicesByRevenue[0]?.revenue || 1;
-                const color = CAT_COLORS[s.category] || "#2563eb";
+                const color = CAT_COLORS[s.category] || "#09998e";
                 const pct2 = Math.round((s.revenue / maxR) * 100);
                 return (
                   <div key={s.name}>
@@ -10536,7 +10536,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
           {/* Left: KPIs + aging buckets */}
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-              <MiniKPI eyebrow="Open Tickets" value={openCount} color="#2563eb" />
+              <MiniKPI eyebrow="Open Tickets" value={openCount} color="#09998e" />
               <MiniKPI eyebrow="Closed (All)" value={closedCount} color="#16a34a" />
               <MiniKPI eyebrow="Aging > 7d" value={aging.over7} color={aging.over7 > 0 ? "#dc2626" : "#16a34a"} />
               <MiniKPI eyebrow="Completion Rate" value={`${pct(closedCount, normalized.length)}%`} />
@@ -10572,7 +10572,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
               {[
                 { l: "Total Created", v: normalized.length, c: "#0f172a" },
                 { l: "Closed", v: closedCount, c: "#16a34a" },
-                { l: "Fully Paid", v: fullyPaidCount, c: "#2563eb" },
+                { l: "Fully Paid", v: fullyPaidCount, c: "#09998e" },
               ].map((step) => {
                 const p = pct(step.v, normalized.length);
                 return (
@@ -10599,10 +10599,10 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8, marginBottom: 14 }}>
           <MiniKPI eyebrow="B2B Sales" value={fmtINR(b2bSalesValue)} color="#16a34a" />
           <MiniKPI eyebrow="Vendor Cost" value={fmtINR(b2bPurchaseValue)} color="#dc2626" />
-          <MiniKPI eyebrow="Receivable" value={fmtINR(b2bReceivable)} color="#2563eb" />
+          <MiniKPI eyebrow="Receivable" value={fmtINR(b2bReceivable)} color="#09998e" />
           <MiniKPI eyebrow="Payable" value={fmtINR(b2bPayable)} color="#ea580c" />
           <MiniKPI eyebrow="B2B Rev Share" value={`${b2bRevSharePct}%`} />
-          <MiniKPI eyebrow="Agent Entries" value={b2bAgents.length} color="#2563eb" />
+          <MiniKPI eyebrow="Agent Entries" value={b2bAgents.length} color="#09998e" />
         </div>
 
         {/* Revenue mix bar */}
@@ -10613,7 +10613,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
               {100 - b2bRevSharePct > 15 ? `Walk-in ${100 - b2bRevSharePct}%` : ""}
             </div>
             {b2bRevSharePct > 0 && (
-              <div style={{ width: `${b2bRevSharePct}%`, background: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: APP_FONT_STACK, fontSize: "0.68rem", fontWeight: 700 }}>
+              <div style={{ width: `${b2bRevSharePct}%`, background: "#09998e", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: APP_FONT_STACK, fontSize: "0.68rem", fontWeight: 700 }}>
                 {b2bRevSharePct > 10 ? `B2B ${b2bRevSharePct}%` : ""}
               </div>
             )}
@@ -10630,7 +10630,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
               {vendorList.slice(0, 4).map((v) => {
                 const p = b2bPurchaseValue > 0 ? Math.round((v.val / b2bPurchaseValue) * 100) : 0;
-                const color = p > 70 ? "#dc2626" : p > 50 ? "#ea580c" : "#2563eb";
+                const color = p > 70 ? "#dc2626" : p > 50 ? "#ea580c" : "#09998e";
                 return (
                   <div key={v.name}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
@@ -10697,7 +10697,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         <div style={S.title}>Forward View</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8, marginBottom: 12 }}>
           <MiniKPI eyebrow="Conservative (30d)" value={fmtINR(conservativeProjection)} color="#ea580c" />
-          <MiniKPI eyebrow="Baseline (30d)" value={fmtINR(projectedRevenue30)} color="#2563eb" />
+          <MiniKPI eyebrow="Baseline (30d)" value={fmtINR(projectedRevenue30)} color="#09998e" />
           <MiniKPI eyebrow="Upside (30d)" value={fmtINR(upsideProjection)} color="#16a34a" />
           <MiniKPI
             eyebrow="Signal Confidence"
@@ -10708,7 +10708,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
           {[
             { eyebrow: "Revenue Trajectory", color: "#16a34a", content: `${fmtINR(Math.round(dailyAvg))}/day avg · ${growthMoM > 0 ? `+${growthMoM}%` : growthMoM < 0 ? `${growthMoM}%` : "flat"} MoM` },
-            { eyebrow: "Backlog Risk", color: "#2563eb", content: aging.over7 === 0 ? "No aging risk" : `${aging.over7} tickets > 7d aging` },
+            { eyebrow: "Backlog Risk", color: "#09998e", content: aging.over7 === 0 ? "No aging risk" : `${aging.over7} tickets > 7d aging` },
             { eyebrow: "Cash Health", color: "#d97706", content: `${fmtINR(allPending)} pending · ${Math.round(pendingPctOfMRR)}% of MRR${b2bPayable > 0 ? ` · ${fmtINR(b2bPayable)} payable` : ""}` },
           ].map((item) => (
             <div key={item.eyebrow} style={{ ...S.cardFlat, borderTop: `2px solid ${item.color}40` }}>
@@ -10760,7 +10760,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
                   {[
                     { l: "Paid", v: mPaid, c: "#16a34a", bg: "rgba(22,163,74,0.07)" },
-                    { l: "Partial", v: mPartial, c: "#2563eb", bg: "rgba(37,99,235,0.07)" },
+                    { l: "Partial", v: mPartial, c: "#09998e", bg: "rgba(9,153,142,0.07)" },
                     { l: "Unpaid", v: mUnpaid, c: "#dc2626", bg: "rgba(220,38,38,0.07)" },
                     { l: "Open/Closed", v: `${mOpen}/${mClosed}`, c: "#0f172a", bg: "rgba(15,23,42,0.04)" },
                   ].map((s) => (
@@ -10880,7 +10880,7 @@ function CustomersWorkspace({ tickets, onDeleteCustomer, onNavigateTab }) {
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
 
       {/* Hero + summary */}
-      <div style={{ ...card, padding: "22px 24px", marginBottom: 22, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(59,130,246,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(37,99,235,0.08), transparent 30%)" }}>
+      <div style={{ ...card, padding: "22px 24px", marginBottom: 22, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(86,179,170,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(9,153,142,0.08), transparent 30%)" }}>
         <span style={eb}>Customer Registry</span>
         <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#0f172a", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
           Clients &amp; <em style={{ fontStyle: "italic", color: "rgba(15,23,42,0.45)" }}>Documents.</em>
@@ -10889,7 +10889,7 @@ function CustomersWorkspace({ tickets, onDeleteCustomer, onNavigateTab }) {
           {[
             { label: "Total Customers", value: customers.length, color: "#0f172a" },
             { label: "With Phone", value: customers.filter((c) => c.phone).length, color: "#2a5a8f" },
-            { label: "Returning", value: customers.filter((c) => c.tickets.length > 1).length, color: "#2563eb" },
+            { label: "Returning", value: customers.filter((c) => c.tickets.length > 1).length, color: "#09998e" },
             { label: "Total Tickets", value: normalized.length, color: DS.wine },
           ].map((s) => (
             <div key={s.label} style={{ background: "rgba(15,23,42,0.04)", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 12, padding: "12px 14px" }}>
@@ -10946,14 +10946,14 @@ function CustomersWorkspace({ tickets, onDeleteCustomer, onNavigateTab }) {
                 return (
                   <div key={key} onClick={() => setSelectedKey(isSelected ? null : key)} style={{
                     ...card, padding: "14px 16px", cursor: "pointer",
-                    border: isSelected ? "1px solid rgba(37,99,235,0.28)" : "1px solid rgba(15,23,42,0.09)",
-                    background: isSelected ? "rgba(37,99,235,0.05)" : "rgba(255,255,255,0.75)",
-                    boxShadow: isSelected ? "inset 3px 0 0 rgba(37,99,235,0.65), 0 4px 16px rgba(15,23,42,0.06)" : "0 4px 16px rgba(15,23,42,0.06)",
+                    border: isSelected ? "1px solid rgba(9,153,142,0.28)" : "1px solid rgba(15,23,42,0.09)",
+                    background: isSelected ? "rgba(9,153,142,0.05)" : "rgba(255,255,255,0.75)",
+                    boxShadow: isSelected ? "inset 3px 0 0 rgba(9,153,142,0.65), 0 4px 16px rgba(15,23,42,0.06)" : "0 4px 16px rgba(15,23,42,0.06)",
                     transition: "all 0.18s ease",
                   }}>
                     <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                       {/* Avatar */}
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: isSelected ? "rgba(37,99,235,0.14)" : "rgba(15,23,42,0.07)", border: `1px solid ${isSelected ? "rgba(37,99,235,0.22)" : "rgba(15,23,42,0.10)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.06em", color: isSelected ? DS.wine : "rgba(15,23,42,0.50)" }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: isSelected ? "rgba(9,153,142,0.14)" : "rgba(15,23,42,0.07)", border: `1px solid ${isSelected ? "rgba(9,153,142,0.22)" : "rgba(15,23,42,0.10)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.06em", color: isSelected ? DS.wine : "rgba(15,23,42,0.50)" }}>
                         {initials}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -10997,10 +10997,10 @@ function CustomersWorkspace({ tickets, onDeleteCustomer, onNavigateTab }) {
             <div className="csc-sticky-panel">
               <div style={{ ...card, overflow: "hidden" }}>
                 {/* Profile header */}
-                <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(15,23,42,0.08)", backgroundImage: "radial-gradient(circle at 90% 0%, rgba(59,130,246,0.12), transparent 36%)" }}>
+                <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(15,23,42,0.08)", backgroundImage: "radial-gradient(circle at 90% 0%, rgba(86,179,170,0.12), transparent 36%)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                     <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                      <div style={{ width: 50, height: 50, borderRadius: "50%", background: "rgba(37,99,235,0.10)", border: "1px solid rgba(37,99,235,0.20)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.80rem", letterSpacing: "0.06em", color: DS.wine, flexShrink: 0 }}>
+                      <div style={{ width: 50, height: 50, borderRadius: "50%", background: "rgba(9,153,142,0.10)", border: "1px solid rgba(9,153,142,0.20)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.80rem", letterSpacing: "0.06em", color: DS.wine, flexShrink: 0 }}>
                         {initials}
                       </div>
                       <div>
@@ -11052,8 +11052,8 @@ function CustomersWorkspace({ tickets, onDeleteCustomer, onNavigateTab }) {
                             <div style={{ fontSize: "0.66rem", color: "rgba(15,23,42,0.40)", fontFamily: APP_MONO_STACK, marginTop: 1 }}>{doc.ticketNo}  |  {doc.ticketDate || " - "}</div>
                           </div>
                           <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                            <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.required ? DS.wine : "rgba(15,23,42,0.40)", background: doc.required ? "rgba(37,99,235,0.07)" : "rgba(15,23,42,0.04)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.required ? "rgba(37,99,235,0.18)" : "rgba(15,23,42,0.08)"}` }}>{doc.required ? "Required" : "Optional"}</span>
-                            <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.submitted ? "#2a6647" : "#2563eb", background: doc.submitted ? "rgba(42,102,71,0.08)" : "rgba(59,130,246,0.09)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.submitted ? "rgba(42,102,71,0.18)" : "rgba(59,130,246,0.22)"}` }}>{doc.submitted ? "Submitted" : "Pending"}</span>
+                            <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.required ? DS.wine : "rgba(15,23,42,0.40)", background: doc.required ? "rgba(9,153,142,0.07)" : "rgba(15,23,42,0.04)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.required ? "rgba(9,153,142,0.18)" : "rgba(15,23,42,0.08)"}` }}>{doc.required ? "Required" : "Optional"}</span>
+                            <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: doc.submitted ? "#2a6647" : "#09998e", background: doc.submitted ? "rgba(42,102,71,0.08)" : "rgba(86,179,170,0.09)", borderRadius: 999, padding: "3px 8px", border: `1px solid ${doc.submitted ? "rgba(42,102,71,0.18)" : "rgba(86,179,170,0.22)"}` }}>{doc.submitted ? "Submitted" : "Pending"}</span>
                           </div>
                         </div>
                       ))}
@@ -11067,7 +11067,7 @@ function CustomersWorkspace({ tickets, onDeleteCustomer, onNavigateTab }) {
                   <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
                     {sortedTickets.map((t) => {
                       const ps = t.structured?.payment?.status || "Unpaid";
-                      const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#2563eb" : DS.wine;
+                      const psColor = ps === "Paid" ? "#2a6647" : ps === "Partial" ? "#09998e" : DS.wine;
                       const services = (t.structured?.services || []).map((s) => s.name).join(", ") || " - ";
                       return (
                         <div key={t.ticketNo} style={{ background: "rgba(255,255,255,0.65)", border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, padding: "12px 14px" }}>
@@ -11081,7 +11081,7 @@ function CustomersWorkspace({ tickets, onDeleteCustomer, onNavigateTab }) {
                             </div>
                             <div style={{ display: "flex", gap: 5, alignItems: "flex-start", flexShrink: 0 }}>
                               <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: psColor, background: `${psColor}15`, border: `1px solid ${psColor}28`, borderRadius: 999, padding: "3px 9px" }}>{ps}</span>
-                              <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#2563eb", background: t.status === "Closed" ? "rgba(37,99,235,0.07)" : "rgba(59,130,246,0.09)", border: `1px solid ${t.status === "Closed" ? "rgba(37,99,235,0.18)" : "rgba(59,130,246,0.22)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
+                              <span style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.status === "Closed" ? DS.wine : "#09998e", background: t.status === "Closed" ? "rgba(9,153,142,0.07)" : "rgba(86,179,170,0.09)", border: `1px solid ${t.status === "Closed" ? "rgba(9,153,142,0.18)" : "rgba(86,179,170,0.22)"}`, borderRadius: 999, padding: "3px 9px" }}>{t.status}</span>
                             </div>
                           </div>
                         </div>
@@ -11148,7 +11148,7 @@ function WalkInModal({ onClose, onStart }) {
         position: "relative", zIndex: 1, width: "min(480px, 100%)",
         background: "#ffffff", border: "1px solid rgba(15,23,42,0.14)", borderRadius: 20,
         padding: "28px 24px", boxShadow: "0 28px 68px rgba(15,23,42,0.18)",
-        backgroundImage: "radial-gradient(circle at 8% 8%, rgba(59,130,246,0.18), transparent 32%), radial-gradient(circle at 90% 90%, rgba(37,99,235,0.10), transparent 30%)",
+        backgroundImage: "radial-gradient(circle at 8% 8%, rgba(86,179,170,0.18), transparent 32%), radial-gradient(circle at 90% 90%, rgba(9,153,142,0.10), transparent 30%)",
       }}>
         <div style={{ fontSize: "0.58rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: DS.wine, marginBottom: 10 }}>
           Quick Walk-In
@@ -11179,9 +11179,9 @@ function WalkInModal({ onClose, onStart }) {
                       onClick={() => setOperator(operatorOption.name)}
                       style={{
                         borderRadius: 999,
-                        border: active ? "1px solid rgba(37,99,235,0.34)" : "1px solid rgba(15,23,42,0.12)",
-                        background: active ? "rgba(37,99,235,0.10)" : "rgba(255,255,255,0.82)",
-                        color: active ? "#1e40af" : "rgba(15,23,42,0.66)",
+                        border: active ? "1px solid rgba(9,153,142,0.34)" : "1px solid rgba(15,23,42,0.12)",
+                        background: active ? "rgba(9,153,142,0.10)" : "rgba(255,255,255,0.82)",
+                        color: active ? "#045a50" : "rgba(15,23,42,0.66)",
                         padding: "10px 15px",
                         fontFamily: APP_BRAND_STACK,
                         fontWeight: 700,
@@ -11200,7 +11200,7 @@ function WalkInModal({ onClose, onStart }) {
           </div>
 
           {error && (
-            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#1d4ed8", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
+            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(214,5,43,0.07)", border: "1px solid rgba(214,5,43,0.22)", color: "#067366", fontSize: "0.82rem", fontFamily: APP_FONT_STACK }}>
               {error}
             </div>
           )}
@@ -11209,7 +11209,7 @@ function WalkInModal({ onClose, onStart }) {
             <button type="button" onClick={onClose} style={{ border: "1px solid rgba(15,23,42,0.14)", borderRadius: 999, padding: "11px 20px", background: "rgba(255,255,255,0.72)", color: "rgba(15,23,42,0.70)", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
               Cancel
             </button>
-            <button type="submit" style={{ border: "1px solid rgba(37,99,235,0.48)", borderRadius: 999, padding: "11px 24px", background: "rgba(37,99,235,0.13)", color: "#1e40af", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
+            <button type="submit" style={{ border: "1px solid rgba(9,153,142,0.48)", borderRadius: 999, padding: "11px 24px", background: "rgba(9,153,142,0.13)", color: "#045a50", fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.22em", textTransform: "uppercase", cursor: "pointer" }}>
               Start Ticket &rarr;
             </button>
           </div>
@@ -11287,8 +11287,8 @@ export default function CSCBilling() {
   const activeTabConfig = TAB_CONFIG.find((item) => item.id === tab) || TAB_CONFIG[0];
   const headerStats = [
     { label: "Daily Revenue", value: `Rs. ${Math.round(dailyRevenueTotal).toLocaleString("en-IN")}`, accent: "#0f172a" },
-    { label: "B2B Sales Today", value: `Rs. ${Math.round(b2bRevenueToday).toLocaleString("en-IN")}`, accent: "#1d4ed8" },
-    { label: "Open Tickets", value: String(openTicketCount), accent: openTicketCount > 0 ? "#1d4ed8" : "#0f172a" },
+    { label: "B2B Sales Today", value: `Rs. ${Math.round(b2bRevenueToday).toLocaleString("en-IN")}`, accent: "#067366" },
+    { label: "Open Tickets", value: String(openTicketCount), accent: openTicketCount > 0 ? "#067366" : "#0f172a" },
   ];
   const cloudSyncLabel = cloudSyncState === "local_only"
     ? "Local-only"
@@ -11977,7 +11977,7 @@ export default function CSCBilling() {
     return (
       <div style={{
         minHeight: "100vh",
-        background: "#f8fbff",
+        background: "#f7fcfb",
         fontFamily: APP_FONT_STACK,
         color: "#0f172a",
       }}>
@@ -11993,7 +11993,7 @@ export default function CSCBilling() {
     return (
       <div style={{
         minHeight: "100vh",
-        background: "#f8fbff",
+        background: "#f7fcfb",
         fontFamily: APP_FONT_STACK,
         color: "#0f172a",
       }}>
@@ -12009,7 +12009,7 @@ export default function CSCBilling() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#f8fbff",
+      background: "#f7fcfb",
       fontFamily: APP_FONT_STACK,
       color: "#0f172a",
       display: "flex",
@@ -12062,7 +12062,7 @@ export default function CSCBilling() {
         select:focus-visible,
         textarea:focus-visible {
           outline: 2px solid transparent;
-          box-shadow: 0 0 0 3px rgba(26,86,219,0.28);
+          box-shadow: 0 0 0 3px rgba(6,115,102,0.28);
         }
         .csc-hover-surface-row:hover,
         .csc-hover-surface-row:focus-within {
@@ -12074,7 +12074,7 @@ export default function CSCBilling() {
         }
         .csc-hover-accent:hover,
         .csc-hover-accent:focus-visible {
-          background: rgba(26,86,219,0.10) !important;
+          background: rgba(6,115,102,0.10) !important;
         }
         .csc-empty-state {
           text-align: center;
@@ -12091,9 +12091,9 @@ export default function CSCBilling() {
           display: grid;
           place-items: center;
           font-size: 16px;
-          color: #1a56db;
-          border: 1px solid rgba(26,86,219,0.22);
-          background: rgba(26,86,219,0.08);
+          color: #067366;
+          border: 1px solid rgba(6,115,102,0.22);
+          background: rgba(6,115,102,0.08);
         }
         .csc-empty-state-title {
           font-size: 0.94rem;
@@ -12110,10 +12110,10 @@ export default function CSCBilling() {
           margin-bottom: 14px;
         }
         .csc-empty-state-cta {
-          border: 1px solid rgba(26,86,219,0.28);
+          border: 1px solid rgba(6,115,102,0.28);
           border-radius: 8px;
-          background: rgba(26,86,219,0.09);
-          color: #1a56db;
+          background: rgba(6,115,102,0.09);
+          color: #067366;
           font-family: ${APP_BRAND_STACK};
           font-weight: 700;
           font-size: 0.72rem;
@@ -12160,8 +12160,8 @@ export default function CSCBilling() {
           to { opacity: 1; transform: translateX(0); }
         }
         @keyframes subtleGlow {
-          from { box-shadow: 0 0 0 0 rgba(26,86,219,0); }
-          to   { box-shadow: 0 0 22px 4px rgba(26,86,219,0.10); }
+          from { box-shadow: 0 0 0 0 rgba(6,115,102,0); }
+          to   { box-shadow: 0 0 22px 4px rgba(6,115,102,0.10); }
         }
         .csc-sidebar-nav::-webkit-scrollbar { width: 4px; }
         .csc-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
@@ -12169,7 +12169,7 @@ export default function CSCBilling() {
         .csc-content-scroll::-webkit-scrollbar { width: 4px; }
         .csc-content-scroll::-webkit-scrollbar-track { background: transparent; }
         .csc-content-scroll::-webkit-scrollbar-thumb { background: rgba(13,27,42,0.11); border-radius: 999px; }
-        input[type="checkbox"] { accent-color: #1a56db; cursor: pointer; }
+        input[type="checkbox"] { accent-color: #067366; cursor: pointer; }
         input::placeholder, textarea::placeholder {
           color: rgba(13,27,42,0.38);
           font-style: normal;
@@ -12315,11 +12315,11 @@ export default function CSCBilling() {
               <button
                 onClick={() => navigateTab("home")}
                 style={{
-                  border: tab === "database" ? "1px solid rgba(0,255,70,0.22)" : "1px solid rgba(26,86,219,0.24)",
+                  border: tab === "database" ? "1px solid rgba(0,255,70,0.22)" : "1px solid rgba(6,115,102,0.24)",
                   borderRadius: 7,
                   padding: "5px 10px",
-                  background: tab === "database" ? "rgba(0,255,70,0.06)" : "rgba(26,86,219,0.08)",
-                  color: tab === "database" ? "rgba(0,255,70,0.80)" : "#1a56db",
+                  background: tab === "database" ? "rgba(0,255,70,0.06)" : "rgba(6,115,102,0.08)",
+                  color: tab === "database" ? "rgba(0,255,70,0.80)" : "#067366",
                   fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
                   fontWeight: 700,
                   fontSize: "0.68rem",
@@ -12339,7 +12339,7 @@ export default function CSCBilling() {
                   <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: tab === "database" ? "rgba(0,255,70,0.38)" : "rgba(13,27,42,0.40)", fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK, marginBottom: 2 }}>
                     {stat.label}
                   </div>
-                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: tab === "database" ? (stat.accent === "#1a56db" ? "rgba(0,255,70,0.90)" : "rgba(0,255,70,0.90)") : (stat.accent || "#0d1b2a"), fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_MONO_STACK, letterSpacing: "-0.01em", textShadow: tab === "database" ? "0 0 8px rgba(0,255,70,0.40)" : "none" }}>
+                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: tab === "database" ? (stat.accent === "#067366" ? "rgba(0,255,70,0.90)" : "rgba(0,255,70,0.90)") : (stat.accent || "#0d1b2a"), fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_MONO_STACK, letterSpacing: "-0.01em", textShadow: tab === "database" ? "0 0 8px rgba(0,255,70,0.40)" : "none" }}>
                     {stat.value}
                   </div>
                 </div>

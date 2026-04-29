@@ -30,9 +30,9 @@ export function PrimaryButton({ onClick, disabled, busy, children, variant = "pr
   };
   const primary = {
     ...base,
-    background: disabled || busy ? "rgba(37,99,235,0.45)" : DT.primary,
+    background: disabled || busy ? "rgba(9,153,142,0.45)" : DT.primary,
     color: "#ffffff",
-    boxShadow: disabled ? "none" : "0 1px 2px rgba(37,99,235,0.3)",
+    boxShadow: disabled ? "none" : "0 1px 2px rgba(9,153,142,0.3)",
   };
   const ghost = {
     ...base,
