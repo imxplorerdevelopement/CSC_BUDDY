@@ -9368,6 +9368,30 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
     acc.pending += Number(entity.pendingValue) || 0;
     return acc;
   }, { amount: 0, settled: 0, pending: 0 });
+  const getB2BPaymentBadgeStyle = (status) => {
+    const normalizedStatus = String(status || "Unpaid");
+    const isPaid = normalizedStatus === "Paid";
+    const isPartial = normalizedStatus === "Partial";
+    return {
+      borderRadius: 999,
+      border: `1px solid ${isPaid ? "rgba(5,150,105,0.30)" : isPartial ? "rgba(217,119,6,0.30)" : "rgba(220,38,38,0.28)"}`,
+      background: isPaid ? "rgba(5,150,105,0.10)" : isPartial ? "rgba(217,119,6,0.10)" : "rgba(220,38,38,0.08)",
+      color: isPaid ? "#047857" : isPartial ? "#b45309" : "#dc2626",
+      fontFamily: APP_FONT_STACK,
+      fontSize: "0.66rem",
+      fontWeight: 700,
+      padding: "3px 8px",
+      whiteSpace: "nowrap",
+    };
+  };
+  const getB2BLedgerDirection = (entry) => (
+    entry.ecosystem === "give" ? "Credit" : "Debit"
+  );
+  const getB2BLedgerCaption = (entry) => (
+    entry.ecosystem === "give"
+      ? "Payment received by us"
+      : "Payment made by us"
+  );
 
   useEffect(() => {
     if (trackEntities.length === 0) return;
@@ -9726,6 +9750,13 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
               {activeEntity.entries.length === 0 ? null : (() => {
                 const dateGroups = [];
                 const dateMap = new Map();
+                const paymentLog = activeEntity.entries
+                  .filter((entry) => (Number(entry.paidAmount) || 0) > 0)
+                  .sort((a, b) => {
+                    const byDate = String(b.entryDate || "").localeCompare(String(a.entryDate || ""));
+                    if (byDate !== 0) return byDate;
+                    return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+                  });
                 activeEntity.entries.forEach((entry) => {
                   const dk = String(entry.entryDate || "").trim() || "unknown";
                   if (!dateMap.has(dk)) { dateMap.set(dk, []); dateGroups.push(dk); }
@@ -9766,7 +9797,10 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                                         : `Qty ${entry.quantity} × Rs. ${entry.rate} = ${formatCurrency(entry.amount)}`}
                                     </div>
                                   </div>
-                                  <div style={{ display: "flex", gap: 6 }}>
+                                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                                    <span style={getB2BPaymentBadgeStyle(entry.paymentStatus)}>
+                                      {entry.paymentStatus}
+                                    </span>
                                     <button type="button" onClick={() => handleEditEntry(entry)} style={{ border: "1px solid rgba(4,90,80,0.28)", borderRadius: 999, background: "rgba(4,90,80,0.08)", color: "#067366", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Edit</button>
                                     <button type="button" onClick={() => handleDeleteEntry(entry)} style={{ border: "1px solid rgba(185,28,28,0.24)", borderRadius: 999, background: "rgba(185,28,28,0.08)", color: "#991b1b", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Delete</button>
                                   </div>
@@ -9789,6 +9823,44 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                         </div>
                       );
                     })}
+                    <div style={{ borderRadius: 12, border: "1px solid rgba(15,23,42,0.09)", background: "rgba(248,250,252,0.72)", padding: "11px 12px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                        <div style={{ fontFamily: APP_BRAND_STACK, fontWeight: 700, fontSize: "0.62rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "#045a50" }}>
+                          Vendor Ledger
+                        </div>
+                        <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.72rem", color: "rgba(15,23,42,0.50)" }}>
+                          Simple debit / credit payment log
+                        </div>
+                      </div>
+                      {paymentLog.length === 0 ? (
+                        <div style={{ border: "1px dashed rgba(15,23,42,0.13)", borderRadius: 10, padding: 10, color: "rgba(15,23,42,0.46)", fontSize: "0.80rem", fontFamily: APP_FONT_STACK }}>
+                          No paid ledger entries yet.
+                        </div>
+                      ) : (
+                        <div style={{ display: "grid", gap: 6 }}>
+                          {paymentLog.map((entry) => {
+                            const direction = getB2BLedgerDirection(entry);
+                            const isCredit = direction === "Credit";
+                            return (
+                              <div key={`b2b_ledger_log_${entry.id}`} style={{ display: "grid", gridTemplateColumns: "86px 82px minmax(0, 1fr) auto", gap: 8, alignItems: "center", borderRadius: 9, border: "1px solid rgba(15,23,42,0.07)", background: "#ffffff", padding: "8px 10px" }}>
+                                <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.68rem", color: "rgba(15,23,42,0.48)" }}>
+                                  {formatEntryDate(entry.entryDate)}
+                                </span>
+                                <span style={{ borderRadius: 999, border: `1px solid ${isCredit ? "rgba(5,150,105,0.25)" : "rgba(220,38,38,0.22)"}`, background: isCredit ? "rgba(5,150,105,0.08)" : "rgba(220,38,38,0.07)", color: isCredit ? "#047857" : "#b91c1c", fontFamily: APP_BRAND_STACK, fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", padding: "3px 7px", textAlign: "center" }}>
+                                  {direction}
+                                </span>
+                                <span style={{ minWidth: 0, fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.72)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {getB2BLedgerCaption(entry)} · {entry.serviceName || entry.referredClient || "Entry"} · {entry.paymentMode}
+                                </span>
+                                <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.80rem", fontWeight: 800, color: isCredit ? "#047857" : "#b91c1c", whiteSpace: "nowrap" }}>
+                                  {isCredit ? "+" : "-"} {formatCurrency(entry.paidAmount)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })()}
