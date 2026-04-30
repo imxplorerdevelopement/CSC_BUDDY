@@ -4632,6 +4632,7 @@ function DatabaseAccessModal({
   onVerify,
   allowClose = true,
   busy = false,
+  initialError = null,
 }) {
   const [securityCode, setSecurityCode] = useState("");
   const [authCode, setAuthCode] = useState("");
@@ -4648,6 +4649,11 @@ function DatabaseAccessModal({
   };
 
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
+
+  useEffect(() => {
+    if (initialError) showToast(initialError);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialError]);
 
   const handleVerify = async () => {
     if (checking || busy) return;
@@ -11330,6 +11336,7 @@ export default function CSCBilling() {
   const [isOfflineDevMode, setIsOfflineDevMode] = useState(false);
   const [unlockAnimPhase, setUnlockAnimPhase] = useState(null); // null | "running" | "success"
   const [unlockTarget, setUnlockTarget] = useState(null); // "dashboard" | "database"
+  const [dashboardAuthError, setDashboardAuthError] = useState(null);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [services, setServices] = useState(() => hydrateServices(INITIAL_SERVICES));
   const [tickets, setTickets] = useState(() => []);
@@ -11778,8 +11785,10 @@ export default function CSCBilling() {
     if (!result?.ok) {
       setUnlockAnimPhase(null);
       setUnlockTarget(null);
+      setDashboardAuthError(result?.message || "Incorrect credentials.");
       return result;
     }
+    setDashboardAuthError(null);
     clearSessionCache();
     resetProtectedAppState();
     setIsDashboardUnlocked(true);
@@ -12100,6 +12109,7 @@ export default function CSCBilling() {
           allowClose={false}
           onVerify={handleDashboardVerification}
           busy={isPreparingWorkspace}
+          initialError={dashboardAuthError}
         />
       </div>
     );
