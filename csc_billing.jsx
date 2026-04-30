@@ -4635,30 +4635,38 @@ function DatabaseAccessModal({
 }) {
   const [securityCode, setSecurityCode] = useState("");
   const [authCode, setAuthCode] = useState("");
-  const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
   const [showSecurityCode, setShowSecurityCode] = useState(false);
   const [showAuthCode, setShowAuthCode] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  const showToast = (message) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(message);
+    toastTimer.current = setTimeout(() => setToast(null), 2000);
+  };
+
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   const handleVerify = async () => {
     if (checking || busy) return;
     if (!String(securityCode || "").trim()) {
-      setError("Enter security code.");
+      showToast("Enter security code.");
       return;
     }
     if (normalizeOtpInput(authCode).length !== 6) {
-      setError("Enter valid 6-digit authenticator code.");
+      showToast("Enter valid 6-digit authenticator code.");
       return;
     }
     setChecking(true);
-    setError("");
     try {
       const result = await onVerify?.({
         securityCode: String(securityCode || "").trim(),
         authenticatorCode: normalizeOtpInput(authCode),
       });
       if (!result?.ok) {
-        setError(result?.message || "Verification failed.");
+        showToast(result?.message || "Incorrect credentials.");
         return;
       }
       // onVerify signals success; animation+close is handled by the parent
@@ -4732,6 +4740,14 @@ function DatabaseAccessModal({
           20% { opacity: 0.22; }
           100% { transform: translateX(240%); opacity: 0; }
         }
+        @keyframes authToastIn {
+          from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes authToastOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
       `}</style>
       <div style={{
         position: "relative",
@@ -4763,6 +4779,31 @@ function DatabaseAccessModal({
             overflow: "hidden",
             position: "relative",
           }} className="auth-redesign-card">
+            {toast && (
+              <div style={{
+                position: "absolute",
+                top: 16,
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 10,
+                pointerEvents: "none",
+                animation: "authToastIn 0.22s ease-out",
+                whiteSpace: "nowrap",
+                borderRadius: 999,
+                background: "rgba(30,10,10,0.82)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                border: "1px solid rgba(239,68,68,0.22)",
+                padding: "9px 18px",
+                fontFamily: APP_FONT_STACK,
+                fontSize: "0.78rem",
+                fontWeight: 500,
+                color: "#fca5a5",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+              }}>
+                {toast}
+              </div>
+            )}
             <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
               <span style={{
                 position: "absolute",
@@ -4870,20 +4911,6 @@ function DatabaseAccessModal({
                       {eyeIcon(showAuthCode)}
                     </button>
                   </label>
-                </div>
-              )}
-              {error && (
-                <div style={{
-                  borderRadius: 18,
-                  border: "1px solid rgba(239,68,68,0.22)",
-                  background: "rgba(254,242,242,0.92)",
-                  padding: "13px 14px",
-                  fontFamily: APP_FONT_STACK,
-                  fontSize: "0.83rem",
-                  color: "#b91c1c",
-                  lineHeight: 1.6,
-                }}>
-                  {error}
                 </div>
               )}
               <div style={{ display: "grid", gap: 14 }}>
