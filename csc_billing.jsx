@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { dbLoadMany, dbSave } from "./supabase.js";
 import { DS } from "./design-tokens.js";
 import { DocumentToolsWorkspace } from "./src/workspaces/document-tools/DocumentToolsWorkspace.jsx";
@@ -1598,7 +1598,7 @@ function hydrateServices(storedServices) {
     savedById.has(service.id) ? normalizeService({ ...service, ...savedById.get(service.id) }) : normalizeService(service)
   ));
 
-  // Only keep operator-created custom services — not old built-in IDs that no
+  // Only keep operator-created custom services â€” not old built-in IDs that no
   // longer exist in the registry (those would appear as unclickable orphans).
   const customServices = storedServices.filter((service) => (
     service &&
@@ -2456,12 +2456,10 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
   const dashboardSections = useMemo(() => ([
     {
       title: "Front Desk",
-      subtitle: "Daily intake and scheduled work",
       items: ["entry", "b2b", "appointments"].map((id) => homeNavById[id]).filter(Boolean),
     },
     {
       title: "Tools",
-      subtitle: "Documents, links, and service setup",
       items: ["doc_tools", "quick_links", "services_dashboard"].map((id) => (
         id === "services_dashboard" && homeNavById[id]
           ? { ...homeNavById[id], label: "Service Dashboard" }
@@ -2470,7 +2468,6 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
     },
     {
       title: "Operations",
-      subtitle: "Reports, records, and ticket tracking",
       items: ["monthly", "database", "log"].map((id) => homeNavById[id]).filter(Boolean),
     },
   ]), [homeNavById]);
@@ -2644,7 +2641,7 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
                   cursor: "pointer",
                 }}
               >
-                View Appointments →
+                View Appointments â†’
               </button>
             </div>
           </div>
@@ -2787,16 +2784,6 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
                 }}>
                   {section.title}
                 </h2>
-                <p style={{
-                  margin: "4px 0 0",
-                  fontFamily: APP_FONT_STACK,
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  lineHeight: 1.35,
-                  color: "rgba(15,23,42,0.52)",
-                }}>
-                  {section.subtitle}
-                </p>
               </div>
               <div style={{ display: "grid", gap: 10 }}>
                 {section.items.map((item) => (
@@ -3386,7 +3373,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
   if (isOffline) {
     return (
       <div style={{ display: "grid", gap: 14 }}>
-        {/* Header bar — same chrome as online, export button dimmed */}
+        {/* Header bar â€” same chrome as online, export button dimmed */}
         <div style={{ border: "1px solid rgba(13,27,42,0.11)", borderRadius: 14, background: "#ffffff", padding: 12 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
             <button
@@ -3436,7 +3423,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                   }}
                 >
                   <span>{section.label}</span>
-                  <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(13,27,42,0.28)" }}>—</span>
+                  <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(13,27,42,0.28)" }}>â€”</span>
                 </div>
               ))}
             </div>
@@ -3526,7 +3513,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
     );
   }
 
-  // ── Hacker theme tokens (scoped entirely to DatabaseWorkspace) ──────────
+  // â”€â”€ Hacker theme tokens (scoped entirely to DatabaseWorkspace) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const HK = {
     bg:           "#020b03",
     bgPanel:      "rgba(0,14,4,0.97)",
@@ -3577,7 +3564,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
       {/* Scanline overlay */}
       <div style={{ position: "absolute", inset: 0, backgroundImage: HK.scanlines, pointerEvents: "none", zIndex: 0, borderRadius: HK.rLg }} />
 
-      {/* ── Toolbar row ─────────────────────────────────────────────────── */}
+      {/* â”€â”€ Toolbar row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{
         position: "relative", zIndex: 1,
         border: `1px solid ${HK.border}`,
@@ -3670,10 +3657,10 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
         </div>
       </div>
 
-      {/* ── Main two-column grid ─────────────────────────────────────────── */}
+      {/* â”€â”€ Main two-column grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="csc-db-main-grid" style={{ position: "relative", zIndex: 1 }}>
 
-        {/* LEFT — Entry form */}
+        {/* LEFT â€” Entry form */}
         <form onSubmit={handleFormSubmit} style={{
           border: `1px solid ${HK.border}`,
           borderRadius: HK.rLg,
@@ -3697,8 +3684,8 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
             alignItems: "center",
             gap: 8,
           }}>
-            <span style={{ color: HK.greenMid }}>❯</span>
-            {sectionConfig.label} — {editingRecordId ? "editing record" : "new entry"}
+            <span style={{ color: HK.greenMid }}>â¯</span>
+            {sectionConfig.label} â€” {editingRecordId ? "editing record" : "new entry"}
           </div>
 
           {/* OCR section */}
@@ -3712,7 +3699,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               gap: 8,
             }}>
               <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: HK.greenMid, fontFamily: HK.mono }}>
-                ◈ Auto-Extract From Document
+                â—ˆ Auto-Extract From Document
               </div>
               <div
                 onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); if (!ocrBusy) setOcrDropActive(true); }}
@@ -3794,12 +3781,12 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               )}
               {ocrStatus && (
                 <div style={{ fontSize: "0.70rem", color: HK.greenMid, fontFamily: HK.mono, fontWeight: 600 }}>
-                  ✓ {ocrStatus}
+                  âœ“ {ocrStatus}
                 </div>
               )}
               {ocrError && (
                 <div style={{ fontSize: "0.70rem", color: HK.red, fontFamily: HK.mono, fontWeight: 600 }}>
-                  ✗ {ocrError}
+                  âœ— {ocrError}
                 </div>
               )}
               <input ref={ocrFileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/bmp,image/tiff" onChange={handleOcrInputChange} style={{ display: "none" }} />
@@ -3839,7 +3826,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
 
           {formError && (
             <div style={{ fontSize: "0.72rem", color: HK.red, fontFamily: HK.mono, fontWeight: 600 }}>
-              ✗ {formError}
+              âœ— {formError}
             </div>
           )}
 
@@ -3885,7 +3872,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,255,70,0.20)"; e.currentTarget.style.boxShadow = HK.glow; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,255,70,0.12)"; e.currentTarget.style.boxShadow = "none"; }}
             >
-              {editingRecordId ? "▶ Update" : "▶ Save Entry"}
+              {editingRecordId ? "â–¶ Update" : "â–¶ Save Entry"}
             </button>
             <button
               type="button"
@@ -3912,7 +3899,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           </div>
         </form>
 
-        {/* RIGHT — Records list */}
+        {/* RIGHT â€” Records list */}
         <div style={{
           border: `1px solid ${HK.border}`,
           borderRadius: HK.rLg,
@@ -3925,7 +3912,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           {/* Records header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", borderBottom: `1px solid ${HK.border}`, paddingBottom: 10 }}>
             <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: HK.greenDim, fontFamily: HK.mono, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ color: HK.greenMid }}>❯</span>
+              <span style={{ color: HK.greenMid }}>â¯</span>
               Saved {sectionConfig.label} Records
               <span style={{
                 fontSize: "0.60rem",
@@ -3965,7 +3952,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           <div style={{ maxHeight: 480, overflowY: "auto", display: "grid", gap: 6 }}>
             {filteredSectionRecords.length === 0 ? (
               <div style={{ padding: "20px 0", color: HK.textMuted, fontFamily: HK.mono, fontSize: "0.76rem", textAlign: "center", letterSpacing: "0.08em" }}>
-                <div style={{ fontSize: "1.4rem", marginBottom: 8, opacity: 0.4 }}>◫</div>
+                <div style={{ fontSize: "1.4rem", marginBottom: 8, opacity: 0.4 }}>â—«</div>
                 no records for {sectionConfig.label.toLowerCase()}
               </div>
             ) : (
@@ -4060,7 +4047,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                           {field.label.toLowerCase()}
                         </span>
                         <span style={{ fontFamily: HK.mono, fontSize: "0.78rem", color: record.values[field.key] ? HK.greenBright : HK.textFaint }}>
-                          {record.values[field.key] || "—"}
+                          {record.values[field.key] || "â€”"}
                         </span>
                       </div>
                     ))}
@@ -4109,7 +4096,7 @@ const HACKER_BOOT_LINES = [
   "Session channel established",
   "$ mount workspace.env --profile=operator",
   "Loading tools, routes, and sync state",
-  "Validating operator code... ████████ OK",
+  "Validating operator code... â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ OK",
   "$ prepare dashboard.route --target=home",
   "Dashboard route primed",
   "$ load workspace.modules --quiet",
@@ -4338,7 +4325,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
                 }}>
                   {line.text.startsWith("$") ? (
                     <span>
-                      <span style={{ color: "rgba(0,255,70,0.40)" }}>❯ </span>
+                      <span style={{ color: "rgba(0,255,70,0.40)" }}>â¯ </span>
                       {line.text.slice(2)}
                     </span>
                   ) : (
@@ -4350,7 +4337,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
             {/* Blinking cursor line */}
             {!showGranted && (
               <div style={{ fontSize: "0.72rem", color: "rgba(0,255,70,0.95)", lineHeight: 1.7 }}>
-                <span style={{ color: "rgba(0,255,70,0.40)" }}>❯ </span>
+                <span style={{ color: "rgba(0,255,70,0.40)" }}>â¯ </span>
                 <span style={{ letterSpacing: "0.08em" }}>{scrambleText}</span>
                 <span style={{
                   display: "inline-block",
@@ -4822,7 +4809,12 @@ function DatabaseAccessModal({
                 animation: "authScan 11s ease-in-out infinite",
               }} />
             </div>
-            <div style={{
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleVerify();
+              }}
+              style={{
               position: "relative",
               zIndex: 1,
               padding: "28px 26px 24px",
@@ -4921,8 +4913,7 @@ function DatabaseAccessModal({
               )}
               <div style={{ display: "grid", gap: 14 }}>
                 <button
-                  type="button"
-                  onClick={handleVerify}
+                  type="submit"
                   disabled={checking || busy}
                   style={{
                     border: "1px solid rgba(6,115,102,0.16)",
@@ -4967,7 +4958,7 @@ function DatabaseAccessModal({
                   )}
                 </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>
@@ -5206,7 +5197,7 @@ function WorkspaceSidebar({
             aria-label="Hide navigation menu"
             title="Hide navigation menu"
           >
-            ← Hide
+            â† Hide
           </button>
         </div>
         <button
@@ -6195,7 +6186,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const [referenceName, setReferenceName] = useState(() => draftSeed.referenceName || "");
   const [referenceLabel, setReferenceLabel] = useState(() => getReferenceLabelValue(draftSeed));
   const [operator, setOperator] = useState(() => (
-    typeof draftSeed.operator === "string" ? draftSeed.operator : DEFAULT_OPERATOR
+    OPERATORS.includes(draftSeed.operator) ? draftSeed.operator : ""
   ));
   const [selectedService, setSelectedService] = useState(() => draftSeed.selectedService || "");
   const [qty, setQty] = useState(() => draftSeed.qty || 1);
@@ -6248,7 +6239,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     typeof draftSeed.docRequired === "boolean" ? draftSeed.docRequired : true
   ));
   const [documents, setDocuments] = useState(() => (
-    Array.isArray(draftSeed.documents) ? draftSeed.documents : []
+    Array.isArray(draftSeed.documents)
+      ? draftSeed.documents.filter((doc) => doc?.source !== "service_required")
+      : []
   ));
   const [items, setItems] = useState(() => (
     Array.isArray(draftSeed.items) ? draftSeed.items : []
@@ -6317,8 +6310,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
       ? serviceDetailErrorMap[selectedServiceConfig.id]
       : {})
     : {};
-  const selectedOperatorConfig = getOperatorConfig(operator);
-
   const total = useMemo(() => items.reduce((sum, item, i) => {
     const val = Math.max(0, Number(serviceRates[i]) || 0);
     if (item.id === "inhouse_stamp_paper") return sum + val;
@@ -6332,28 +6323,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
   const paidTotal = cashCollected + upiCollected;
   const pendingBalance = Math.max(total - paidTotal, 0);
   const isOverpaid = total > 0 && paidTotal > total;
-  const requiredDocsCount = documents.filter((doc) => doc.required).length;
-  const submittedRequiredDocsCount = documents.filter((doc) => doc.required && doc.submitted).length;
-  const uniqueServiceItems = useMemo(() => {
-    const seen = new Set();
-    return items.filter((item) => {
-      const serviceId = String(item?.id || "").trim();
-      if (!serviceId || seen.has(serviceId)) return false;
-      seen.add(serviceId);
-      return true;
-    });
-  }, [items]);
-  const serviceDocumentGroups = useMemo(
-    () => uniqueServiceItems.map((serviceItem) => ({
-      serviceId: serviceItem.id,
-      serviceName: serviceItem.name,
-      docs: documents.filter((doc) => doc.source === "service_required" && doc.serviceId === serviceItem.id),
-    })),
-    [uniqueServiceItems, documents]
-  );
   const sanitizePhone = (value) => value.replace(/\D/g, "").slice(0, 10);
   const hasNoTotal = total === 0;
-  const canSaveTicket = items.length > 0 && !isOverpaid && !hasNoTotal;
+  const canSaveTicket = OPERATORS.includes(operator) && items.length > 0 && !isOverpaid && !hasNoTotal;
   const ENTRY_ACCENT = "#067366";
   const ENTRY_ACCENT_TEXT = "#045a50";
   const ENTRY_ACCENT_SOFT = "rgba(6,115,102,0.10)";
@@ -6537,13 +6509,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     }
   }, [selectedService]);
 
-  useEffect(() => {
-    setDocuments((current) => {
-      const synced = syncServiceRequiredDocuments(current, items);
-      return areDocumentListsEqual(current, synced) ? current : synced;
-    });
-  }, [items]);
-
   useEffect(() => () => {
     if (undoTimeoutRef.current) {
       clearTimeout(undoTimeoutRef.current);
@@ -6595,6 +6560,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     if (hasReference && referencePhoneDigits.length > 0 && !PHONE_REGEX.test(referencePhoneDigits)) {
       nextErrors.referencePhone = "Reference mobile must be exactly 10 digits if entered.";
     }
+    if (!OPERATORS.includes(operator)) {
+      nextErrors.operator = "Select an operator.";
+    }
 
     return {
       nextErrors,
@@ -6619,7 +6587,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     } = getIntakeValidationSnapshot();
     setIntakeFieldErrors(nextErrors);
 
-    const firstInvalidField = ["customerName", "customerPhone", "entryDateKey", "referenceName", "referencePhone"].find((fieldKey) => nextErrors[fieldKey]);
+    const firstInvalidField = ["customerName", "customerPhone", "entryDateKey", "referenceName", "referencePhone", "operator"].find((fieldKey) => nextErrors[fieldKey]);
     if (firstInvalidField) {
       setError(nextErrors[firstInvalidField]);
       const fieldStepMap = {
@@ -6628,6 +6596,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         entryDateKey: 1,
         referenceName: 1,
         referencePhone: 1,
+        operator: 1,
       };
       setSubStep(fieldStepMap[firstInvalidField] || 1);
       if (focusOnError) focusIntakeField(firstInvalidField);
@@ -6747,7 +6716,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         unitPrice: 0,
         amount: 0,
         detailValues: {},
-        detailSummary: stampLines.map((l) => `${l.qty}×₹${l.value}`).join(", "),
+        detailSummary: stampLines.map((l) => `${l.qty}Ã—â‚¹${l.value}`).join(", "),
         done: false,
       }]);
       setServiceRates((prev) => ({ ...prev, [newIndex]: String(faceValueTotal) }));
@@ -6866,6 +6835,11 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
   const saveTicket = (status) => {
     if (!ticketMeta) return;
+    if (!OPERATORS.includes(operator)) {
+      setSubStep(1);
+      setError("Select an operator.");
+      return;
+    }
     if (items.length === 0) {
       setSubStep(1);
       setError("Add at least one service before saving ticket.");
@@ -6937,7 +6911,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
     setEntryDateKey(getTicketCounterDateKey(new Date()));
     setReferenceName("");
     setReferenceLabel("");
-    setOperator(DEFAULT_OPERATOR);
+    setOperator("");
     setSelectedService("");
     setQty(1);
     setCustomAmt("");
@@ -7072,6 +7046,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
             || intakeSnapshot.nextErrors.entryDateKey
             || intakeSnapshot.nextErrors.referenceName
             || intakeSnapshot.nextErrors.referencePhone
+            || intakeSnapshot.nextErrors.operator
           ),
           2: items.length === 0,
           3: false,
@@ -7174,48 +7149,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
               {/* thin progress bar */}
               <div style={{ marginTop: 12, height: 3, borderRadius: 3, background: "rgba(15,23,42,0.07)", overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${((subStep - 1) / (totalSubSteps - 1)) * 100}%`, background: ENTRY_ACCENT, borderRadius: 3, transition: "width 0.40s cubic-bezier(0.16,1,0.3,1)" }} />
-              </div>
-            </div>
-
-            <div style={{ ...softPanelStyle, marginBottom: 18, padding: "14px 16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <div>
-                  <div style={sectionEyebrowStyle}>Operator</div>
-                  <div style={{ fontSize: "0.84rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK }}>
-                    Choose the operator for this ticket. This stays linked to the same ticket data flow as before.
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {OPERATOR_DIRECTORY.map((operatorOption) => {
-                    const active = operator === operatorOption.name;
-                    return (
-                      <button
-                        key={`ticket_operator_${operatorOption.id}`}
-                        type="button"
-                        onClick={() => setOperator(operatorOption.name)}
-                        style={{
-                          borderRadius: 999,
-                          border: active ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(13,27,42,0.12)",
-                          background: active ? ENTRY_ACCENT_SOFTER : "#ffffff",
-                          color: active ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.68)",
-                          padding: "10px 16px",
-                          fontFamily: APP_BRAND_STACK,
-                          fontSize: "0.70rem",
-                          fontWeight: 700,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                          cursor: "pointer",
-                          boxShadow: active ? "0 0 0 2px rgba(6,115,102,0.08)" : "0 1px 2px rgba(13,27,42,0.05)",
-                        }}
-                      >
-                        {operatorOption.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div style={{ marginTop: 10, fontSize: "0.78rem", color: "rgba(15,23,42,0.54)", fontFamily: APP_FONT_STACK }}>
-                Active operator: <strong style={{ color: "#0f172a", fontWeight: 700 }}>{selectedOperatorConfig.name}</strong> · {selectedOperatorConfig.role}
               </div>
             </div>
 
@@ -7398,6 +7331,40 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     </>
                   )}
                 </div>
+                <div style={{ ...softPanelStyle, marginTop: 16, padding: "14px 16px" }}>
+                  <div style={sectionEyebrowStyle}>Operator *</div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {OPERATOR_DIRECTORY.map((operatorOption) => {
+                      const active = operator === operatorOption.name;
+                      return (
+                        <button
+                          key={`ticket_operator_${operatorOption.id}`}
+                          type="button"
+                          onClick={() => {
+                            setOperator(operatorOption.name);
+                            setError("");
+                          }}
+                          style={{
+                            borderRadius: 999,
+                            border: active ? `1px solid ${ENTRY_ACCENT_BORDER}` : "1px solid rgba(13,27,42,0.12)",
+                            background: active ? ENTRY_ACCENT_SOFTER : "#ffffff",
+                            color: active ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.68)",
+                            padding: "10px 16px",
+                            fontFamily: APP_BRAND_STACK,
+                            fontSize: "0.70rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            cursor: "pointer",
+                            boxShadow: active ? "0 0 0 2px rgba(6,115,102,0.08)" : "0 1px 2px rgba(13,27,42,0.05)",
+                          }}
+                        >
+                          {operatorOption.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -7406,9 +7373,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
                     Add Services
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: "0.86rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.6 }}>
-                    Step 2 only captures which services this client is taking from us and the quantity for each line item.
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 14, alignItems: "end" }}>
@@ -7444,12 +7408,9 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                 {selectedServiceConfig?.id === "inhouse_stamp_paper" && (
                   <div style={{ ...softPanelStyle, marginBottom: 14, padding: "14px 15px" }}>
                     <div style={{ ...sectionEyebrowStyle, marginBottom: 10 }}>Stamp Paper Denominations</div>
-                    <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK, marginBottom: 10, lineHeight: 1.5 }}>
-                      Add each denomination separately. Example: 10 pieces of ₹100, 1 piece of ₹500.
-                    </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "end", marginBottom: 10 }}>
                       <label style={{ display: "grid", gap: 5 }}>
-                        <span style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Value (₹)</span>
+                        <span style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Value (â‚¹)</span>
                         <input
                           type="number"
                           min="1"
@@ -7499,18 +7460,18 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         {stampLines.map((line, li) => (
                           <div key={line.value} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.09)", background: "rgba(255,255,255,0.80)" }}>
                             <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.86rem", color: "#0f172a", fontWeight: 600 }}>
-                              {line.qty} × ₹{line.value.toLocaleString("en-IN")}
-                              <span style={{ marginLeft: 10, fontSize: "0.76rem", color: "rgba(15,23,42,0.45)", fontWeight: 400 }}>= ₹{(line.qty * line.value).toLocaleString("en-IN")}</span>
+                              {line.qty} Ã— â‚¹{line.value.toLocaleString("en-IN")}
+                              <span style={{ marginLeft: 10, fontSize: "0.76rem", color: "rgba(15,23,42,0.45)", fontWeight: 400 }}>= â‚¹{(line.qty * line.value).toLocaleString("en-IN")}</span>
                             </div>
                             <button
                               type="button"
                               onClick={() => setStampLines((prev) => prev.filter((_, i) => i !== li))}
                               style={{ width: 26, height: 26, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 6, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}
-                            >×</button>
+                            >Ã—</button>
                           </div>
                         ))}
                         <div style={{ paddingTop: 6, borderTop: "1px solid rgba(15,23,42,0.08)", fontSize: "0.82rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK, textAlign: "right" }}>
-                          Total: {stampLines.reduce((s, l) => s + l.qty, 0)} pcs — Face value ₹{stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
+                          Total: {stampLines.reduce((s, l) => s + l.qty, 0)} pcs â€” Face value â‚¹{stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
                         </div>
                       </div>
                     )}
@@ -7558,12 +7519,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                                 {it.stampLines.map((line) => (
                                   <span key={line.value} style={{ fontSize: "0.75rem", fontFamily: APP_FONT_STACK, color: "#045a50", background: "rgba(6,115,102,0.07)", border: "1px solid rgba(6,115,102,0.18)", borderRadius: 5, padding: "2px 7px" }}>
-                                    {line.qty}×₹{line.value.toLocaleString("en-IN")}
+                                    {line.qty}Ã—â‚¹{line.value.toLocaleString("en-IN")}
                                   </span>
                                 ))}
                               </div>
                               <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
-                                {it.qty} pcs · Face value ₹{it.stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
+                                {it.qty} pcs Â· Face value â‚¹{it.stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
                               </div>
                             </div>
                           ) : (
@@ -7587,76 +7548,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
 
             {subStep === 3 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-                  <div>
-                    <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
-                      Service Document Intake
-                    </div>
-                    <div style={{ marginTop: 6, fontSize: "0.84rem", color: "rgba(15,23,42,0.58)", fontFamily: APP_FONT_STACK, lineHeight: 1.6 }}>
-                      This step is the only place where document and proof intake is tracked. Required items are pulled from the selected services.
-                    </div>
-                  </div>
-                  <div style={{ ...smallBadgeStyle, background: "rgba(15,23,42,0.05)", border: "1px solid rgba(15,23,42,0.09)", color: "rgba(15,23,42,0.52)" }}>
-                    {submittedRequiredDocsCount}/{requiredDocsCount} required submitted
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 0, fontFamily: APP_FONT_STACK }}>
+                    Documents
                   </div>
                 </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {serviceDocumentGroups.length === 0 ? (
-                    <div style={{ ...softPanelStyle, textAlign: "center", color: "rgba(15,23,42,0.45)", fontSize: "0.84rem", padding: "22px 16px" }}>
-                      Add at least one service first. Required documents will appear service-wise.
-                    </div>
-                  ) : (
-                    serviceDocumentGroups.map((group) => (
-                      <div key={`group_${group.serviceId}`} style={{ ...softPanelStyle, padding: "14px 15px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
-                          <div style={{ fontSize: "0.92rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                            {group.serviceName}
-                          </div>
-                          <div style={{ ...smallBadgeStyle, background: ENTRY_ACCENT_SOFTER, border: `1px solid ${ENTRY_ACCENT_BORDER}`, color: ENTRY_ACCENT_TEXT }}>
-                            {group.docs.filter((doc) => doc.submitted).length}/{group.docs.length} intaked
-                          </div>
-                        </div>
-                        {group.docs.length === 0 ? (
-                          <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
-                            No required documents configured for this service.
-                          </div>
-                        ) : (
-                          <div style={{ display: "grid", gap: 8 }}>
-                            {group.docs.map((doc) => (
-                              <div key={doc.id} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.72)", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                                <div style={{ fontSize: "0.84rem", color: "#0f172a", fontWeight: 600, fontFamily: APP_FONT_STACK }}>
-                                  {doc.name}
-                                </div>
-                                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(15,23,42,0.64)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
-                                    <input
-                                      type="radio"
-                                      name={`doc_status_${doc.id}`}
-                                      checked={Boolean(doc.submitted)}
-                                      onChange={() => setDocumentSubmitted(doc.id, true)}
-                                    />
-                                    Intaked
-                                  </label>
-                                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(15,23,42,0.64)", fontSize: "0.78rem", fontFamily: APP_FONT_STACK, cursor: "pointer" }}>
-                                    <input
-                                      type="radio"
-                                      name={`doc_status_${doc.id}`}
-                                      checked={!doc.submitted}
-                                      onChange={() => setDocumentSubmitted(doc.id, false)}
-                                    />
-                                    Pending
-                                  </label>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div style={{ ...softPanelStyle, marginTop: 12 }}>
+                <div style={{ ...softPanelStyle }}>
                   <div style={sectionEyebrowStyle}>Custom Documents</div>
                   <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, alignItems: "center", marginBottom: 10 }}>
                     <input
@@ -7665,20 +7562,20 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         setDocName(e.target.value);
                         setError("");
                       }}
-                      placeholder="Add custom document"
+                      placeholder="Add document"
                       style={inputStyle}
                     />
-                    <button onClick={addDocument} style={{ ...secondaryButtonStyle, padding: "11px 16px" }}>
+                    <button type="button" onClick={addDocument} style={{ ...secondaryButtonStyle, padding: "11px 16px" }}>
                       Add
                     </button>
                   </div>
-                  {documents.filter((doc) => doc.source !== "service_required").length === 0 ? (
+                  {documents.length === 0 ? (
                     <div style={{ fontSize: "0.80rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_FONT_STACK }}>
-                      No custom documents added.
+                      No documents added.
                     </div>
                   ) : (
                     <div style={{ display: "grid", gap: 8 }}>
-                      {documents.filter((doc) => doc.source !== "service_required").map((doc) => (
+                      {documents.map((doc) => (
                         <div key={doc.id} style={{ border: "1px solid rgba(15,23,42,0.09)", borderRadius: 10, background: "rgba(255,255,255,0.72)", padding: "9px 11px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                           <div style={{ fontSize: "0.82rem", color: "#0f172a", fontFamily: APP_FONT_STACK, fontWeight: 600 }}>{doc.name}</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -7686,7 +7583,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               <input type="checkbox" checked={Boolean(doc.submitted)} onChange={() => toggleDocumentSubmitted(doc.id)} />
                               Received
                             </label>
-                            <button onClick={() => removeDocument(doc.id)} style={{ width: 28, height: 28, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
+                            <button type="button" onClick={() => removeDocument(doc.id)} style={{ width: 28, height: 28, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 8, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}>
                               x
                             </button>
                           </div>
@@ -7697,7 +7594,6 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                 </div>
               </div>
             )}
-
             {subStep === 4 && (
               <div style={{ animation: "fadeIn 0.28s ease-out" }}>
                 <div style={{ maxWidth: 980, margin: "0 auto", width: "100%" }}>
@@ -7725,7 +7621,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                                 <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
                                   {it.stampLines.map((line) => (
                                     <span key={line.value} style={{ fontSize: "0.70rem", fontFamily: APP_FONT_STACK, color: "#045a50", background: "rgba(6,115,102,0.07)", border: "1px solid rgba(6,115,102,0.15)", borderRadius: 4, padding: "1px 6px" }}>
-                                      {line.qty}×₹{line.value.toLocaleString("en-IN")}
+                                      {line.qty}Ã—â‚¹{line.value.toLocaleString("en-IN")}
                                     </span>
                                   ))}
                                 </div>
@@ -7735,7 +7631,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             </div>
                             <label style={{ display: "grid", gap: 4, minWidth: 110 }}>
                               <span style={{ fontSize: "0.62rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                                {isStamp ? "Total Amount (₹)" : `Rate per ${it.unit || "unit"} (₹)`}
+                                {isStamp ? "Total Amount (â‚¹)" : `Rate per ${it.unit || "unit"} (â‚¹)`}
                               </span>
                               <input
                                 type="number"
@@ -7749,7 +7645,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             <div style={{ textAlign: "right", minWidth: 80 }}>
                               <div style={{ fontSize: "0.60rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>Line Total</div>
                               <div style={{ fontSize: "0.94rem", fontWeight: 700, color: lineTotal > 0 ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.30)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
-                                {lineTotal > 0 ? `₹${lineTotal.toLocaleString("en-IN")}` : "—"}
+                                {lineTotal > 0 ? `â‚¹${lineTotal.toLocaleString("en-IN")}` : "â€”"}
                               </div>
                             </div>
                           </div>
@@ -7759,7 +7655,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>Total Amount Charged</span>
                       <span style={{ fontSize: "1.10rem", fontWeight: 700, color: total > 0 ? "#0f172a" : "rgba(15,23,42,0.30)", fontFamily: APP_FONT_STACK }}>
-                        {total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}
+                        {total > 0 ? `â‚¹${total.toLocaleString("en-IN")}` : "â€”"}
                       </span>
                     </div>
                   </div>
@@ -7777,7 +7673,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               min="0"
                               value={serviceVendorAmounts[i] ?? ""}
                               onChange={(e) => setServiceVendorAmounts((prev) => ({ ...prev, [i]: e.target.value }))}
-                              placeholder="₹ 0"
+                              placeholder="â‚¹ 0"
                               style={{ ...inputStyle, padding: "8px 10px", textAlign: "right", fontSize: "0.88rem" }}
                             />
                           </label>
@@ -7787,7 +7683,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     {computedVendorTotal > 0 && (
                       <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>Total Vendor Payment</span>
-                        <span style={{ fontSize: "1.00rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>₹{computedVendorTotal.toLocaleString("en-IN")}</span>
+                        <span style={{ fontSize: "1.00rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>â‚¹{computedVendorTotal.toLocaleString("en-IN")}</span>
                       </div>
                     )}
                   </div>
@@ -7811,7 +7707,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
                         <span>Total Amount</span>
                         <span style={{ color: total > 0 ? "#0f172a" : "rgba(15,23,42,0.35)", fontWeight: 700 }}>
-                          {total > 0 ? `Rs. ${total}` : "—"}
+                          {total > 0 ? `Rs. ${total}` : "â€”"}
                         </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
@@ -7825,7 +7721,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       {computedVendorTotal > 0 && (
                         <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
                           <span>Total Vendor Payment</span>
-                          <span style={{ color: "#0f172a", fontWeight: 700 }}>₹{computedVendorTotal.toLocaleString("en-IN")}</span>
+                          <span style={{ color: "#0f172a", fontWeight: 700 }}>â‚¹{computedVendorTotal.toLocaleString("en-IN")}</span>
                         </div>
                       )}
                       <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10 }}>
@@ -9242,6 +9138,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
     give: createB2BEntryForm("give"),
     agent: createB2BEntryForm("agent"),
   });
+  const [forceCustomPartnerInput, setForceCustomPartnerInput] = useState({ take: false, give: false, agent: false });
   const [formError, setFormError] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState(null);
@@ -9384,9 +9281,14 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
   const trackEntities = entitiesByTrack[activeTrack] || [];
   const activeEntity = trackEntities.find((entity) => entity.key === activeEntityKeys[activeTrack]) || trackEntities[0] || null;
   const activeForm = entryForms[activeTrack];
-  const matchingFormEntity = trackEntities.find((entity) => normalizeEntityKey(entity.name) === normalizeEntityKey(activeForm.partnerName));
+  const formPartnerOptions = activeTrack === "agent"
+    ? entitiesByTrack.agent
+    : entityDirectory.filter((entity) => entity.roles.some((roleId) => roleId === "take" || roleId === "give"));
+  const matchingFormEntity = formPartnerOptions.find((entity) => normalizeEntityKey(entity.name) === normalizeEntityKey(activeForm.partnerName));
   const customPartnerOptionValue = "__custom_partner__";
-  const selectedPartnerOptionValue = matchingFormEntity?.key || (String(activeForm.partnerName || "").trim() ? customPartnerOptionValue : "");
+  const selectedPartnerOptionValue = forceCustomPartnerInput[activeTrack]
+    ? customPartnerOptionValue
+    : matchingFormEntity?.key || (String(activeForm.partnerName || "").trim() ? customPartnerOptionValue : "");
   const serviceSuggestions = matchingFormEntity
     ? dedupeB2BItems(matchingFormEntity.servicesByRole[activeTrack].flatMap((group) => group.items || []))
     : [];
@@ -9395,21 +9297,54 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
   const pendingPreview = Math.max(0, amountPreview - settledPreview);
   const serviceListId = `b2b_service_options_${activeTrack}_${matchingFormEntity?.key || "custom"}`;
   const trackMeta = B2B_TRACK_META[activeTrack];
+  function fmtMoneyCompact(v) {
+    const n = Math.round(Number(v) || 0);
+    return n === 0 ? "â€”" : `Rs. ${n.toLocaleString("en-IN")}`;
+  }
   const trackTotals = trackEntities.reduce((acc, entity) => {
     acc.amount += Number(entity.amountValue) || 0;
     acc.settled += Number(entity.settledValue) || 0;
     acc.pending += Number(entity.pendingValue) || 0;
     return acc;
   }, { amount: 0, settled: 0, pending: 0 });
+  const summaryMetrics = [
+    {
+      label: activeTrack === "take" ? "Purchases" : activeTrack === "give" ? "Sales" : "Business",
+      value: fmtMoneyCompact(trackTotals.amount),
+      tone: "#0f172a",
+    },
+    {
+      label: activeTrack === "give" ? "Collected" : "Paid",
+      value: fmtMoneyCompact(trackTotals.settled),
+      tone: "#166534",
+    },
+    {
+      label: activeTrack === "take" ? "Pending Payable" : activeTrack === "give" ? "Pending" : "Commission Due",
+      value: fmtMoneyCompact(trackTotals.pending),
+      tone: trackTotals.pending > 0 ? "#7c2d12" : "rgba(15,23,42,0.46)",
+    },
+  ];
+  const metricPillStyle = {
+    minHeight: 50,
+    minWidth: 132,
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.10)",
+    background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.90))",
+    boxShadow: "0 6px 14px rgba(15,23,42,0.05)",
+    padding: "8px 12px",
+    display: "grid",
+    gap: 2,
+    alignContent: "center",
+  };
   const getB2BPaymentBadgeStyle = (status) => {
     const normalizedStatus = String(status || "Unpaid");
     const isPaid = normalizedStatus === "Paid";
     const isPartial = normalizedStatus === "Partial";
     return {
       borderRadius: 999,
-      border: `1px solid ${isPaid ? "rgba(5,150,105,0.30)" : isPartial ? "rgba(217,119,6,0.30)" : "rgba(220,38,38,0.28)"}`,
-      background: isPaid ? "rgba(5,150,105,0.10)" : isPartial ? "rgba(217,119,6,0.10)" : "rgba(220,38,38,0.08)",
-      color: isPaid ? "#047857" : isPartial ? "#b45309" : "#dc2626",
+      border: `1px solid ${isPaid ? "rgba(100,116,139,0.24)" : isPartial ? "rgba(217,119,6,0.30)" : "rgba(220,38,38,0.28)"}`,
+      background: isPaid ? "rgba(100,116,139,0.10)" : isPartial ? "rgba(217,119,6,0.10)" : "rgba(220,38,38,0.08)",
+      color: isPaid ? "rgba(51,65,85,0.78)" : isPartial ? "#b45309" : "#dc2626",
       fontFamily: APP_FONT_STACK,
       fontSize: "0.66rem",
       fontWeight: 700,
@@ -9456,6 +9391,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
 
   const selectEntity = (entity) => {
     setActiveEntityKeys((prev) => ({ ...prev, [activeTrack]: entity.key }));
+    setForceCustomPartnerInput((prev) => ({ ...prev, [activeTrack]: false }));
     setEntryForms((prev) => ({
       ...prev,
       [activeTrack]: {
@@ -9468,16 +9404,33 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
 
   const handlePartnerSelection = (partnerKey) => {
     if (!partnerKey) {
+      setForceCustomPartnerInput((prev) => ({ ...prev, [activeTrack]: false }));
       updateActiveForm("partnerName", "");
       return;
     }
     if (partnerKey === customPartnerOptionValue) {
+      setForceCustomPartnerInput((prev) => ({ ...prev, [activeTrack]: true }));
       updateActiveForm("partnerName", matchingFormEntity ? "" : activeForm.partnerName);
       return;
     }
-    const entity = trackEntities.find((item) => item.key === partnerKey);
+    setForceCustomPartnerInput((prev) => ({ ...prev, [activeTrack]: false }));
+    const entity = formPartnerOptions.find((item) => item.key === partnerKey);
     if (!entity) return;
     selectEntity(entity);
+  };
+
+  const handleAddVendor = () => {
+    const targetTrack = activeTrack === "agent" ? "take" : activeTrack;
+    setActiveTrack(targetTrack);
+    setEditingEntryId(null);
+    setFormError("");
+    setForceCustomPartnerInput((prev) => ({ ...prev, [targetTrack]: true }));
+    setEntryForms((prev) => ({
+      ...prev,
+      [targetTrack]: createB2BEntryForm(targetTrack),
+    }));
+    setFormOpen(true);
+    setTimeout(() => b2bFormRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
   };
 
   const handleAddEntry = () => {
@@ -9494,19 +9447,19 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
 
     if (!partnerName) {
       setFormError(activeTrack === "agent" ? "Agent name is required." : "Vendor name is required.");
-      return;
+      return false;
     }
     if (activeTrack !== "agent" && !serviceName) {
       setFormError("Service name is required.");
-      return;
+      return false;
     }
     if (activeTrack === "agent" && !referredClient) {
       setFormError("Client referred is required.");
-      return;
+      return false;
     }
     if (rateNum <= 0) {
       setFormError(`${trackMeta.rateFieldLabel} must be greater than zero.`);
-      return;
+      return false;
     }
 
     setFormError("");
@@ -9540,6 +9493,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
         createdAt: new Date().toISOString(),
       });
     }
+    setForceCustomPartnerInput((prev) => ({ ...prev, [activeTrack]: false }));
 
     setEntryForms((prev) => ({
       ...prev,
@@ -9550,12 +9504,14 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
         includeInDailyRevenue: activeTrack === "give" ? Boolean(prev[activeTrack].includeInDailyRevenue) : false,
       },
     }));
+    return true;
   };
 
   const handleEditEntry = (entry) => {
     if (!entry?.id) return;
     setActiveTrack(entry.ecosystem);
     setEditingEntryId(entry.id);
+    setForceCustomPartnerInput((prev) => ({ ...prev, [entry.ecosystem]: false }));
     setEntryForms((prev) => ({
       ...prev,
       [entry.ecosystem]: {
@@ -9580,6 +9536,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
   const handleCancelEdit = () => {
     setEditingEntryId(null);
     setFormError("");
+    setForceCustomPartnerInput((prev) => ({ ...prev, [activeTrack]: false }));
     setEntryForms((prev) => ({
       ...prev,
       [activeTrack]: {
@@ -9612,11 +9569,6 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
   };
 
   const eb = { fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(15,23,42,0.46)", fontFamily: APP_BRAND_STACK };
-  const fmtMoneyCompact = (v) => {
-    const n = Math.round(Number(v) || 0);
-    return n === 0 ? "—" : `Rs. ${n.toLocaleString("en-IN")}`;
-  };
-
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out", maxWidth: 1140, margin: "0 auto", display: "grid", gap: 12 }}>
       {/* Compact header: title + tabs + inline stats + add button */}
@@ -9630,7 +9582,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
               {trackEntities.length} {activeTrack === "agent" ? "agents" : "vendors"}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end" }}>
             {B2B_TRACKS.map((track) => {
               const active = track.id === activeTrack;
               return (
@@ -9654,22 +9606,35 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                 </button>
               );
             })}
+            <button
+              type="button"
+              onClick={handleAddVendor}
+              style={{
+                borderRadius: 8,
+                border: "1px solid rgba(4,90,80,0.30)",
+                background: "rgba(4,90,80,0.10)",
+                color: "#067366",
+                padding: "6px 12px",
+                fontFamily: APP_FONT_STACK,
+                fontSize: "0.74rem",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              + Add Vendor
+            </button>
           </div>
         </div>
         {/* Inline stat strip */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.06)", alignItems: "center" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={eb}>{trackMeta.amountLabel}</span>
-            <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#0f172a" }}>{fmtMoneyCompact(trackTotals.amount)}</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={eb}>{trackMeta.settledLabel}</span>
-            <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: "#166534" }}>{fmtMoneyCompact(trackTotals.settled)}</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={eb}>{trackMeta.pendingLabel}</span>
-            <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 700, color: trackTotals.pending > 0 ? "#7c2d12" : "rgba(15,23,42,0.40)" }}>{fmtMoneyCompact(trackTotals.pending)}</span>
-          </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.06)", alignItems: "center" }}>
+          {summaryMetrics.map((metric) => (
+            <div key={metric.label} style={metricPillStyle}>
+              <span style={eb}>{metric.label}</span>
+              <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.95rem", fontWeight: 800, color: metric.tone }}>
+                {metric.value}
+              </span>
+            </div>
+          ))}
           <div style={{ marginLeft: "auto" }}>
             <button
               type="button"
@@ -9812,46 +9777,60 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                             <div style={{ flex: 1, height: 1, background: "rgba(6,115,102,0.15)" }} />
                             <div style={{ display: "flex", gap: 10, fontSize: "0.68rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.48)", whiteSpace: "nowrap" }}>
                               {dayTotal > 0 && <span style={{ fontWeight: 600, color: "#0f172a" }}>{fmtMoneyCompact(dayTotal)}</span>}
-                              {dayPending > 0 && <span style={{ color: "#7c2d12", fontWeight: 600 }}>₹{Math.round(dayPending).toLocaleString("en-IN")} due</span>}
+                              {dayPending > 0 && <span style={{ color: "#7c2d12", fontWeight: 600 }}>â‚¹{Math.round(dayPending).toLocaleString("en-IN")} due</span>}
                             </div>
                           </div>
                           {/* Entries for this date */}
                           <div style={{ display: "grid", gap: 7 }}>
-                            {dayEntries.map((entry) => (
-                              <div key={entry.id} style={{ borderRadius: 10, border: "1px solid rgba(15,23,42,0.08)", background: "rgba(255,255,255,0.82)", padding: "10px 11px" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
-                                  <div>
-                                    <div style={{ fontSize: "0.84rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>
-                                      {entry.serviceName || entry.referredClient || "Untitled entry"}
+                            {dayEntries.map((entry) => {
+                              const isSettled = entry.paymentStatus === "Paid" || ((Number(entry.amount) || 0) > 0 && (Number(entry.pendingAmount) || 0) <= 0);
+                              const rowTextColor = isSettled ? "rgba(15,23,42,0.58)" : "#0f172a";
+                              const mutedTextColor = isSettled ? "rgba(15,23,42,0.42)" : "rgba(15,23,42,0.52)";
+                              return (
+                                <div
+                                  key={entry.id}
+                                  style={{
+                                    borderRadius: 10,
+                                    border: isSettled ? "1px solid rgba(15,23,42,0.07)" : "1px solid rgba(15,23,42,0.08)",
+                                    background: isSettled ? "linear-gradient(180deg, rgba(248,250,252,0.94), rgba(241,245,249,0.88))" : "rgba(255,255,255,0.82)",
+                                    padding: "10px 11px",
+                                    boxShadow: isSettled ? "inset 3px 0 0 rgba(100,116,139,0.22)" : "none",
+                                  }}
+                                >
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
+                                    <div>
+                                      <div style={{ fontSize: "0.84rem", fontWeight: 700, color: rowTextColor, fontFamily: APP_FONT_STACK }}>
+                                        {entry.serviceName || entry.referredClient || "Untitled entry"}
+                                      </div>
+                                      <div style={{ marginTop: 3, fontSize: "0.74rem", color: isSettled ? "rgba(15,23,42,0.44)" : "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK }}>
+                                        {activeTrack === "agent"
+                                          ? `Client ${entry.referredClient || "N/A"} | Commission ${formatCurrency(entry.amount)}`
+                                          : `Qty ${entry.quantity} × Rs. ${entry.rate} = ${formatCurrency(entry.amount)}`}
+                                      </div>
                                     </div>
-                                    <div style={{ marginTop: 3, fontSize: "0.74rem", color: "rgba(15,23,42,0.56)", fontFamily: APP_FONT_STACK }}>
-                                      {activeTrack === "agent"
-                                        ? `Client ${entry.referredClient || "N/A"} | Commission ${formatCurrency(entry.amount)}`
-                                        : `Qty ${entry.quantity} × Rs. ${entry.rate} = ${formatCurrency(entry.amount)}`}
+                                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                                      <span style={getB2BPaymentBadgeStyle(entry.paymentStatus)}>
+                                        {entry.paymentStatus}
+                                      </span>
+                                      <button type="button" onClick={() => handleEditEntry(entry)} style={{ border: "1px solid rgba(4,90,80,0.28)", borderRadius: 999, background: "rgba(4,90,80,0.08)", color: "#067366", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Edit</button>
+                                      <button type="button" onClick={() => handleDeleteEntry(entry)} style={{ border: "1px solid rgba(185,28,28,0.24)", borderRadius: 999, background: "rgba(185,28,28,0.08)", color: "#991b1b", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Delete</button>
                                     </div>
                                   </div>
-                                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                                    <span style={getB2BPaymentBadgeStyle(entry.paymentStatus)}>
-                                      {entry.paymentStatus}
-                                    </span>
-                                    <button type="button" onClick={() => handleEditEntry(entry)} style={{ border: "1px solid rgba(4,90,80,0.28)", borderRadius: 999, background: "rgba(4,90,80,0.08)", color: "#067366", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Edit</button>
-                                    <button type="button" onClick={() => handleDeleteEntry(entry)} style={{ border: "1px solid rgba(185,28,28,0.24)", borderRadius: 999, background: "rgba(185,28,28,0.08)", color: "#991b1b", fontSize: "0.56rem", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 9px", cursor: "pointer" }}>Delete</button>
+                                  <div style={{ marginTop: 5, fontSize: "0.72rem", color: mutedTextColor, fontFamily: APP_FONT_STACK }}>
+                                    {entry.paymentStatus} · {trackMeta.settledLabel} {formatCurrency(entry.paidAmount)} · Pending {formatCurrency(entry.pendingAmount)} · {entry.paymentMode}
                                   </div>
+                                  {entry.ecosystem === "agent" && Number(entry.businessAmount) > 0 && (
+                                    <div style={{ marginTop: 3, fontSize: "0.72rem", color: mutedTextColor, fontFamily: APP_FONT_STACK }}>Referred business {formatCurrency(entry.businessAmount)}</div>
+                                  )}
+                                  {entry.ecosystem === "give" && entry.includeInDailyRevenue && (
+                                    <div style={{ marginTop: 3, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: isSettled ? "rgba(15,23,42,0.42)" : "#067366", fontFamily: APP_BRAND_STACK }}>Included in daily revenue</div>
+                                  )}
+                                  {entry.note && (
+                                    <div style={{ marginTop: 3, fontSize: "0.72rem", color: mutedTextColor, fontFamily: APP_FONT_STACK }}>Note: {entry.note}</div>
+                                  )}
                                 </div>
-                                <div style={{ marginTop: 5, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>
-                                  {entry.paymentStatus} · {trackMeta.settledLabel} {formatCurrency(entry.paidAmount)} · Pending {formatCurrency(entry.pendingAmount)} · {entry.paymentMode}
-                                </div>
-                                {entry.ecosystem === "agent" && Number(entry.businessAmount) > 0 && (
-                                  <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>Referred business {formatCurrency(entry.businessAmount)}</div>
-                                )}
-                                {entry.ecosystem === "give" && entry.includeInDailyRevenue && (
-                                  <div style={{ marginTop: 3, fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#067366", fontFamily: APP_BRAND_STACK }}>Included in daily revenue</div>
-                                )}
-                                {entry.note && (
-                                  <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.52)", fontFamily: APP_FONT_STACK }}>Note: {entry.note}</div>
-                                )}
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -9883,7 +9862,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                                   {direction}
                                 </span>
                                 <span style={{ minWidth: 0, fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.72)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {getB2BLedgerCaption(entry)} · {entry.serviceName || entry.referredClient || "Entry"} · {entry.paymentMode}
+                                  {getB2BLedgerCaption(entry)} Â· {entry.serviceName || entry.referredClient || "Entry"} Â· {entry.paymentMode}
                                 </span>
                                 <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.80rem", fontWeight: 800, color: isCredit ? "#047857" : "#b91c1c", whiteSpace: "nowrap" }}>
                                   {isCredit ? "+" : "-"} {formatCurrency(entry.paidAmount)}
@@ -9903,7 +9882,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
       </div>
 
       {formOpen && (
-      <form ref={b2bFormRef} onSubmit={(event) => { event.preventDefault(); handleAddEntry(); setFormOpen(false); }} style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(4,90,80,0.20)", background: "rgba(255,255,255,0.96)", padding: "14px 16px" }}>
+      <form ref={b2bFormRef} onSubmit={(event) => { event.preventDefault(); if (handleAddEntry()) setFormOpen(false); }} style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(4,90,80,0.20)", background: "rgba(255,255,255,0.96)", padding: "14px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: DS.wine, fontFamily: APP_BRAND_STACK }}>
@@ -9929,7 +9908,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
               <option value="" style={MENU_OPTION_STYLE}>
                 {activeTrack === "agent" ? "Select agent" : "Select vendor"}
               </option>
-              {trackEntities.map((entity) => (
+              {formPartnerOptions.map((entity) => (
                 <option key={`partner_select_${activeTrack}_${entity.key}`} value={entity.key} style={MENU_OPTION_STYLE}>
                   {entity.name}
                 </option>
@@ -10255,7 +10234,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
     if (catRevenue[s.category] !== undefined) catRevenue[s.category] += s.revenue;
   });
 
-  // ── Design tokens ────────────────────────────────────────────────────────
+  // â”€â”€ Design tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const S = {
     card:       { background: "#fff", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 },
     cardFlat:   { background: "rgba(248,250,252,0.9)", border: "1px solid rgba(15,23,42,0.07)", borderRadius: 12, padding: "14px 16px" },
@@ -10270,7 +10249,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
   const statusColor = (h) => h === "good" ? "#16a34a" : h === "watch" ? "#d97706" : "#dc2626";
   const statusLabel = (h) => h === "good" ? "HEALTHY" : h === "watch" ? "WATCH" : "ACTION";
 
-  // ── Reusable sub-components ───────────────────────────────────────────────
+  // â”€â”€ Reusable sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const KPICard = ({ eyebrow, value, valueColor = "#0f172a", badge, badgeColor }) => (
     <div style={{ ...S.cardFlat }}>
       <div style={S.eyebrow}>{eyebrow}</div>
@@ -10389,7 +10368,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
     );
   }
 
-  // ── Derived chart data ───────────────────────────────────────────────────
+  // â”€â”€ Derived chart data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const monthBars = months.slice(0, 6).reverse().map((m) => {
     const label = (() => {
       if (!/^\d{4}-\d{2}$/.test(m)) return m;
@@ -10421,7 +10400,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
     { label: "Cost", value: totalTicketVendorCost, color: "#dc2626" },
   ] : [];
 
-  // ── Legend helper ────────────────────────────────────────────────────────
+  // â”€â”€ Legend helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const Legend = ({ items }) => (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10 }}>
       {items.filter((i) => i.value > 0).map((i) => (
@@ -10436,7 +10415,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
 
-      {/* ── SECTION 1: EXECUTIVE HEALTH CHECK ── */}
+      {/* â”€â”€ SECTION 1: EXECUTIVE HEALTH CHECK â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>Executive Health Check</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
@@ -10471,7 +10450,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* ── SECTION 2: REVENUE & COLLECTIONS ── */}
+      {/* â”€â”€ SECTION 2: REVENUE & COLLECTIONS â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>Revenue & Collections</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -10527,7 +10506,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* ── SECTION 3: PROFIT / LOSS ── */}
+      {/* â”€â”€ SECTION 3: PROFIT / LOSS â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>Profit / Loss</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -10580,7 +10559,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* ── SECTION 4: SERVICE PERFORMANCE ── */}
+      {/* â”€â”€ SECTION 4: SERVICE PERFORMANCE â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>Service Performance</div>
 
@@ -10592,12 +10571,12 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             value={`${concentration}%`}
             color={concentration >= 50 && concentration <= 65 ? "#16a34a" : concentration > 75 ? "#dc2626" : "#d97706"}
           />
-          <MiniKPI eyebrow="Most Frequent" value={topServicesByCount[0]?.name?.split(" ").slice(0, 2).join(" ") || "—"} color="#09998e" />
-          <MiniKPI eyebrow="Highest Revenue" value={topServicesByRevenue[0]?.name?.split(" ").slice(0, 2).join(" ") || "—"} color="#16a34a" />
+          <MiniKPI eyebrow="Most Frequent" value={topServicesByCount[0]?.name?.split(" ").slice(0, 2).join(" ") || "â€”"} color="#09998e" />
+          <MiniKPI eyebrow="Highest Revenue" value={topServicesByRevenue[0]?.name?.split(" ").slice(0, 2).join(" ") || "â€”"} color="#16a34a" />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          {/* Top services by revenue — vertical bar layout */}
+          {/* Top services by revenue â€” vertical bar layout */}
           <div style={S.cardFlat}>
             <div style={S.eyebrow}>Top Services by Revenue</div>
             <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
@@ -10633,7 +10612,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* ── SECTION 5: WORKFLOW & OPERATIONS ── */}
+      {/* â”€â”€ SECTION 5: WORKFLOW & OPERATIONS â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>Workflow & Operations</div>
 
@@ -10650,8 +10629,8 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 6 }}>
               {[
                 { l: "< 1d", v: aging.fresh, c: "#16a34a" },
-                { l: "1–3d", v: aging.d1to3, c: "#d97706" },
-                { l: "3–7d", v: aging.d3to7, c: "#ea580c" },
+                { l: "1â€“3d", v: aging.d1to3, c: "#d97706" },
+                { l: "3â€“7d", v: aging.d3to7, c: "#ea580c" },
                 { l: "> 7d", v: aging.over7, c: "#dc2626" },
               ].map((a) => (
                 <div key={a.l} style={{ background: `${a.c}0e`, border: `1px solid ${a.c}28`, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
@@ -10697,7 +10676,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* ── SECTION 6: B2B & VENDOR INTEGRATION ── */}
+      {/* â”€â”€ SECTION 6: B2B & VENDOR INTEGRATION â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>B2B & Vendor Integration</div>
 
@@ -10751,7 +10730,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         )}
       </div>
 
-      {/* ── SECTION 7: EXPANSION READINESS ── */}
+      {/* â”€â”€ SECTION 7: EXPANSION READINESS â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>Expansion Readiness</div>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(180px, 220px) 1fr", gap: 16, alignItems: "start" }}>
@@ -10797,7 +10776,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* ── SECTION 8: FORWARD VIEW ── */}
+      {/* â”€â”€ SECTION 8: FORWARD VIEW â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>Forward View</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8, marginBottom: 12 }}>
@@ -10812,9 +10791,9 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
           {[
-            { eyebrow: "Revenue Trajectory", color: "#16a34a", content: `${fmtINR(Math.round(dailyAvg))}/day avg · ${growthMoM > 0 ? `+${growthMoM}%` : growthMoM < 0 ? `${growthMoM}%` : "flat"} MoM` },
+            { eyebrow: "Revenue Trajectory", color: "#16a34a", content: `${fmtINR(Math.round(dailyAvg))}/day avg Â· ${growthMoM > 0 ? `+${growthMoM}%` : growthMoM < 0 ? `${growthMoM}%` : "flat"} MoM` },
             { eyebrow: "Backlog Risk", color: "#09998e", content: aging.over7 === 0 ? "No aging risk" : `${aging.over7} tickets > 7d aging` },
-            { eyebrow: "Cash Health", color: "#d97706", content: `${fmtINR(allPending)} pending · ${Math.round(pendingPctOfMRR)}% of MRR${b2bPayable > 0 ? ` · ${fmtINR(b2bPayable)} payable` : ""}` },
+            { eyebrow: "Cash Health", color: "#d97706", content: `${fmtINR(allPending)} pending Â· ${Math.round(pendingPctOfMRR)}% of MRR${b2bPayable > 0 ? ` Â· ${fmtINR(b2bPayable)} payable` : ""}` },
           ].map((item) => (
             <div key={item.eyebrow} style={{ ...S.cardFlat, borderTop: `2px solid ${item.color}40` }}>
               <div style={{ ...S.eyebrow, color: item.color }}>{item.eyebrow}</div>
@@ -10824,7 +10803,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* ── SECTION 9: HISTORICAL MONTHLY DETAIL ── */}
+      {/* â”€â”€ SECTION 9: HISTORICAL MONTHLY DETAIL â”€â”€ */}
       <div style={S.card}>
         <div style={S.title}>Historical Monthly Detail</div>
         <div style={{ display: "grid", gap: 8 }}>
@@ -11392,8 +11371,8 @@ export default function CSCBilling() {
   const isHomeTab = tab === "home";
   const activeTabConfig = TAB_CONFIG.find((item) => item.id === tab) || TAB_CONFIG[0];
   const headerStats = [
-    { label: "Daily Revenue", value: `Rs. ${Math.round(dailyRevenueTotal).toLocaleString("en-IN")}`, accent: "#0f172a" },
-    { label: "B2B Sales Today", value: `Rs. ${Math.round(b2bRevenueToday).toLocaleString("en-IN")}`, accent: "#067366" },
+    { label: "Revenue", value: `Rs. ${Math.round(dailyRevenueTotal).toLocaleString("en-IN")}`, accent: "#0f172a" },
+    { label: "B2B Today", value: `Rs. ${Math.round(b2bRevenueToday).toLocaleString("en-IN")}`, accent: "#067366" },
     { label: "Open Tickets", value: String(openTicketCount), accent: openTicketCount > 0 ? "#067366" : "#0f172a" },
   ];
   const cloudSyncLabel = cloudSyncState === "local_only"
@@ -11777,7 +11756,7 @@ export default function CSCBilling() {
     return queuedSave;
   };
 
-  // Step 1: Main dashboard authentication — unlocks the dashboard but NOT the Database page.
+  // Step 1: Main dashboard authentication â€” unlocks the dashboard but NOT the Database page.
   const handleDashboardVerification = async ({ securityCode, authenticatorCode }) => {
     setUnlockTarget("dashboard");
     setUnlockAnimPhase("running");
@@ -11792,7 +11771,7 @@ export default function CSCBilling() {
     clearSessionCache();
     resetProtectedAppState();
     setIsDashboardUnlocked(true);
-    setDatabaseUnlocked(false); // Database stays locked — requires a separate auth step.
+    setDatabaseUnlocked(false); // Database stays locked â€” requires a separate auth step.
     setIsOfflineDevMode(false);
     setAuthChecked(true);
     setCloudSyncState("connecting");
@@ -11802,7 +11781,7 @@ export default function CSCBilling() {
     return { ok: true };
   };
 
-  // Step 2: Database-specific authentication — separate from dashboard auth.
+  // Step 2: Database-specific authentication â€” separate from dashboard auth.
   const handleDatabaseVerification = async ({ securityCode, authenticatorCode }) => {
     setUnlockTarget("database");
     setUnlockAnimPhase("running");
@@ -12468,13 +12447,28 @@ export default function CSCBilling() {
             </div>
 
             {/* Stats strip + WhatsApp CTA */}
-            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
               {headerStats.map((stat) => (
-                <div key={stat.label} style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.60rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: tab === "database" ? "rgba(0,255,70,0.38)" : "rgba(13,27,42,0.40)", fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK, marginBottom: 2 }}>
+                <div
+                  key={stat.label}
+                  style={{
+                    minHeight: 38,
+                    minWidth: stat.label === "Open Tickets" ? 92 : 104,
+                    borderRadius: 999,
+                    border: tab === "database" ? "1px solid rgba(0,255,70,0.20)" : "1px solid rgba(13,27,42,0.10)",
+                    background: tab === "database" ? "rgba(0,255,70,0.045)" : "rgba(255,255,255,0.82)",
+                    boxShadow: tab === "database" ? "none" : "0 4px 12px rgba(15,23,42,0.04)",
+                    padding: "6px 12px",
+                    display: "grid",
+                    alignContent: "center",
+                    justifyItems: "end",
+                    gap: 1,
+                  }}
+                >
+                  <div style={{ fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: tab === "database" ? "rgba(0,255,70,0.42)" : "rgba(13,27,42,0.46)", fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK }}>
                     {stat.label}
                   </div>
-                  <div style={{ fontSize: "0.86rem", fontWeight: 700, color: tab === "database" ? (stat.accent === "#067366" ? "rgba(0,255,70,0.90)" : "rgba(0,255,70,0.90)") : (stat.accent || "#0d1b2a"), fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_MONO_STACK, letterSpacing: "-0.01em", textShadow: tab === "database" ? "0 0 8px rgba(0,255,70,0.40)" : "none" }}>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 800, color: tab === "database" ? "rgba(0,255,70,0.90)" : (stat.accent || "#0d1b2a"), fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_MONO_STACK, letterSpacing: 0, textShadow: tab === "database" ? "0 0 8px rgba(0,255,70,0.40)" : "none" }}>
                     {stat.value}
                   </div>
                 </div>
@@ -12567,7 +12561,7 @@ export default function CSCBilling() {
                   fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
                   marginBottom: 8,
                 }}>
-                  {tab === "database" ? "❯ SYSTEM / DATABASE" : "CSC Centre Workspace"}
+                  {tab === "database" ? "â¯ SYSTEM / DATABASE" : "CSC Centre Workspace"}
                 </div>
                 <h1 style={{
                   margin: 0,
