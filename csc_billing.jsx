@@ -1598,7 +1598,7 @@ function hydrateServices(storedServices) {
     savedById.has(service.id) ? normalizeService({ ...service, ...savedById.get(service.id) }) : normalizeService(service)
   ));
 
-  // Only keep operator-created custom services â€” not old built-in IDs that no
+  // Only keep operator-created custom services — not old built-in IDs that no
   // longer exist in the registry (those would appear as unclickable orphans).
   const customServices = storedServices.filter((service) => (
     service &&
@@ -2641,7 +2641,7 @@ function HomeLaunchpad({ onOpenSection, onLogout, appointments = [], sessionExpi
                   cursor: "pointer",
                 }}
               >
-                View Appointments â†’
+                View Appointments →
               </button>
             </div>
           </div>
@@ -3373,7 +3373,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
   if (isOffline) {
     return (
       <div style={{ display: "grid", gap: 14 }}>
-        {/* Header bar â€” same chrome as online, export button dimmed */}
+        {/* Header bar — same chrome as online, export button dimmed */}
         <div style={{ border: "1px solid rgba(13,27,42,0.11)", borderRadius: 14, background: "#ffffff", padding: 12 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
             <button
@@ -3423,7 +3423,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                   }}
                 >
                   <span>{section.label}</span>
-                  <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(13,27,42,0.28)" }}>â€”</span>
+                  <span style={{ fontFamily: APP_MONO_STACK, fontSize: "0.72rem", color: "rgba(13,27,42,0.28)" }}>?</span>
                 </div>
               ))}
             </div>
@@ -3513,7 +3513,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
     );
   }
 
-  // â”€â”€ Hacker theme tokens (scoped entirely to DatabaseWorkspace) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Hacker theme tokens (scoped entirely to DatabaseWorkspace)
   const HK = {
     bg:           "#020b03",
     bgPanel:      "rgba(0,14,4,0.97)",
@@ -3564,7 +3564,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
       {/* Scanline overlay */}
       <div style={{ position: "absolute", inset: 0, backgroundImage: HK.scanlines, pointerEvents: "none", zIndex: 0, borderRadius: HK.rLg }} />
 
-      {/* â”€â”€ Toolbar row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* Toolbar row */}
       <div style={{
         position: "relative", zIndex: 1,
         border: `1px solid ${HK.border}`,
@@ -3657,10 +3657,10 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
         </div>
       </div>
 
-      {/* â”€â”€ Main two-column grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* Main two-column grid */}
       <div className="csc-db-main-grid" style={{ position: "relative", zIndex: 1 }}>
 
-        {/* LEFT â€” Entry form */}
+        {/* LEFT — Entry form */}
         <form onSubmit={handleFormSubmit} style={{
           border: `1px solid ${HK.border}`,
           borderRadius: HK.rLg,
@@ -3684,8 +3684,8 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
             alignItems: "center",
             gap: 8,
           }}>
-            <span style={{ color: HK.greenMid }}>â¯</span>
-            {sectionConfig.label} â€” {editingRecordId ? "editing record" : "new entry"}
+            <span style={{ color: HK.greenMid }}>?</span>
+            {sectionConfig.label} — {editingRecordId ? "editing record" : "new entry"}
           </div>
 
           {/* OCR section */}
@@ -3699,7 +3699,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               gap: 8,
             }}>
               <div style={{ fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: HK.greenMid, fontFamily: HK.mono }}>
-                â—ˆ Auto-Extract From Document
+                ◈ Auto-Extract From Document
               </div>
               <div
                 onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); if (!ocrBusy) setOcrDropActive(true); }}
@@ -3781,12 +3781,12 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               )}
               {ocrStatus && (
                 <div style={{ fontSize: "0.70rem", color: HK.greenMid, fontFamily: HK.mono, fontWeight: 600 }}>
-                  âœ“ {ocrStatus}
+                  ✓ {ocrStatus}
                 </div>
               )}
               {ocrError && (
                 <div style={{ fontSize: "0.70rem", color: HK.red, fontFamily: HK.mono, fontWeight: 600 }}>
-                  âœ— {ocrError}
+                  ✕ {ocrError}
                 </div>
               )}
               <input ref={ocrFileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/bmp,image/tiff" onChange={handleOcrInputChange} style={{ display: "none" }} />
@@ -3826,7 +3826,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
 
           {formError && (
             <div style={{ fontSize: "0.72rem", color: HK.red, fontFamily: HK.mono, fontWeight: 600 }}>
-              âœ— {formError}
+              ✕ {formError}
             </div>
           )}
 
@@ -3872,7 +3872,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,255,70,0.20)"; e.currentTarget.style.boxShadow = HK.glow; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,255,70,0.12)"; e.currentTarget.style.boxShadow = "none"; }}
             >
-              {editingRecordId ? "â–¶ Update" : "â–¶ Save Entry"}
+              {editingRecordId ? "▶ Update" : "▶ Save Entry"}
             </button>
             <button
               type="button"
@@ -3899,7 +3899,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           </div>
         </form>
 
-        {/* RIGHT â€” Records list */}
+        {/* RIGHT — Records list */}
         <div style={{
           border: `1px solid ${HK.border}`,
           borderRadius: HK.rLg,
@@ -3912,7 +3912,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           {/* Records header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", borderBottom: `1px solid ${HK.border}`, paddingBottom: 10 }}>
             <div style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: HK.greenDim, fontFamily: HK.mono, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ color: HK.greenMid }}>â¯</span>
+              <span style={{ color: HK.greenMid }}>?</span>
               Saved {sectionConfig.label} Records
               <span style={{
                 fontSize: "0.60rem",
@@ -3952,7 +3952,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
           <div style={{ maxHeight: 480, overflowY: "auto", display: "grid", gap: 6 }}>
             {filteredSectionRecords.length === 0 ? (
               <div style={{ padding: "20px 0", color: HK.textMuted, fontFamily: HK.mono, fontSize: "0.76rem", textAlign: "center", letterSpacing: "0.08em" }}>
-                <div style={{ fontSize: "1.4rem", marginBottom: 8, opacity: 0.4 }}>â—«</div>
+                <div style={{ fontSize: "1.4rem", marginBottom: 8, opacity: 0.4 }}>?</div>
                 no records for {sectionConfig.label.toLowerCase()}
               </div>
             ) : (
@@ -4047,7 +4047,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
                           {field.label.toLowerCase()}
                         </span>
                         <span style={{ fontFamily: HK.mono, fontSize: "0.78rem", color: record.values[field.key] ? HK.greenBright : HK.textFaint }}>
-                          {record.values[field.key] || "â€”"}
+                          {record.values[field.key] || "—"}
                         </span>
                       </div>
                     ))}
@@ -4096,7 +4096,7 @@ const HACKER_BOOT_LINES = [
   "Session channel established",
   "$ mount workspace.env --profile=operator",
   "Loading tools, routes, and sync state",
-  "Validating operator code... â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ OK",
+  "Validating operator code... ████████ OK",
   "$ prepare dashboard.route --target=home",
   "Dashboard route primed",
   "$ load workspace.modules --quiet",
@@ -4325,7 +4325,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
                 }}>
                   {line.text.startsWith("$") ? (
                     <span>
-                      <span style={{ color: "rgba(0,255,70,0.40)" }}>â¯ </span>
+                      <span style={{ color: "rgba(0,255,70,0.40)" }}>❯ </span>
                       {line.text.slice(2)}
                     </span>
                   ) : (
@@ -4337,7 +4337,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
             {/* Blinking cursor line */}
             {!showGranted && (
               <div style={{ fontSize: "0.72rem", color: "rgba(0,255,70,0.95)", lineHeight: 1.7 }}>
-                <span style={{ color: "rgba(0,255,70,0.40)" }}>â¯ </span>
+                <span style={{ color: "rgba(0,255,70,0.40)" }}>❯ </span>
                 <span style={{ letterSpacing: "0.08em" }}>{scrambleText}</span>
                 <span style={{
                   display: "inline-block",
@@ -5197,7 +5197,7 @@ function WorkspaceSidebar({
             aria-label="Hide navigation menu"
             title="Hide navigation menu"
           >
-            â† Hide
+            ← Hide
           </button>
         </div>
         <button
@@ -6716,7 +6716,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
         unitPrice: 0,
         amount: 0,
         detailValues: {},
-        detailSummary: stampLines.map((l) => `${l.qty}Ã—â‚¹${l.value}`).join(", "),
+        detailSummary: stampLines.map((l) => `${l.qty}??${l.value}`).join(", "),
         done: false,
       }]);
       setServiceRates((prev) => ({ ...prev, [newIndex]: String(faceValueTotal) }));
@@ -7410,7 +7410,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <div style={{ ...sectionEyebrowStyle, marginBottom: 10 }}>Stamp Paper Denominations</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "end", marginBottom: 10 }}>
                       <label style={{ display: "grid", gap: 5 }}>
-                        <span style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Value (â‚¹)</span>
+                        <span style={{ fontSize: "0.70rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>Value (₹)</span>
                         <input
                           type="number"
                           min="1"
@@ -7460,18 +7460,18 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                         {stampLines.map((line, li) => (
                           <div key={line.value} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(15,23,42,0.09)", background: "rgba(255,255,255,0.80)" }}>
                             <div style={{ fontFamily: APP_FONT_STACK, fontSize: "0.86rem", color: "#0f172a", fontWeight: 600 }}>
-                              {line.qty} Ã— â‚¹{line.value.toLocaleString("en-IN")}
-                              <span style={{ marginLeft: 10, fontSize: "0.76rem", color: "rgba(15,23,42,0.45)", fontWeight: 400 }}>= â‚¹{(line.qty * line.value).toLocaleString("en-IN")}</span>
+                              {line.qty} × ₹{line.value.toLocaleString("en-IN")}
+                              <span style={{ marginLeft: 10, fontSize: "0.76rem", color: "rgba(15,23,42,0.45)", fontWeight: 400 }}>= ₹{(line.qty * line.value).toLocaleString("en-IN")}</span>
                             </div>
                             <button
                               type="button"
                               onClick={() => setStampLines((prev) => prev.filter((_, i) => i !== li))}
                               style={{ width: 26, height: 26, border: "1px solid rgba(214,5,43,0.20)", borderRadius: 6, background: "rgba(214,5,43,0.06)", color: "#8f2e3d", cursor: "pointer", fontWeight: 800, fontSize: "0.8rem", flexShrink: 0 }}
-                            >Ã—</button>
+                            >×</button>
                           </div>
                         ))}
                         <div style={{ paddingTop: 6, borderTop: "1px solid rgba(15,23,42,0.08)", fontSize: "0.82rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK, textAlign: "right" }}>
-                          Total: {stampLines.reduce((s, l) => s + l.qty, 0)} pcs â€” Face value â‚¹{stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
+                          Total: {stampLines.reduce((s, l) => s + l.qty, 0)} pcs — Face value ₹{stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
                         </div>
                       </div>
                     )}
@@ -7519,12 +7519,12 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                                 {it.stampLines.map((line) => (
                                   <span key={line.value} style={{ fontSize: "0.75rem", fontFamily: APP_FONT_STACK, color: "#045a50", background: "rgba(6,115,102,0.07)", border: "1px solid rgba(6,115,102,0.18)", borderRadius: 5, padding: "2px 7px" }}>
-                                    {line.qty}Ã—â‚¹{line.value.toLocaleString("en-IN")}
+                                    {line.qty}×₹{line.value.toLocaleString("en-IN")}
                                   </span>
                                 ))}
                               </div>
                               <div style={{ marginTop: 3, fontSize: "0.72rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_FONT_STACK }}>
-                                {it.qty} pcs Â· Face value â‚¹{it.stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
+                                {it.qty} pcs · Face value ₹{it.stampLines.reduce((s, l) => s + l.qty * l.value, 0).toLocaleString("en-IN")}
                               </div>
                             </div>
                           ) : (
@@ -7621,7 +7621,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                                 <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", gap: 4 }}>
                                   {it.stampLines.map((line) => (
                                     <span key={line.value} style={{ fontSize: "0.70rem", fontFamily: APP_FONT_STACK, color: "#045a50", background: "rgba(6,115,102,0.07)", border: "1px solid rgba(6,115,102,0.15)", borderRadius: 4, padding: "1px 6px" }}>
-                                      {line.qty}Ã—â‚¹{line.value.toLocaleString("en-IN")}
+                                      {line.qty}×₹{line.value.toLocaleString("en-IN")}
                                     </span>
                                   ))}
                                 </div>
@@ -7631,7 +7631,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             </div>
                             <label style={{ display: "grid", gap: 4, minWidth: 110 }}>
                               <span style={{ fontSize: "0.62rem", color: "rgba(15,23,42,0.50)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                                {isStamp ? "Total Amount (â‚¹)" : `Rate per ${it.unit || "unit"} (â‚¹)`}
+                                {isStamp ? "Total Amount (₹)" : `Rate per ${it.unit || "unit"} (₹)`}
                               </span>
                               <input
                                 type="number"
@@ -7645,7 +7645,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                             <div style={{ textAlign: "right", minWidth: 80 }}>
                               <div style={{ fontSize: "0.60rem", color: "rgba(15,23,42,0.45)", fontFamily: APP_BRAND_STACK, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>Line Total</div>
                               <div style={{ fontSize: "0.94rem", fontWeight: 700, color: lineTotal > 0 ? ENTRY_ACCENT_TEXT : "rgba(15,23,42,0.30)", fontFamily: APP_FONT_STACK, marginTop: 2 }}>
-                                {lineTotal > 0 ? `â‚¹${lineTotal.toLocaleString("en-IN")}` : "â€”"}
+                                {lineTotal > 0 ? `₹${lineTotal.toLocaleString("en-IN")}` : "—"}
                               </div>
                             </div>
                           </div>
@@ -7655,7 +7655,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>Total Amount Charged</span>
                       <span style={{ fontSize: "1.10rem", fontWeight: 700, color: total > 0 ? "#0f172a" : "rgba(15,23,42,0.30)", fontFamily: APP_FONT_STACK }}>
-                        {total > 0 ? `â‚¹${total.toLocaleString("en-IN")}` : "â€”"}
+                        {total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}
                       </span>
                     </div>
                   </div>
@@ -7673,7 +7673,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                               min="0"
                               value={serviceVendorAmounts[i] ?? ""}
                               onChange={(e) => setServiceVendorAmounts((prev) => ({ ...prev, [i]: e.target.value }))}
-                              placeholder="â‚¹ 0"
+                              placeholder="₹ 0"
                               style={{ ...inputStyle, padding: "8px 10px", textAlign: "right", fontSize: "0.88rem" }}
                             />
                           </label>
@@ -7683,7 +7683,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                     {computedVendorTotal > 0 && (
                       <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: "0.78rem", color: "rgba(15,23,42,0.55)", fontFamily: APP_FONT_STACK }}>Total Vendor Payment</span>
-                        <span style={{ fontSize: "1.00rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>â‚¹{computedVendorTotal.toLocaleString("en-IN")}</span>
+                        <span style={{ fontSize: "1.00rem", fontWeight: 700, color: "#0f172a", fontFamily: APP_FONT_STACK }}>₹{computedVendorTotal.toLocaleString("en-IN")}</span>
                       </div>
                     )}
                   </div>
@@ -7707,7 +7707,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
                         <span>Total Amount</span>
                         <span style={{ color: total > 0 ? "#0f172a" : "rgba(15,23,42,0.35)", fontWeight: 700 }}>
-                          {total > 0 ? `Rs. ${total}` : "â€”"}
+                          {total > 0 ? `Rs. ${total}` : "—"}
                         </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
@@ -7721,7 +7721,7 @@ function TicketWorkspace({ services, tickets, onSaveTicket, onNavigateTab, isAct
                       {computedVendorTotal > 0 && (
                         <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "rgba(15,23,42,0.60)", fontFamily: APP_FONT_STACK }}>
                           <span>Total Vendor Payment</span>
-                          <span style={{ color: "#0f172a", fontWeight: 700 }}>â‚¹{computedVendorTotal.toLocaleString("en-IN")}</span>
+                          <span style={{ color: "#0f172a", fontWeight: 700 }}>₹{computedVendorTotal.toLocaleString("en-IN")}</span>
                         </div>
                       )}
                       <div style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 10 }}>
@@ -9299,7 +9299,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
   const trackMeta = B2B_TRACK_META[activeTrack];
   function fmtMoneyCompact(v) {
     const n = Math.round(Number(v) || 0);
-    return n === 0 ? "â€”" : `Rs. ${n.toLocaleString("en-IN")}`;
+    return n === 0 ? "—" : `Rs. ${n.toLocaleString("en-IN")}`;
   }
   const trackTotals = trackEntities.reduce((acc, entity) => {
     acc.amount += Number(entity.amountValue) || 0;
@@ -9777,7 +9777,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                             <div style={{ flex: 1, height: 1, background: "rgba(6,115,102,0.15)" }} />
                             <div style={{ display: "flex", gap: 10, fontSize: "0.68rem", fontFamily: APP_FONT_STACK, color: "rgba(15,23,42,0.48)", whiteSpace: "nowrap" }}>
                               {dayTotal > 0 && <span style={{ fontWeight: 600, color: "#0f172a" }}>{fmtMoneyCompact(dayTotal)}</span>}
-                              {dayPending > 0 && <span style={{ color: "#7c2d12", fontWeight: 600 }}>â‚¹{Math.round(dayPending).toLocaleString("en-IN")} due</span>}
+                              {dayPending > 0 && <span style={{ color: "#7c2d12", fontWeight: 600 }}>₹{Math.round(dayPending).toLocaleString("en-IN")} due</span>}
                             </div>
                           </div>
                           {/* Entries for this date */}
@@ -9862,7 +9862,7 @@ function B2BWorkspace({ ledger = [], onAddLedgerEntry, onDeleteLedgerEntry, onUp
                                   {direction}
                                 </span>
                                 <span style={{ minWidth: 0, fontFamily: APP_FONT_STACK, fontSize: "0.78rem", color: "rgba(15,23,42,0.72)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {getB2BLedgerCaption(entry)} Â· {entry.serviceName || entry.referredClient || "Entry"} Â· {entry.paymentMode}
+                                  {getB2BLedgerCaption(entry)} · {entry.serviceName || entry.referredClient || "Entry"} · {entry.paymentMode}
                                 </span>
                                 <span style={{ fontFamily: APP_FONT_STACK, fontSize: "0.80rem", fontWeight: 800, color: isCredit ? "#047857" : "#b91c1c", whiteSpace: "nowrap" }}>
                                   {isCredit ? "+" : "-"} {formatCurrency(entry.paidAmount)}
@@ -10234,7 +10234,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
     if (catRevenue[s.category] !== undefined) catRevenue[s.category] += s.revenue;
   });
 
-  // â”€â”€ Design tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Design tokens
   const S = {
     card:       { background: "#fff", border: "1px solid rgba(15,23,42,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 },
     cardFlat:   { background: "rgba(248,250,252,0.9)", border: "1px solid rgba(15,23,42,0.07)", borderRadius: 12, padding: "14px 16px" },
@@ -10249,7 +10249,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
   const statusColor = (h) => h === "good" ? "#16a34a" : h === "watch" ? "#d97706" : "#dc2626";
   const statusLabel = (h) => h === "good" ? "HEALTHY" : h === "watch" ? "WATCH" : "ACTION";
 
-  // â”€â”€ Reusable sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Reusable sub-components
   const KPICard = ({ eyebrow, value, valueColor = "#0f172a", badge, badgeColor }) => (
     <div style={{ ...S.cardFlat }}>
       <div style={S.eyebrow}>{eyebrow}</div>
@@ -10368,7 +10368,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
     );
   }
 
-  // â”€â”€ Derived chart data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Derived chart data
   const monthBars = months.slice(0, 6).reverse().map((m) => {
     const label = (() => {
       if (!/^\d{4}-\d{2}$/.test(m)) return m;
@@ -10400,7 +10400,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
     { label: "Cost", value: totalTicketVendorCost, color: "#dc2626" },
   ] : [];
 
-  // â”€â”€ Legend helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Legend helper
   const Legend = ({ items }) => (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10 }}>
       {items.filter((i) => i.value > 0).map((i) => (
@@ -10415,7 +10415,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
 
-      {/* â”€â”€ SECTION 1: EXECUTIVE HEALTH CHECK â”€â”€ */}
+      {/* ?? SECTION 1: EXECUTIVE HEALTH CHECK ?? */}
       <div style={S.card}>
         <div style={S.title}>Executive Health Check</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
@@ -10450,7 +10450,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* â”€â”€ SECTION 2: REVENUE & COLLECTIONS â”€â”€ */}
+      {/* ?? SECTION 2: REVENUE & COLLECTIONS ?? */}
       <div style={S.card}>
         <div style={S.title}>Revenue & Collections</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -10506,7 +10506,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* â”€â”€ SECTION 3: PROFIT / LOSS â”€â”€ */}
+      {/* ?? SECTION 3: PROFIT / LOSS ?? */}
       <div style={S.card}>
         <div style={S.title}>Profit / Loss</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -10559,7 +10559,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* â”€â”€ SECTION 4: SERVICE PERFORMANCE â”€â”€ */}
+      {/* ?? SECTION 4: SERVICE PERFORMANCE ?? */}
       <div style={S.card}>
         <div style={S.title}>Service Performance</div>
 
@@ -10571,12 +10571,12 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             value={`${concentration}%`}
             color={concentration >= 50 && concentration <= 65 ? "#16a34a" : concentration > 75 ? "#dc2626" : "#d97706"}
           />
-          <MiniKPI eyebrow="Most Frequent" value={topServicesByCount[0]?.name?.split(" ").slice(0, 2).join(" ") || "â€”"} color="#09998e" />
-          <MiniKPI eyebrow="Highest Revenue" value={topServicesByRevenue[0]?.name?.split(" ").slice(0, 2).join(" ") || "â€”"} color="#16a34a" />
+          <MiniKPI eyebrow="Most Frequent" value={topServicesByCount[0]?.name?.split(" ").slice(0, 2).join(" ") || "—"} color="#09998e" />
+          <MiniKPI eyebrow="Highest Revenue" value={topServicesByRevenue[0]?.name?.split(" ").slice(0, 2).join(" ") || "—"} color="#16a34a" />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          {/* Top services by revenue â€” vertical bar layout */}
+          {/* Top services by revenue — vertical bar layout */}
           <div style={S.cardFlat}>
             <div style={S.eyebrow}>Top Services by Revenue</div>
             <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
@@ -10612,7 +10612,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* â”€â”€ SECTION 5: WORKFLOW & OPERATIONS â”€â”€ */}
+      {/* ?? SECTION 5: WORKFLOW & OPERATIONS ?? */}
       <div style={S.card}>
         <div style={S.title}>Workflow & Operations</div>
 
@@ -10629,8 +10629,8 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 6 }}>
               {[
                 { l: "< 1d", v: aging.fresh, c: "#16a34a" },
-                { l: "1â€“3d", v: aging.d1to3, c: "#d97706" },
-                { l: "3â€“7d", v: aging.d3to7, c: "#ea580c" },
+                { l: "1?3d", v: aging.d1to3, c: "#d97706" },
+                { l: "3?7d", v: aging.d3to7, c: "#ea580c" },
                 { l: "> 7d", v: aging.over7, c: "#dc2626" },
               ].map((a) => (
                 <div key={a.l} style={{ background: `${a.c}0e`, border: `1px solid ${a.c}28`, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
@@ -10676,7 +10676,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* â”€â”€ SECTION 6: B2B & VENDOR INTEGRATION â”€â”€ */}
+      {/* ?? SECTION 6: B2B & VENDOR INTEGRATION ?? */}
       <div style={S.card}>
         <div style={S.title}>B2B & Vendor Integration</div>
 
@@ -10730,7 +10730,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         )}
       </div>
 
-      {/* â”€â”€ SECTION 7: EXPANSION READINESS â”€â”€ */}
+      {/* ?? SECTION 7: EXPANSION READINESS ?? */}
       <div style={S.card}>
         <div style={S.title}>Expansion Readiness</div>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(180px, 220px) 1fr", gap: 16, alignItems: "start" }}>
@@ -10776,7 +10776,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* â”€â”€ SECTION 8: FORWARD VIEW â”€â”€ */}
+      {/* ?? SECTION 8: FORWARD VIEW ?? */}
       <div style={S.card}>
         <div style={S.title}>Forward View</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8, marginBottom: 12 }}>
@@ -10791,9 +10791,9 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
           {[
-            { eyebrow: "Revenue Trajectory", color: "#16a34a", content: `${fmtINR(Math.round(dailyAvg))}/day avg Â· ${growthMoM > 0 ? `+${growthMoM}%` : growthMoM < 0 ? `${growthMoM}%` : "flat"} MoM` },
+            { eyebrow: "Revenue Trajectory", color: "#16a34a", content: `${fmtINR(Math.round(dailyAvg))}/day avg · ${growthMoM > 0 ? `+${growthMoM}%` : growthMoM < 0 ? `${growthMoM}%` : "flat"} MoM` },
             { eyebrow: "Backlog Risk", color: "#09998e", content: aging.over7 === 0 ? "No aging risk" : `${aging.over7} tickets > 7d aging` },
-            { eyebrow: "Cash Health", color: "#d97706", content: `${fmtINR(allPending)} pending Â· ${Math.round(pendingPctOfMRR)}% of MRR${b2bPayable > 0 ? ` Â· ${fmtINR(b2bPayable)} payable` : ""}` },
+            { eyebrow: "Cash Health", color: "#d97706", content: `${fmtINR(allPending)} pending · ${Math.round(pendingPctOfMRR)}% of MRR${b2bPayable > 0 ? ` · ${fmtINR(b2bPayable)} payable` : ""}` },
           ].map((item) => (
             <div key={item.eyebrow} style={{ ...S.cardFlat, borderTop: `2px solid ${item.color}40` }}>
               <div style={{ ...S.eyebrow, color: item.color }}>{item.eyebrow}</div>
@@ -10803,7 +10803,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
         </div>
       </div>
 
-      {/* â”€â”€ SECTION 9: HISTORICAL MONTHLY DETAIL â”€â”€ */}
+      {/* ?? SECTION 9: HISTORICAL MONTHLY DETAIL ?? */}
       <div style={S.card}>
         <div style={S.title}>Historical Monthly Detail</div>
         <div style={{ display: "grid", gap: 8 }}>
@@ -11756,7 +11756,7 @@ export default function CSCBilling() {
     return queuedSave;
   };
 
-  // Step 1: Main dashboard authentication â€” unlocks the dashboard but NOT the Database page.
+  // Step 1: Main dashboard authentication — unlocks the dashboard but NOT the Database page.
   const handleDashboardVerification = async ({ securityCode, authenticatorCode }) => {
     setUnlockTarget("dashboard");
     setUnlockAnimPhase("running");
@@ -11771,7 +11771,7 @@ export default function CSCBilling() {
     clearSessionCache();
     resetProtectedAppState();
     setIsDashboardUnlocked(true);
-    setDatabaseUnlocked(false); // Database stays locked â€” requires a separate auth step.
+    setDatabaseUnlocked(false); // Database stays locked — requires a separate auth step.
     setIsOfflineDevMode(false);
     setAuthChecked(true);
     setCloudSyncState("connecting");
@@ -11781,7 +11781,7 @@ export default function CSCBilling() {
     return { ok: true };
   };
 
-  // Step 2: Database-specific authentication â€” separate from dashboard auth.
+  // Step 2: Database-specific authentication — separate from dashboard auth.
   const handleDatabaseVerification = async ({ securityCode, authenticatorCode }) => {
     setUnlockTarget("database");
     setUnlockAnimPhase("running");
@@ -12561,7 +12561,7 @@ export default function CSCBilling() {
                   fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
                   marginBottom: 8,
                 }}>
-                  {tab === "database" ? "â¯ SYSTEM / DATABASE" : "CSC Centre Workspace"}
+                  {tab === "database" ? "❯ SYSTEM / DATABASE" : "CSC Centre Workspace"}
                 </div>
                 <h1 style={{
                   margin: 0,
