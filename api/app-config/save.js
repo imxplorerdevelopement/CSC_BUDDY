@@ -1,5 +1,11 @@
 import { getSupabaseConfigErrors, isAllowedAppConfigKey, saveAppConfigValue } from "../_lib/app_config.js";
-import { readJsonBody, readSessionFromRequest } from "../_lib/database_auth.js";
+import {
+  clearSessionCookie,
+  DATABASE_SESSION_COOKIE,
+  parseCookies,
+  readJsonBody,
+  readSessionFromRequest,
+} from "../_lib/database_auth.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -9,7 +15,15 @@ export default async function handler(req, res) {
 
   const session = readSessionFromRequest(req);
   if (!session.ok) {
-    return res.status(401).json({ ok: false, message: "Database session required." });
+    if (parseCookies(req)[DATABASE_SESSION_COOKIE]) {
+      res.setHeader("Set-Cookie", clearSessionCookie());
+    }
+    const expired = session.reason === "expired";
+    return res.status(401).json({
+      ok: false,
+      reason: expired ? "session_expired" : "unauthorized",
+      message: expired ? "Database session expired." : "Database session required.",
+    });
   }
 
   const configErrors = getSupabaseConfigErrors();

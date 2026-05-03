@@ -301,23 +301,23 @@ export function createSessionToken(req) {
 
 export function verifySessionToken(token, req = null) {
   const rawToken = normalizeText(token);
-  if (!rawToken || !rawToken.includes(".")) return { ok: false };
+  if (!rawToken || !rawToken.includes(".")) return { ok: false, reason: "missing" };
   const [payloadBase64, signature] = rawToken.split(".");
-  if (!payloadBase64 || !signature) return { ok: false };
+  if (!payloadBase64 || !signature) return { ok: false, reason: "invalid" };
   const expectedSignature = signSessionPayload(payloadBase64);
-  if (!expectedSignature || !constantTimeEqual(signature, expectedSignature)) return { ok: false };
+  if (!expectedSignature || !constantTimeEqual(signature, expectedSignature)) return { ok: false, reason: "invalid" };
   let payload;
   try {
     payload = JSON.parse(Buffer.from(payloadBase64, "base64url").toString("utf8"));
   } catch (_error) {
-    return { ok: false };
+    return { ok: false, reason: "invalid" };
   }
   const now = Math.floor(Date.now() / 1000);
   if (!payload || typeof payload.exp !== "number" || payload.exp <= now) {
-    return { ok: false };
+    return { ok: false, reason: "expired" };
   }
   if (payload.fp && req && !constantTimeEqual(payload.fp, getRequestFingerprint(req))) {
-    return { ok: false };
+    return { ok: false, reason: "invalid" };
   }
   return { ok: true, payload };
 }

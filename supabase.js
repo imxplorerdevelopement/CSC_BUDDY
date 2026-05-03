@@ -7,6 +7,13 @@ async function parseJsonResponse(response) {
   return response.json().catch(() => ({}));
 }
 
+function isUnauthorizedResponse(response, payload) {
+  return response.status === 401
+    || response.status === 403
+    || payload?.reason === "unauthorized"
+    || payload?.reason === "session_expired";
+}
+
 export async function dbLoadMany(keys) {
   try {
     const response = await fetch(APP_CONFIG_API.load, {
@@ -21,7 +28,7 @@ export async function dbLoadMany(keys) {
         ok: false,
         values: {},
         status: response.status,
-        reason: response.status === 401 ? "unauthorized" : payload?.message || "load_failed",
+        reason: isUnauthorizedResponse(response, payload) ? "unauthorized" : payload?.message || "load_failed",
       };
     }
     return { ok: true, values: payload?.values || {} };
@@ -51,7 +58,7 @@ export async function dbSave(key, value) {
       return {
         ok: false,
         status: response.status,
-        reason: response.status === 401 ? "unauthorized" : payload?.message || "save_failed",
+        reason: isUnauthorizedResponse(response, payload) ? "unauthorized" : payload?.message || "save_failed",
       };
     }
     return { ok: true };

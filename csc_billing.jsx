@@ -752,6 +752,27 @@ async function checkDashboardSessionOnServer() {
   }
 }
 
+async function logoutDashboardSessionOnServer() {
+  try {
+    await fetch("/api/database-auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch (_error) {
+    // Ignore network errors and still clear local lock state.
+  }
+}
+
+function getSessionExpiryMs(expiresAt) {
+  const parsed = Date.parse(expiresAt || "");
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isSessionExpired(expiresAt, nowMs = Date.now()) {
+  const expiresMs = getSessionExpiryMs(expiresAt);
+  return expiresMs == null || expiresMs <= nowMs;
+}
+
 function verifyDeleteAccess(actionLabel, enteredCode) {
   if (String(enteredCode || "").trim() !== DELETE_ACCESS_CODE) {
     return { ok: false, message: `Access denied. Invalid code for ${actionLabel}.` };
@@ -11708,9 +11729,13 @@ export default function CSCBilling() {
     setAppointments([]);
     setCloudLastSyncedAt(null);
   };
-  const handleAuthExpired = () => {
+  const handleAuthExpired = (options = {}) => {
+    if (options.notifyServer !== false && !isOfflineDevMode) {
+      void logoutDashboardSessionOnServer();
+    }
     clearSessionCache();
     resetProtectedAppState();
+    cloudSaveQueuesRef.current = {};
     setIsDashboardUnlocked(false);
     setDatabaseUnlocked(false);
     setIsOfflineDevMode(false);
@@ -11718,10 +11743,11 @@ export default function CSCBilling() {
     setCloudSyncState("locked");
     setDashboardSessionExpiresAt("");
     setShowSessionExpiryWarning(false);
+    setAuthChecked(true);
     navigateTab("home", "replace", { bypassDatabaseGate: true });
   };
   const handleBackgroundSyncUnauthorized = () => {
-    setCloudSyncState("sync_failed");
+    handleAuthExpired();
   };
   const enqueueCloudSave = (key, value) => {
     if (!dbSyncedRef.current || !configLoaded) {
@@ -11767,6 +11793,13 @@ export default function CSCBilling() {
       setDashboardAuthError(result?.message || "Incorrect credentials.");
       return result;
     }
+    if (isSessionExpired(result.expiresAt)) {
+      setUnlockAnimPhase(null);
+      setUnlockTarget(null);
+      setDashboardAuthError("Session expiry was not returned by the server. Please try again.");
+      void logoutDashboardSessionOnServer();
+      return { ok: false };
+    }
     setDashboardAuthError(null);
     clearSessionCache();
     resetProtectedAppState();
@@ -11791,7 +11824,15 @@ export default function CSCBilling() {
       setUnlockTarget(null);
       return result;
     }
+    if (isSessionExpired(result.expiresAt)) {
+      setUnlockAnimPhase(null);
+      setUnlockTarget(null);
+      void logoutDashboardSessionOnServer();
+      return { ok: false, message: "Session expiry was not returned by the server. Please try again." };
+    }
     setDatabaseUnlocked(true);
+    setDashboardSessionExpiresAt(result.expiresAt || "");
+    setShowSessionExpiryWarning(false);
     setUnlockAnimPhase("success");
     return { ok: true };
   };
@@ -11809,24 +11850,8 @@ export default function CSCBilling() {
   };
 
   const lockDatabaseAccess = async () => {
-    try {
-      await fetch("/api/database-auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch (_error) {
-      // Ignore network errors and still clear local lock state.
-    }
-    clearSessionCache();
-    resetProtectedAppState();
-    setIsDashboardUnlocked(false);
-    setDatabaseUnlocked(false);
-    setIsOfflineDevMode(false);
-    setShowDatabaseGate(false);
-    setCloudSyncState("locked");
-    setDashboardSessionExpiresAt("");
-    setShowSessionExpiryWarning(false);
-    navigateTab("home", "replace", { bypassDatabaseGate: true });
+    await logoutDashboardSessionOnServer();
+    handleAuthExpired({ notifyServer: false });
   };
 
   useEffect(() => {
@@ -11843,6 +11868,10 @@ export default function CSCBilling() {
       if (cancelled) return;
 
       if (result?.ok && result.authenticated) {
+        if (isSessionExpired(result.expiresAt)) {
+          handleAuthExpired();
+          return;
+        }
         const localSnapshot = readProtectedStateFromSessionCache();
         dbSyncedRef.current = false;
         setServices(localSnapshot.services);
@@ -11907,9 +11936,45 @@ export default function CSCBilling() {
   }, [databaseUnlocked]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return undefined;
+    if (!isDashboardUnlocked || isOfflineDevMode) return undefined;
+
+    const expiresMs = getSessionExpiryMs(dashboardSessionExpiresAt);
+    if (expiresMs == null) {
+      handleAuthExpired();
+      return undefined;
+    }
+
+    const enforceExpiry = () => {
+      if (Date.now() < expiresMs) return false;
+      handleAuthExpired();
+      return true;
+    };
+
+    if (enforceExpiry()) return undefined;
+
+    const expiryTimer = window.setTimeout(enforceExpiry, Math.max(0, expiresMs - Date.now()));
+    const handleFocus = () => {
+      enforceExpiry();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") enforceExpiry();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearTimeout(expiryTimer);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isDashboardUnlocked, isOfflineDevMode, dashboardSessionExpiresAt]);
+
+  useEffect(() => {
     if (!isDashboardUnlocked || !dashboardSessionExpiresAt) return undefined;
-    const expiresMs = Date.parse(dashboardSessionExpiresAt);
-    if (!Number.isFinite(expiresMs)) return undefined;
+    const expiresMs = getSessionExpiryMs(dashboardSessionExpiresAt);
+    if (expiresMs == null) return undefined;
     const fireAt = expiresMs - 5 * 60 * 1000;
     const delay = fireAt - Date.now();
     if (expiresMs <= Date.now()) return undefined;
