@@ -46,10 +46,10 @@ export const DS = {
   card:        "rgba(13,27,42,0.04)",
   cardDeep:    "rgba(13,27,42,0.08)",
 
-  // Fonts
-  sans:   "'Geist', system-ui, sans-serif",
-  brand:  "'Fraunces', Georgia, serif",
-  mono:   "'Geist Mono', monospace",
+  // Fonts: DM Sans is the single typeface used across the dashboard.
+  sans:   "'DM Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  brand:  "'DM Sans', 'Inter', system-ui, sans-serif",
+  mono:   "'DM Sans', 'Inter', system-ui, sans-serif",
 
   // Radius
   rXs:   "4px",

@@ -1,7 +1,7 @@
 export const AP = {
-  font:  "'Geist', system-ui, sans-serif",
-  brand: "'Fraunces', Georgia, serif",
-  mono:  "'Geist Mono', monospace",
+  font:  "'DM Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  brand: "'DM Sans', 'Inter', system-ui, sans-serif",
+  mono:  "'DM Sans', 'Inter', system-ui, sans-serif",
 
   surface:       "#ffffff",
   surfaceMuted:  "#f4f7fa",

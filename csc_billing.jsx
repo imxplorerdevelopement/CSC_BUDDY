@@ -235,10 +235,10 @@ const DOCUMENT_PRESET_BY_NAME = DOCUMENT_PRESETS.reduce((acc, preset) => {
   acc[String(preset.label || "").trim().toLowerCase()] = preset;
   return acc;
 }, {});
-const APP_FONT_STACK = "'Geist', system-ui, sans-serif";
-const APP_SERIF_STACK = "'Fraunces', Georgia, serif";
-const APP_BRAND_STACK = "'Geist', system-ui, sans-serif";
-const APP_MONO_STACK = "'Geist Mono', monospace";
+const APP_FONT_STACK = "'DM Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const APP_SERIF_STACK = "'DM Sans', 'Inter', system-ui, sans-serif";
+const APP_BRAND_STACK = "'DM Sans', 'Inter', system-ui, sans-serif";
+const APP_MONO_STACK = "'DM Sans', 'Inter', system-ui, sans-serif";
 const OPS = {
   bg: "#eef2f7",
   shell: "#ffffff",
@@ -1329,7 +1329,7 @@ function buildPrintableTicketHtml(ticket) {
         padding: 24px;
         background: #f8fafc;
         color: #0f172a;
-        font-family: "Geist", system-ui, sans-serif;
+        font-family: "DM Sans", "Inter", system-ui, sans-serif;
       }
       .slip {
         max-width: 420px;
@@ -3539,7 +3539,7 @@ function DatabaseWorkspace({ tickets, services, b2bLedger, records = [], onUpser
     textSub:      "rgba(0,255,70,0.55)",
     textMuted:    "rgba(0,255,70,0.35)",
     textFaint:    "rgba(0,255,70,0.20)",
-    mono:         "'Courier New','Consolas','Monaco',monospace",
+    mono:         APP_MONO_STACK,
     glow:         "0 0 8px rgba(0,255,70,0.35)",
     glowStrong:   "0 0 16px rgba(0,255,70,0.50), 0 0 40px rgba(0,255,70,0.18)",
     scanlines:    "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,70,0.018) 2px,rgba(0,255,70,0.018) 4px)",
@@ -4283,7 +4283,7 @@ function HackerUnlockAnimation({ phase, onDone }) {
           ? "0 0 0 1px rgba(0,255,70,0.18), 0 0 60px rgba(0,255,70,0.22), 0 0 120px rgba(0,255,70,0.10), inset 0 0 40px rgba(0,255,70,0.04)"
           : "0 0 0 1px rgba(0,255,70,0.08), 0 0 40px rgba(0,255,70,0.12), inset 0 0 20px rgba(0,255,70,0.03)",
         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
-        fontFamily: "'Courier New', 'Consolas', 'Monaco', monospace",
+        fontFamily: APP_FONT_STACK,
         overflow: "hidden",
       }}>
         {/* Terminal title bar */}
@@ -10305,10 +10305,10 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
           <path key={i} d={s.path} fill="none" stroke={s.color} strokeWidth={thickness - 1} strokeLinecap="butt" />
         ))}
         {centerLabel && (
-          <text x={cx} y={cy + 5} textAnchor="middle" fontSize={size * 0.145} fontWeight="700" fill="#0f172a" fontFamily="Geist, system-ui, sans-serif">{centerLabel}</text>
+          <text x={cx} y={cy + 5} textAnchor="middle" fontSize={size * 0.145} fontWeight="700" fill="#0f172a" fontFamily="DM Sans, Inter, system-ui, sans-serif">{centerLabel}</text>
         )}
         {centerSub && (
-          <text x={cx} y={cy + size * 0.18} textAnchor="middle" fontSize={size * 0.085} fill="rgba(15,23,42,0.45)" fontFamily="Geist, system-ui, sans-serif">{centerSub}</text>
+          <text x={cx} y={cy + size * 0.18} textAnchor="middle" fontSize={size * 0.085} fill="rgba(15,23,42,0.45)" fontFamily="DM Sans, Inter, system-ui, sans-serif">{centerSub}</text>
         )}
       </svg>
     );
@@ -10335,7 +10335,7 @@ function MonthlyOverview({ tickets, b2bLedger = [], onNavigateTab }) {
             <g key={b.label}>
               {penH > 1 && <rect x={x} y={plotH - totalH} width={bw} height={penH} fill="rgba(220,38,38,0.45)" rx="2" />}
               {collH > 1 && <rect x={x} y={plotH - collH} width={bw} height={collH} fill="#16a34a" rx={penH > 1 ? "0" : "2"} />}
-              <text x={x + bw / 2} y={svgH - 4} textAnchor="middle" fontSize="8" fill="rgba(15,23,42,0.45)" fontFamily="Geist,system-ui,sans-serif">{b.label}</text>
+              <text x={x + bw / 2} y={svgH - 4} textAnchor="middle" fontSize="8" fill="rgba(15,23,42,0.45)" fontFamily="DM Sans, Inter, system-ui, sans-serif">{b.label}</text>
             </g>
           );
         })}
@@ -10967,7 +10967,7 @@ function CustomersWorkspace({ tickets, onDeleteCustomer, onNavigateTab }) {
       <div style={{ ...card, padding: "22px 24px", marginBottom: 22, backgroundImage: "radial-gradient(circle at 5% 10%, rgba(86,179,170,0.14), transparent 32%), radial-gradient(circle at 92% 88%, rgba(9,153,142,0.08), transparent 30%)" }}>
         <span style={eb}>Customer Registry</span>
         <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 300, color: "#0f172a", letterSpacing: "-0.02em", marginBottom: 18, lineHeight: 1 }}>
-          Clients &amp; <em style={{ fontStyle: "italic", color: "rgba(15,23,42,0.45)" }}>Documents.</em>
+          Clients &amp; <em style={{ fontStyle: "normal", color: "rgba(15,23,42,0.45)" }}>Documents.</em>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
           {[
@@ -11238,7 +11238,7 @@ function WalkInModal({ onClose, onStart }) {
           Quick Walk-In
         </div>
         <div style={{ fontFamily: APP_SERIF_STACK, fontSize: "1.65rem", fontWeight: 300, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: 6, lineHeight: 1.1 }}>
-          Start <em style={{ fontStyle: "italic" }}>instantly.</em>
+          Start <em style={{ fontStyle: "normal" }}>instantly.</em>
         </div>
 
         <form onSubmit={handleStartSubmit}>
@@ -12376,168 +12376,281 @@ export default function CSCBilling() {
           {!isHomeTab && (
           <>
           {/* Top bar */}
-          <header style={{
+          <header className="csc-top-nav" style={{
             position: "sticky",
             top: 0,
             zIndex: 10,
-            background: tab === "database" ? "rgba(1,10,3,0.97)" : `rgba(255,255,255,0.96)`,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            borderBottom: tab === "database" ? `1px solid rgba(0,255,70,0.18)` : `1px solid rgba(13,27,42,0.09)`,
-            padding: "0 28px",
-            height: 56,
+            background: tab === "database" ? "rgba(1,10,3,0.97)" : "rgba(255,255,255,0.94)",
+            backdropFilter: "blur(18px) saturate(140%)",
+            WebkitBackdropFilter: "blur(18px) saturate(140%)",
+            borderBottom: tab === "database" ? "1px solid rgba(0,255,70,0.18)" : "1px solid rgba(13,27,42,0.07)",
+            padding: "0 24px",
+            height: 60,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 16,
+            gap: 20,
             transition: "background 0.3s ease, border-color 0.3s ease",
+            fontFamily: APP_FONT_STACK,
           }}>
-            {/* Active view label */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Left cluster */}
+            <div className="csc-top-nav__left" style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <button
                 onClick={() => setIsSidebarOpen((prev) => !prev)}
                 style={{
-                  border: tab === "database" ? "1px solid rgba(0,255,70,0.22)" : "1px solid rgba(13,27,42,0.13)",
-                  borderRadius: 7,
-                  padding: "5px 10px",
-                  background: tab === "database" ? "rgba(0,255,70,0.06)" : "#f4f7fa",
-                  color: tab === "database" ? "rgba(0,255,70,0.80)" : "rgba(13,27,42,0.70)",
-                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
-                  fontWeight: 700,
-                  fontSize: "0.68rem",
-                  letterSpacing: tab === "database" ? "0.08em" : "0.04em",
+                  border: "1px solid transparent",
+                  borderRadius: 10,
+                  height: 36,
+                  padding: "0 12px 0 10px",
+                  background: tab === "database" ? "rgba(0,255,70,0.06)" : (isSidebarOpen ? "rgba(13,27,42,0.06)" : "transparent"),
+                  color: tab === "database" ? "rgba(0,255,70,0.85)" : "#0d1b2a",
+                  fontFamily: APP_FONT_STACK,
+                  fontWeight: 500,
+                  fontSize: "0.875rem",
+                  letterSpacing: 0,
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 7,
+                  gap: 8,
+                  transition: "background 0.18s ease, color 0.18s ease",
                 }}
+                onMouseEnter={(e) => { if (tab !== "database" && !isSidebarOpen) e.currentTarget.style.background = "rgba(13,27,42,0.05)"; }}
+                onMouseLeave={(e) => { if (tab !== "database" && !isSidebarOpen) e.currentTarget.style.background = "transparent"; }}
                 aria-label={isSidebarOpen ? "Hide navigation menu" : "Open navigation menu"}
                 title={isSidebarOpen ? "Hide navigation menu" : "Open navigation menu"}
               >
-                {isSidebarOpen ? (
-                  <span style={{ fontSize: "0.7rem", lineHeight: 1 }}>{"<"}</span>
-                ) : (
-                  <span style={{ display: "grid", gap: 2 }}>
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.65)" : "rgba(13,27,42,0.65)", display: "block" }} />
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.65)" : "rgba(13,27,42,0.65)", display: "block" }} />
-                    <span style={{ width: 10, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.65)" : "rgba(13,27,42,0.65)", display: "block" }} />
-                  </span>
-                )}
-                {isSidebarOpen ? "Hide Menu" : "Menu"}
+                <span style={{ display: "grid", gap: 3 }} aria-hidden>
+                  <span style={{ width: 14, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.75)" : "rgba(13,27,42,0.78)", display: "block" }} />
+                  <span style={{ width: 14, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.75)" : "rgba(13,27,42,0.78)", display: "block" }} />
+                  <span style={{ width: 14, height: 1.5, borderRadius: 999, background: tab === "database" ? "rgba(0,255,70,0.75)" : "rgba(13,27,42,0.78)", display: "block" }} />
+                </span>
+                {isSidebarOpen ? "Hide menu" : "Menu"}
               </button>
               <button
                 onClick={() => navigateTab("home")}
                 style={{
-                  border: tab === "database" ? "1px solid rgba(0,255,70,0.22)" : "1px solid rgba(6,115,102,0.24)",
-                  borderRadius: 7,
-                  padding: "5px 10px",
-                  background: tab === "database" ? "rgba(0,255,70,0.06)" : "rgba(6,115,102,0.08)",
-                  color: tab === "database" ? "rgba(0,255,70,0.80)" : "#067366",
-                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
-                  fontWeight: 700,
-                  fontSize: "0.68rem",
-                  letterSpacing: tab === "database" ? "0.08em" : "0.04em",
+                  border: "1px solid transparent",
+                  borderRadius: 10,
+                  height: 36,
+                  padding: "0 12px 0 10px",
+                  background: "transparent",
+                  color: tab === "database" ? "rgba(0,255,70,0.85)" : "#067366",
+                  fontFamily: APP_FONT_STACK,
+                  fontWeight: 500,
+                  fontSize: "0.875rem",
+                  letterSpacing: 0,
                   cursor: "pointer",
                   whiteSpace: "nowrap",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  transition: "background 0.18s ease",
                 }}
+                onMouseEnter={(e) => { if (tab !== "database") e.currentTarget.style.background = "rgba(6,115,102,0.08)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M3 11.5 12 4l9 7.5" />
+                  <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" />
+                </svg>
                 Home
               </button>
+              {/* Section breadcrumb */}
+              <div aria-hidden style={{
+                width: 1,
+                height: 18,
+                background: tab === "database" ? "rgba(0,255,70,0.18)" : "rgba(13,27,42,0.12)",
+                margin: "0 6px 0 4px",
+              }} />
+              <span className="csc-top-nav__section" style={{
+                fontFamily: APP_FONT_STACK,
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                color: tab === "database" ? "rgba(0,255,70,0.78)" : "rgba(13,27,42,0.62)",
+                letterSpacing: 0,
+                whiteSpace: "nowrap",
+              }}>
+                {activeTabConfig?.label}
+              </span>
             </div>
 
-            {/* Stats strip + WhatsApp CTA */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              {headerStats.map((stat) => (
-                <div
-                  key={stat.label}
-                  style={{
-                    minHeight: 38,
-                    minWidth: stat.label === "Open Tickets" ? 92 : 104,
-                    borderRadius: 999,
-                    border: tab === "database" ? "1px solid rgba(0,255,70,0.20)" : "1px solid rgba(13,27,42,0.10)",
-                    background: tab === "database" ? "rgba(0,255,70,0.045)" : "rgba(255,255,255,0.82)",
-                    boxShadow: tab === "database" ? "none" : "0 4px 12px rgba(15,23,42,0.04)",
-                    padding: "6px 12px",
-                    display: "grid",
-                    alignContent: "center",
-                    justifyItems: "end",
-                    gap: 1,
-                  }}
-                >
-                  <div style={{ fontSize: "0.54rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: tab === "database" ? "rgba(0,255,70,0.42)" : "rgba(13,27,42,0.46)", fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK }}>
-                    {stat.label}
-                  </div>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 800, color: tab === "database" ? "rgba(0,255,70,0.90)" : (stat.accent || "#0d1b2a"), fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_MONO_STACK, letterSpacing: 0, textShadow: tab === "database" ? "0 0 8px rgba(0,255,70,0.40)" : "none" }}>
-                    {stat.value}
-                  </div>
-                </div>
-              ))}
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 7, padding: "4px 9px", border: tab === "database" ? `1px solid rgba(0,255,70,0.22)` : `1px solid ${cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.26)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.26)" : "rgba(13,27,42,0.13)"}`, background: tab === "database" ? "rgba(0,255,70,0.06)" : (cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.07)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.07)" : "rgba(13,27,42,0.04)") }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: tab === "database" ? "rgba(0,255,70,0.85)" : cloudSyncAccent, display: "inline-block" }} />
-                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: tab === "database" ? "rgba(0,255,70,0.85)" : cloudSyncAccent, fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK, letterSpacing: "0.06em" }}>
+            {/* Right cluster */}
+            <div className="csc-top-nav__right" style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              {/* Cohesive metric strip */}
+              <div
+                className="csc-top-nav__metrics"
+                role="group"
+                aria-label="Today's operational metrics"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "stretch",
+                  height: 40,
+                  borderRadius: 12,
+                  border: tab === "database" ? "1px solid rgba(0,255,70,0.20)" : "1px solid rgba(13,27,42,0.08)",
+                  background: tab === "database" ? "rgba(0,255,70,0.04)" : "#ffffff",
+                  boxShadow: tab === "database" ? "none" : "0 1px 2px rgba(13,27,42,0.04), 0 0 0 0.5px rgba(13,27,42,0.02)",
+                  overflow: "hidden",
+                  fontFamily: APP_FONT_STACK,
+                }}
+              >
+                {headerStats.map((stat, idx) => (
+                  <React.Fragment key={stat.label}>
+                    {idx > 0 && (
+                      <div aria-hidden style={{
+                        width: 1,
+                        background: tab === "database" ? "rgba(0,255,70,0.16)" : "rgba(13,27,42,0.07)",
+                        alignSelf: "stretch",
+                      }} />
+                    )}
+                    <div
+                      className="csc-top-nav__metric"
+                      style={{
+                        display: "inline-flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        alignItems: "flex-start",
+                        padding: "0 14px",
+                        gap: 1,
+                        minWidth: stat.label === "Open Tickets" ? 80 : 110,
+                      }}
+                      title={`${stat.label}: ${stat.value}`}
+                    >
+                      <span style={{
+                        fontSize: "0.6875rem",
+                        fontWeight: 500,
+                        letterSpacing: 0,
+                        color: tab === "database" ? "rgba(0,255,70,0.55)" : "rgba(13,27,42,0.52)",
+                        lineHeight: 1.1,
+                      }}>
+                        {stat.label}
+                      </span>
+                      <span
+                        className="csc-tabular"
+                        style={{
+                          fontSize: "0.9375rem",
+                          fontWeight: 600,
+                          color: tab === "database" ? "rgba(0,255,70,0.92)" : (stat.accent || "#0d1b2a"),
+                          letterSpacing: 0,
+                          lineHeight: 1.2,
+                          textShadow: tab === "database" ? "0 0 8px rgba(0,255,70,0.35)" : "none",
+                        }}
+                      >
+                        {stat.value}
+                      </span>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Sync status */}
+              <div
+                className="csc-top-nav__sync"
+                title={cloudSyncState === "synced" && cloudLastSyncedAt ? `Last synced ${formatSyncTime(cloudLastSyncedAt)}` : cloudSyncLabel}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  height: 40,
+                  padding: "0 12px",
+                  borderRadius: 12,
+                  border: tab === "database"
+                    ? "1px solid rgba(0,255,70,0.22)"
+                    : `1px solid ${cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.22)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.22)" : "rgba(13,27,42,0.08)"}`,
+                  background: tab === "database"
+                    ? "rgba(0,255,70,0.05)"
+                    : (cloudSyncState === "sync_failed" ? "rgba(220,38,38,0.05)" : cloudSyncState === "synced" ? "rgba(5,150,105,0.05)" : "#ffffff"),
+                  fontFamily: APP_FONT_STACK,
+                }}
+              >
+                <span style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: tab === "database" ? "rgba(0,255,70,0.85)" : cloudSyncAccent,
+                  boxShadow: cloudSyncState === "synced" && tab !== "database" ? "0 0 0 3px rgba(5,150,105,0.12)" : "none",
+                  display: "inline-block",
+                  flexShrink: 0,
+                }} />
+                <span style={{
+                  fontSize: "0.8125rem",
+                  fontWeight: 500,
+                  color: tab === "database" ? "rgba(0,255,70,0.85)" : cloudSyncAccent,
+                  letterSpacing: 0,
+                }}>
                   {cloudSyncLabel}
                 </span>
-                {cloudSyncState === "synced" && cloudLastSyncedAt && (
-                  <span style={{ fontSize: "0.68rem", color: tab === "database" ? "rgba(0,255,70,0.45)" : "rgba(13,27,42,0.40)", fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_MONO_STACK }}>
-                    {formatSyncTime(cloudLastSyncedAt)}
-                  </span>
-                )}
                 {isOfflineDevMode && (
                   <span style={{
                     marginLeft: 2,
-                    fontSize: "0.58rem",
-                    fontWeight: 700,
-                    color: tab === "database" ? "rgba(0,255,70,0.78)" : "#92400e",
-                    fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
+                    padding: "1px 6px",
+                    borderRadius: 4,
+                    fontSize: "0.625rem",
+                    fontWeight: 600,
+                    color: tab === "database" ? "rgba(0,255,70,0.85)" : "#92400e",
+                    background: tab === "database" ? "rgba(0,255,70,0.10)" : "rgba(180,83,9,0.10)",
+                    letterSpacing: 0,
                   }}>
                     Dev
                   </span>
                 )}
               </div>
+
               {databaseUnlocked && !isOfflineDevMode && (
                 <button
                   onClick={lockDatabaseAccess}
                   style={{
-                    border: "1px solid rgba(255,60,60,0.40)",
-                    borderRadius: 999,
-                    padding: "10px 16px",
-                    background: "rgba(255,60,60,0.08)",
-                    color: "rgba(255,80,80,0.90)",
-                    fontFamily: "'Courier New','Consolas',monospace",
-                    fontWeight: 700,
-                    fontSize: "0.56rem",
-                    letterSpacing: "0.20em",
-                    textTransform: "uppercase",
+                    height: 40,
+                    border: "1px solid rgba(220,38,38,0.30)",
+                    borderRadius: 12,
+                    padding: "0 14px",
+                    background: "rgba(220,38,38,0.06)",
+                    color: "#dc2626",
+                    fontFamily: APP_FONT_STACK,
+                    fontWeight: 500,
+                    fontSize: "0.8125rem",
+                    letterSpacing: 0,
                     cursor: "pointer",
                     whiteSpace: "nowrap",
-                    transition: "all 0.22s ease",
+                    transition: "background 0.18s ease",
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(220,38,38,0.10)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(220,38,38,0.06)"; }}
                 >
-                  Lock App
+                  Lock app
                 </button>
               )}
+
+              {/* Primary action */}
               <button
+                className="csc-top-nav__whatsapp"
                 onClick={openCscWhatsApp}
                 style={{
-                  border: tab === "database" ? "1px solid rgba(0,255,70,0.30)" : "1px solid rgba(22,163,74,0.40)",
-                  borderRadius: 999,
-                  padding: "10px 18px",
-                  background: tab === "database" ? "rgba(0,255,70,0.07)" : "rgba(22,163,74,0.11)",
-                  color: tab === "database" ? "rgba(0,255,70,0.85)" : "#166534",
-                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
-                  fontWeight: 700,
-                  fontSize: "0.56rem",
-                  letterSpacing: "0.22em",
-                  textTransform: "uppercase",
+                  height: 40,
+                  border: tab === "database" ? "1px solid rgba(0,255,70,0.32)" : "1px solid transparent",
+                  borderRadius: 12,
+                  padding: "0 16px",
+                  background: tab === "database" ? "rgba(0,255,70,0.08)" : "#16a34a",
+                  color: tab === "database" ? "rgba(0,255,70,0.92)" : "#ffffff",
+                  fontFamily: APP_FONT_STACK,
+                  fontWeight: 500,
+                  fontSize: "0.8125rem",
+                  letterSpacing: 0,
                   cursor: "pointer",
                   whiteSpace: "nowrap",
-                  transition: "all 0.22s ease",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  boxShadow: tab === "database" ? "none" : "0 1px 2px rgba(22,163,74,0.18), 0 0 0 0.5px rgba(22,163,74,0.20)",
+                  transition: "background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease",
                 }}
+                onMouseEnter={(e) => { if (tab !== "database") { e.currentTarget.style.background = "#15803d"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(22,163,74,0.25)"; } }}
+                onMouseLeave={(e) => { if (tab !== "database") { e.currentTarget.style.background = "#16a34a"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(22,163,74,0.18), 0 0 0 0.5px rgba(22,163,74,0.20)"; } }}
               >
-                Open WhatsApp
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M12 2a10 10 0 0 0-8.55 15.18L2 22l4.95-1.4A10 10 0 1 0 12 2Zm5.4 14.27c-.23.66-1.34 1.27-1.86 1.32-.5.05-1.13.07-1.83-.12-.42-.12-.97-.3-1.66-.6-2.93-1.27-4.84-4.23-4.99-4.43-.15-.2-1.2-1.6-1.2-3.05 0-1.45.76-2.16 1.03-2.46.27-.3.59-.37.78-.37l.56.01c.18.01.42-.07.66.5.23.58.79 2.02.86 2.17.07.15.12.32.02.52-.1.2-.15.32-.3.5l-.45.52c-.15.15-.3.32-.13.62.18.3.79 1.3 1.7 2.1 1.16 1.03 2.13 1.36 2.43 1.51.3.15.47.13.65-.07.18-.2.75-.87.95-1.17.2-.3.4-.25.66-.15.27.1 1.7.8 2 .95.3.15.5.22.57.35.07.13.07.74-.16 1.4Z" />
+                </svg>
+                WhatsApp
               </button>
             </div>
           </header>
@@ -12558,18 +12671,18 @@ export default function CSCBilling() {
                   letterSpacing: "0.18em",
                   textTransform: "uppercase",
                   color: tab === "database" ? "rgba(0,255,70,0.40)" : "rgba(13,27,42,0.42)",
-                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
+                  fontFamily: APP_BRAND_STACK,
                   marginBottom: 8,
                 }}>
                   {tab === "database" ? "❯ SYSTEM / DATABASE" : "CSC Centre Workspace"}
                 </div>
                 <h1 style={{
                   margin: 0,
-                  fontFamily: tab === "database" ? "'Courier New','Consolas',monospace" : APP_BRAND_STACK,
-                  fontSize: "clamp(1.4rem, 2.4vw, 1.9rem)",
+                  fontFamily: APP_BRAND_STACK,
+                  fontSize: "1.7rem",
                   fontWeight: 800,
                   lineHeight: 1.0,
-                  letterSpacing: tab === "database" ? "0.06em" : "-0.01em",
+                  letterSpacing: 0,
                   color: tab === "database" ? "rgba(0,255,70,0.92)" : "#0d1b2a",
                   textShadow: tab === "database" ? "0 0 18px rgba(0,255,70,0.30)" : "none",
                   textTransform: tab === "database" ? "uppercase" : "none",
